@@ -1,7 +1,7 @@
 "use client";
 import { Header } from '@/components/marketing/Header';
 import { Footer } from '@/components/marketing/Footer';
-import { MessageSquare, Users, Github, Zap, ExternalLink, Globe } from 'lucide-react';
+import { MessageSquare, Users, Github, Zap, ExternalLink, Globe, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CommunityPage() {
