@@ -114,7 +114,7 @@ export default function LandingPage() {
   }, []);
 
   const handleUpgrade = async (plan: string) => {
-    if (!isAuthenticated) {
+    if (!isSignedIn) {
       openSignIn();
       return;
     }
