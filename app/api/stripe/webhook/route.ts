@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createServiceClient } from "@/lib/supabase";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2024-12-18.acacia",
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+    typescript: true,
 });
 
 export async function POST(req: any) {
