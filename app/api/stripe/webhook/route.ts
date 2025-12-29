@@ -38,7 +38,7 @@ export async function POST(req: any) {
             const { data: user } = await supabase
                 .from('users')
                 .select('credits, referred_by')
-                .eq('id', userId)
+                .eq('clerk_id', userId)
                 .single();
 
             // 2. Update upgraded user
@@ -48,7 +48,7 @@ export async function POST(req: any) {
                     subscription_tier: plan.toLowerCase(),
                     credits: (user?.credits || 0) + creditsToAdd
                 })
-                .eq('id', userId);
+                .eq('clerk_id', userId);
 
             if (updateError) {
                 console.error("Failed to upgrade user in Supabase:", updateError);
