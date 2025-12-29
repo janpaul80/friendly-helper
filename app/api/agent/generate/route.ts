@@ -1,0 +1,92 @@
+import { createServiceClient } from "@/lib/supabase";
+import { NextResponse } from "next/server";
+import { AIEngine, ModelID } from "@/lib/ai/engine";
+import { auth } from "@clerk/nextjs/server";
+
+export async function POST(req: Request) {
+    const { userId: clerkId } = await auth();
+
+    // 1. Authenticate User (via Clerk)
+    if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const supabase = createServiceClient();
+    const body = await req.json();
+    const { projectId, prompt, model, fileContext } = body;
+
+    // 2. Get User from Supabase and Check Credits
+    const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id, credits")
+        .eq("clerk_id", clerkId)
+        .single();
+
+    if (userError || !userData) {
+        return NextResponse.json({ error: "User not found in database" }, { status: 404 });
+    }
+
+    const isImage = model === "flux.2-pro";
+    const cost = isImage ? 50 : 5;
+
+    if (userData.credits < cost) {
+        return NextResponse.json({ error: `Insufficient credits (Need ${cost})` }, { status: 403 });
+    }
+
+    try {
+        // 3. Call AI Engine
+        const result = await AIEngine.generate(model as ModelID, prompt, fileContext);
+
+        let content;
+        let imageUrl;
+
+        if (isImage) {
+            const parsed = JSON.parse(result.content);
+            imageUrl = parsed.url;
+            const fileName = `public/assets/gen-${Date.now()}.png`;
+            content = { [fileName]: `IMAGE_ASSET:${imageUrl}` };
+        } else {
+            try {
+                content = JSON.parse(result.content);
+            } catch (e) {
+                return NextResponse.json({ error: "AI returned invalid JSON" }, { status: 500 });
+            }
+        }
+
+        // 4. Update Supabase (Merge JSON)
+        const { data: project } = await supabase
+            .from("projects")
+            .select("files")
+            .eq("id", projectId)
+            .single();
+
+        const newFiles = { ...project?.files, ...content };
+
+        await supabase
+            .from("projects")
+            .update({
+                files: newFiles,
+                last_modified: Date.now()
+            })
+            .eq("id", projectId);
+
+        // 5. Deduct Credits (Using RPC for safety)
+        const { error: rpcError } = await supabase.rpc('decrement_credits', {
+            target_user_id: userData.id,
+            amount: cost
+        });
+
+        if (rpcError) {
+            console.error("RPC Credit Deduction Failed, falling back to patch:", rpcError);
+            // Fallback if RPC isn't created yet
+            await supabase
+                .from("users")
+                .update({ credits: Math.max(0, userData.credits - cost) })
+                .eq("id", userData.id);
+        }
+
+        return NextResponse.json({ success: true, changes: content, imageUrl });
+
+    } catch (error: any) {
+        console.error("API Agent Error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}

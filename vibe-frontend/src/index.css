@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global overflow fix for mobile */
+html,
+body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+body {
+  @apply bg-background text-gray-100;
+}
+
+/* Prevent any element from exceeding viewport width */
+* {
+  max-width: 100vw;
+}
+
+/* Mobile-specific fixes */
+@media (max-width: 768px) {
+
+  /* Ensure no horizontal scroll */
+  .overflow-x-hidden {
+    overflow-x: hidden !important;
+  }
+
+  /* Fix for absolute positioned elements */
+  .absolute {
+    max-width: calc(100vw - 32px);
+  }
+}
+
+/* Carousel Animation */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 20s linear infinite;
+}
+
+
+/* Slow pulse animation for chat demo */
+@keyframes pulse-slow {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+/* Message Highlighting Styles - Claude/Base44 Style */
+.agent-message {
+  color: #e0e0e0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.highlight-primary {
+  color: #ff8c42;
+  /* Orange for actions and status - matches landing page */
+}
+
+.highlight-secondary {
+  color: #ff9e64;
+  /* Warm orange for warnings */
+}
+
+.highlight-code {
+  color: #64ffda;
+  /* Teal for code and commands */
+  font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.highlight-link {
+  color: #64ffda;
+  /* Teal for links */
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.highlight-link:hover {
+  color: #7dffea;
+}
