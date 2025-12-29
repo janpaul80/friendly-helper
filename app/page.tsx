@@ -87,8 +87,8 @@ const ModelIcon = ({ provider }: { provider: string }) => {
 export default function LandingPage() {
   const router = useRouter();
   const { openSignIn } = useClerk();
-  const { isSignedIn } = useAuth();
-  const { user: clerkUser } = useUser();
+  const { openSignIn } = useClerk();
+  const { isSignedIn, user } = useUser();
 
   const [prompt, setPrompt] = useState('');
   const [selectedModel, setSelectedModel] = useState('gpt-5.1');
@@ -125,8 +125,8 @@ export default function LandingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan,
-          userId: convexUser?._id,
-          userEmail: clerkUser?.emailAddresses[0].emailAddress,
+          userId: user?.id,
+          userEmail: user?.emailAddresses[0]?.emailAddress,
         }),
       });
       const data = await response.json();
