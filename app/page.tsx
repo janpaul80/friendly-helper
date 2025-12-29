@@ -87,7 +87,6 @@ const ModelIcon = ({ provider }: { provider: string }) => {
 export default function LandingPage() {
   const router = useRouter();
   const { openSignIn } = useClerk();
-  const { openSignIn } = useClerk();
   const { isSignedIn, user } = useUser();
 
   const [prompt, setPrompt] = useState('');
