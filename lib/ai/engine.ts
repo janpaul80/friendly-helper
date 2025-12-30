@@ -3,11 +3,11 @@ import ModelClient from "@azure-rest/ai-inference";
 import { AzureKeyCredential } from "@azure/core-auth";
 
 const CONFIG = {
-    AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT!,
+    AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT?.replace(/\/+$/, "")!,
     AZURE_OPENAI_KEY: process.env.AZURE_OPENAI_KEY || process.env.AZURE_OPENAI_API_KEY!,
-    AZURE_MAAS_ENDPOINT: process.env.AZURE_MAAS_ENDPOINT || process.env.AZURE_OPENAI_ENDPOINT!,
+    AZURE_MAAS_ENDPOINT: (process.env.AZURE_MAAS_ENDPOINT || process.env.AZURE_OPENAI_ENDPOINT)?.replace(/\/+$/, "")!,
     AZURE_MAAS_KEY: process.env.AZURE_MAAS_KEY || process.env.AZURE_OPENAI_KEY || process.env.AZURE_OPENAI_API_KEY!,
-    AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION || "2025-04-01-preview",
+    AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION || "2024-02-15-preview",
 };
 
 export type ModelID =
@@ -34,7 +34,7 @@ export class AIEngine {
             endpoint: CONFIG.AZURE_OPENAI_ENDPOINT,
             apiKey: CONFIG.AZURE_OPENAI_KEY,
             apiVersion: CONFIG.AZURE_OPENAI_API_VERSION,
-            deployment: process.env.AZURE_DEPLOYMENT_HEFTCODER_ORCHESTRATOR || process.env.AZURE_DEPLOYMENT_GPT51 || "gpt-5.1-chat",
+            deployment: process.env.AZURE_DEPLOYMENT_HEFTCODER_ORCHESTRATOR || process.env.AZURE_DEPLOYMENT_GPT51 || "Kimi-K2-Thinking",
         });
 
         const response = await client.chat.completions.create({
@@ -64,12 +64,12 @@ export class AIEngine {
 
         const deploymentMap: Record<string, string> = {
             "grok-4": process.env.AZURE_DEPLOYMENT_GROK || "grok-4-fast-reasoning",
-            "deepseek-v3.1": process.env.AZURE_DEPLOYMENT_DEEPSEEK || "deepseek-v3-2-special",
+            "deepseek-v3.1": process.env.AZURE_DEPLOYMENT_DEEPSEEK || "DeepSeek-V3.2",
             "mistral-medium": process.env.AZURE_DEPLOYMENT_MISTRAL_MEDIUM || "mistral-medium-2505",
             "mistral-large": process.env.AZURE_DEPLOYMENT_MISTRAL_LARGE || "mistra-large-3",
-            "codestral": process.env.AZURE_DEPLOYMENT_CODESTRAL || "codestral-2501",
-            "llama-4": process.env.AZURE_DEPLOYMENT_LLAMA_MAVERICK || "Llama-4-Maverick-17B-128E",
-            "kimi-k2": process.env.AZURE_DEPLOYMENT_KIMI || "kimi-k2-thinking"
+            "codestral": process.env.AZURE_DEPLOYMENT_CODESTRAL || process.env.AZURE_DEPLOYMENT_MISTRAL || "Codestral-2501",
+            "llama-4": process.env.AZURE_DEPLOYMENT_LLAMA_MAVERICK || process.env.AZURE_DEPLOYMENT_LLAMA || "Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "kimi-k2": process.env.AZURE_DEPLOYMENT_KIMI || process.env.AZURE_DEPLOYMENT_GPT51 || "Kimi-K2-Thinking"
         };
 
         const response = await client.path("/chat/completions").post({
