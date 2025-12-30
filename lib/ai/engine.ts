@@ -85,7 +85,11 @@ export class AIEngine {
         });
 
         if (response.status !== "200") {
-            throw new Error(`MaaS Error: ${(response.body as any).error}`);
+            const errorBody = response.body as any;
+            const errorMessage = typeof errorBody === 'object'
+                ? (errorBody?.error?.message || errorBody?.error || JSON.stringify(errorBody))
+                : errorBody;
+            throw new Error(`MaaS Error: ${errorMessage}`);
         }
 
         let raw = (response.body as any).choices[0].message.content;
