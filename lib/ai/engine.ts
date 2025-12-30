@@ -7,6 +7,7 @@ const CONFIG = {
     AZURE_OPENAI_KEY: process.env.AZURE_OPENAI_KEY || process.env.AZURE_OPENAI_API_KEY!,
     AZURE_MAAS_ENDPOINT: process.env.AZURE_MAAS_ENDPOINT || process.env.AZURE_OPENAI_ENDPOINT!,
     AZURE_MAAS_KEY: process.env.AZURE_MAAS_KEY || process.env.AZURE_OPENAI_KEY || process.env.AZURE_OPENAI_API_KEY!,
+    AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION || "2025-04-01-preview",
 };
 
 export type ModelID =
@@ -27,8 +28,8 @@ export class AIEngine {
         const client = new AzureOpenAI({
             endpoint: CONFIG.AZURE_OPENAI_ENDPOINT,
             apiKey: CONFIG.AZURE_OPENAI_KEY,
-            apiVersion: "2025-04-01-preview", // Updated to match .env.local version if possible
-            deployment: "gpt-5.1-orchestrator",
+            apiVersion: CONFIG.AZURE_OPENAI_API_VERSION,
+            deployment: process.env.AZURE_DEPLOYMENT_GPT51 || "gpt-5.1-orchestrator",
         });
 
         const response = await client.chat.completions.create({
@@ -57,9 +58,9 @@ export class AIEngine {
         );
 
         const deploymentMap: Record<string, string> = {
-            "grok-4": "grok-4-reasoning",
-            "deepseek-v3.1": "deepseek-v3-1",
-            "mistral-medium": "mistral-medium-latest"
+            "grok-4": process.env.AZURE_DEPLOYMENT_GROK || "grok-4-reasoning",
+            "deepseek-v3.1": process.env.AZURE_DEPLOYMENT_DEEPSEEK || "deepseek-v3-1",
+            "mistral-medium": process.env.AZURE_DEPLOYMENT_MISTRAL_MEDIUM || "mistral-medium-latest"
         };
 
         const response = await client.path("/chat/completions").post({
@@ -97,7 +98,7 @@ export class AIEngine {
 
         const response = await client.path("/images/generations" as any).post({
             body: {
-                model: "flux-2-pro",
+                model: process.env.AZURE_DEPLOYMENT_FLUX || "flux-2-pro",
                 prompt: prompt,
                 size: "1024x1024",
                 n: 1

@@ -33,9 +33,8 @@ import {
 // Model list matching the "vibe" design
 const models = [
   { id: "gpt-5.1", name: "ChatGPT 5.1", provider: "openai", pro: true },
-  { id: "claude-sonnet-4.5", name: "Claude Sonnet 4.5", provider: "anthropic", pro: true },
   { id: "grok-4", name: "Grok 4 (thinking)", provider: "xai", pro: true },
-  { id: "deepseek-v3", name: "DeepSeek v3", provider: "deepseek", pro: false },
+  { id: "deepseek-v3.1", name: "DeepSeek v3.1", provider: "deepseek", pro: false },
   { id: "mistral-medium", name: "Mistral Medium", provider: "mistral", pro: false },
   { id: "flux.2-pro", name: "Flux.2-Pro", provider: "flux", pro: true },
 ];
@@ -125,8 +124,8 @@ const ConnectorsModal = ({ onClose }: { onClose: () => void }) => {
               <button
                 onClick={() => toggleConnection(app.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${connected[app.id]
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                    : 'bg-white/10 text-white hover:bg-white/20 border border-transparent'
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                  : 'bg-white/10 text-white hover:bg-white/20 border border-transparent'
                   }`}
               >
                 {connected[app.id] ? 'Connected' : 'Connect'}

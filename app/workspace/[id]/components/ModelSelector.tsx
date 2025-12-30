@@ -41,9 +41,8 @@ const FluxIcon = () => (
 
 const MODELS = [
     { id: "gpt-5.1", name: "ChatGPT 5.1", icon: OpenAIIcon, color: "text-[#10a37f]", pro: true },
-    { id: "claude-sonnet-4.5", name: "Claude Sonnet 4.5", icon: AnthropicIcon, color: "text-[#d97757]", pro: true },
     { id: "grok-4", name: "Grok 4 (thinking)", icon: XIcon, color: "text-white", pro: true },
-    { id: "deepseek-v3", name: "DeepSeek v3", icon: DeepSeekIcon, color: "text-blue-500", pro: false },
+    { id: "deepseek-v3.1", name: "DeepSeek v3.1", icon: DeepSeekIcon, color: "text-blue-500", pro: false },
     { id: "mistral-medium", name: "Mistral Medium", icon: MistralIcon, color: "text-orange-500", pro: false },
     { id: "flux.2-pro", name: "Flux.2-Pro", icon: FluxIcon, color: "text-purple-500", pro: true },
 ];
