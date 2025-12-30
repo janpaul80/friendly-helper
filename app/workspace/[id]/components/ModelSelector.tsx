@@ -39,11 +39,19 @@ const FluxIcon = () => (
     </svg>
 );
 
+const MetaIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z" fill="#0668E1" />
+        <path d="M12 6c-3.313 0-6 2.687-6 6s2.687 6 6 6 6-2.687 6-6-2.687-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z" fill="#0668E1" />
+    </svg>
+);
+
 const MODELS = [
     { id: "gpt-5.1", name: "ChatGPT 5.1", icon: OpenAIIcon, color: "text-[#10a37f]", pro: true },
     { id: "grok-4", name: "Grok 4 (thinking)", icon: XIcon, color: "text-white", pro: true },
     { id: "deepseek-v3.1", name: "DeepSeek v3.1", icon: DeepSeekIcon, color: "text-blue-500", pro: false },
     { id: "mistral-medium", name: "Mistral Medium", icon: MistralIcon, color: "text-orange-500", pro: false },
+    { id: "llama-4", name: "Llama 4 Maverick", icon: MetaIcon, color: "text-blue-600", pro: true },
     { id: "flux.2-pro", name: "Flux.2-Pro", icon: FluxIcon, color: "text-purple-500", pro: true },
 ];
 

@@ -15,6 +15,7 @@ export type ModelID =
     | "grok-4"
     | "deepseek-v3.1"
     | "mistral-medium"
+    | "llama-4"
     | "flux.2-pro";
 
 interface AIResponse {
@@ -29,7 +30,7 @@ export class AIEngine {
             endpoint: CONFIG.AZURE_OPENAI_ENDPOINT,
             apiKey: CONFIG.AZURE_OPENAI_KEY,
             apiVersion: CONFIG.AZURE_OPENAI_API_VERSION,
-            deployment: process.env.AZURE_DEPLOYMENT_GPT51 || "gpt-5.1-orchestrator",
+            deployment: process.env.AZURE_DEPLOYMENT_GPT51 || "gpt-5.1-chat",
         });
 
         const response = await client.chat.completions.create({
@@ -58,9 +59,10 @@ export class AIEngine {
         );
 
         const deploymentMap: Record<string, string> = {
-            "grok-4": process.env.AZURE_DEPLOYMENT_GROK || "grok-4-reasoning",
-            "deepseek-v3.1": process.env.AZURE_DEPLOYMENT_DEEPSEEK || "deepseek-v3-1",
-            "mistral-medium": process.env.AZURE_DEPLOYMENT_MISTRAL_MEDIUM || "mistral-medium-latest"
+            "grok-4": process.env.AZURE_DEPLOYMENT_GROK || "grok-4-fast-reasoning",
+            "deepseek-v3.1": process.env.AZURE_DEPLOYMENT_DEEPSEEK || "deepseek-v3-2-special",
+            "mistral-medium": process.env.AZURE_DEPLOYMENT_MISTRAL_MEDIUM || "mistral-medium-2505",
+            "llama-4": process.env.AZURE_DEPLOYMENT_LLAMA_MAVERICK || "Llama-4-Maverick-17B-128E"
         };
 
         const response = await client.path("/chat/completions").post({
@@ -70,7 +72,7 @@ export class AIEngine {
                     { role: "system", content: "You are a coding assistant. Return valid JSON only. If you are a reasoning model, finish your internal thinking before outputting the final JSON." },
                     { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
                 ],
-                temperature: modelId === "grok-4" ? 0.3 : 0.1,
+                temperature: modelId === "grok-4" || modelId === "llama-4" ? 0.3 : 0.1,
                 max_tokens: 4096
             }
         });
@@ -123,6 +125,7 @@ export class AIEngine {
             case "grok-4":
             case "deepseek-v3.1":
             case "mistral-medium":
+            case "llama-4":
                 return this.runMaaS(model, prompt, contextStr);
 
             default:

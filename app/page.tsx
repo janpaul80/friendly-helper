@@ -36,6 +36,7 @@ const models = [
   { id: "grok-4", name: "Grok 4 (thinking)", provider: "xai", pro: true },
   { id: "deepseek-v3.1", name: "DeepSeek v3.1", provider: "deepseek", pro: false },
   { id: "mistral-medium", name: "Mistral Medium", provider: "mistral", pro: false },
+  { id: "llama-4", name: "Llama 4 Maverick", provider: "meta", pro: true },
   { id: "flux.2-pro", name: "Flux.2-Pro", provider: "flux", pro: true },
 ];
 
@@ -72,6 +73,13 @@ const ModelIcon = ({ provider }: { provider: string }) => {
           <rect x="3" y="3" width="18" height="18" rx="2" fill="#8B5CF6" />
           <circle cx="8.5" cy="8.5" r="1.5" fill="white" />
           <path d="M21 15L16 10L5 21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'meta':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z" fill="#0668E1" />
+          <path d="M12 6c-3.313 0-6 2.687-6 6s2.687 6 6 6 6-2.687 6-6-2.687-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z" fill="#0668E1" />
         </svg>
       );
     case 'xai':
