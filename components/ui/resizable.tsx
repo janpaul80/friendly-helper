@@ -1,4 +1,5 @@
 "use client"
+// Shadcn UI Resizable with forwardRef and explicit types to fix deployment build errors
 
 import * as React from "react"
 import { GripVerticalIcon } from "lucide-react"
