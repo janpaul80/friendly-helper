@@ -2,15 +2,14 @@
 
 import * as React from "react"
 import { GripVerticalIcon } from "lucide-react"
-import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels"
-import type { PanelGroupProps } from "react-resizable-panels"
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
 
 function ResizablePanelGroup({
   className,
   ...props
-}: PanelGroupProps) {
+}: React.ComponentProps<typeof PanelGroup>) {
   return (
     <PanelGroup
       data-slot="resizable-panel-group"
@@ -27,7 +26,7 @@ import type { PanelProps, PanelResizeHandleProps } from "react-resizable-panels"
 
 function ResizablePanel({
   ...props
-}: PanelProps) {
+}: React.ComponentProps<typeof Panel>) {
   return <Panel data-slot="resizable-panel" {...props} />
 }
 
@@ -35,7 +34,7 @@ function ResizableHandle({
   withHandle,
   className,
   ...props
-}: PanelResizeHandleProps & {
+}: React.ComponentProps<typeof PanelResizeHandle> & {
   withHandle?: boolean
 }) {
   return (
