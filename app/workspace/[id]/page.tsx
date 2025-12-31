@@ -213,7 +213,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
 
                 {/* 3-Pane Layout */}
                 <div className="flex-1 flex overflow-hidden">
-                    <ResizablePanelGroup>
+                    <ResizablePanelGroup direction="horizontal">
                         {/* Left: File Explorer */}
                         <ResizablePanel defaultSize={20} minSize={15}>
                             <div className="h-full bg-[#0a0a0a] border-r border-white/10 flex flex-col">
