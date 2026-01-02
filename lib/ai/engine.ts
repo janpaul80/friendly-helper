@@ -213,7 +213,7 @@ export class AIEngine {
                         { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
                         { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
                     ],
-                    temperature: 0.3,
+                    temperature: 0.7,
                     max_tokens: 2048
                 })
             });
