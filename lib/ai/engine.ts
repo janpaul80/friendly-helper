@@ -190,7 +190,7 @@ export class AIEngine {
 
     private static async runWatermelon(prompt: string, context: string, assistantId?: string): Promise<AIResponse> {
         try {
-            const response = await fetch("https://api.watermelon.ai/v1/chat/completions", {
+            const response = await fetch("https://public.watermelon.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -244,9 +244,15 @@ export class AIEngine {
                 try {
                     response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID, true);
                 } catch (e: any) {
-                    console.error("Vibe Engine (Claude) Failed, Failover to HeftCoder Plus (Watermelon):", e.message);
-                    response = await this.runWatermelon(prompt, contextStr, CONFIG.WATERMELON_PLUS_ID);
-                    response.failover = true;
+                    console.error("Vibe Engine (Claude) Failed:", e.message);
+                    console.warn("Attempting Failover to HeftCoder Plus (Watermelon)...");
+                    try {
+                        response = await this.runWatermelon(prompt, contextStr, CONFIG.WATERMELON_PLUS_ID);
+                        response.failover = true;
+                    } catch (failoverError: any) {
+                        console.error("Failover Engine (Watermelon) also failed:", failoverError.message);
+                        throw new Error(`Both PRO and PLUS engines failed. Last error: ${failoverError.message}`);
+                    }
                 }
                 break;
 
