@@ -142,9 +142,16 @@ export class AIEngine {
     }
 
     private static async runLangdock(prompt: string, context: string, assistantId?: string, extendedThinking: boolean = false, systemInstruction?: string): Promise<AIResponse> {
+        const id = assistantId || CONFIG.LANGDOCK_ASSISTANT_ID;
+        const key = CONFIG.LANGDOCK_API_KEY;
+
+        if (!id || id === "HeftCoder Pro" || !key) {
+            throw new Error(`Langdock Configuration Missing: Ensure 'LANGDOCK_ASSISTANT_ID' and 'LANGDOCK_API_KEY' are correctly set in Coolify env.`);
+        }
+
         try {
             const body: any = {
-                assistantId: assistantId || CONFIG.LANGDOCK_ASSISTANT_ID,
+                assistantId: id,
                 messages: [
                     { role: "system", content: systemInstruction || "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
                     { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
@@ -186,9 +193,16 @@ export class AIEngine {
     }
 
     private static async runWatermelon(prompt: string, context: string, assistantId?: string): Promise<AIResponse> {
+        const id = assistantId || CONFIG.WATERMELON_PLUS_ID;
+        const key = process.env.WATERMELON_SECRET_KEY || CONFIG.WATERMELON_API_KEY;
+
+        if (!id || id === "HeftCoder Plus" || !key) {
+            throw new Error(`Watermelon Configuration Missing: Ensure 'WATERMELON_PLUS_ID' and 'WATERMELON_API_KEY' are set in Coolify env.`);
+        }
+
         try {
-            // Using public.watermelon.ai/v1/chat/completions (dropping /api)
-            const response = await fetch("https://public.watermelon.ai/v1/chat/completions", {
+            // Updated Path for Watermelon Ultimate API
+            const response = await fetch("https://public.watermelon.ai/api/v1/ultimate/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
