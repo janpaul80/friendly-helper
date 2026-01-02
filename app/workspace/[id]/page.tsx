@@ -96,7 +96,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
             if (data.failover) {
                 setMessages(prev => [...prev, {
                     role: "ai",
-                    content: "⚠️ Fail-Safe Mode Active: The primary Vibe engine is currently under heavy load or unavailable. I've automatically switched to Mistral Large (Azure) to ensure your workspace remains functional."
+                    content: "⚠️ Fail-Safe Mode Active: Primary Vibe engine busy. Automatically re-routing to HeftCoder Plus (GPT-5.1) to ensure your progress is never lost."
                 }]);
             }
 

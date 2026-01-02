@@ -11,11 +11,14 @@ const CONFIG = {
     LANGDOCK_API_KEY: process.env.LANGDOCK_API_KEY!,
     LANGDOCK_ASSISTANT_ID: process.env.LANGDOCK_ASSISTANT_ID!,
     LANGDOCK_UI_ARCHITECT_ID: process.env.LANGDOCK_UI_ARCHITECT_ID || process.env.LANGDOCK_ASSISTANT_ID!,
-    LANGDOCK_DEBUGGER_PRO_ID: process.env.LANGDOCK_DEBUGGER_PRO_ID || process.env.LANGDOCK_ASSISTANT_ID!
+    LANGDOCK_DEBUGGER_PRO_ID: process.env.LANGDOCK_DEBUGGER_PRO_ID || process.env.LANGDOCK_ASSISTANT_ID!,
+    WATERMELON_API_KEY: process.env.WATERMELON_API_KEY!,
+    WATERMELON_PLUS_ID: process.env.WATERMELON_PLUS_ID!
 };
 
 export type ModelID =
     | "heftcoder-pro"
+    | "heftcoder-plus"
     | "ui-architect"
     | "debugger-pro"
     | "general-assistant"
@@ -138,12 +141,12 @@ export class AIEngine {
         return { content: JSON.stringify({ url: "#", message: `Sora video generation (Mock: using deployment ${deploymentName})` }) };
     }
 
-    private static async runLangdock(prompt: string, context: string, assistantId?: string, extendedThinking: boolean = false): Promise<AIResponse> {
+    private static async runLangdock(prompt: string, context: string, assistantId?: string, extendedThinking: boolean = false, systemInstruction?: string): Promise<AIResponse> {
         try {
             const body: any = {
                 assistantId: assistantId || CONFIG.LANGDOCK_ASSISTANT_ID,
                 messages: [
-                    { role: "system", content: "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
+                    { role: "system", content: systemInstruction || "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
                     { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
                 ],
                 model: "claude-4.5-sonnet"
@@ -185,6 +188,38 @@ export class AIEngine {
         }
     }
 
+    private static async runWatermelon(prompt: string, context: string, assistantId?: string): Promise<AIResponse> {
+        try {
+            const response = await fetch("https://api.watermelon.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${CONFIG.WATERMELON_API_KEY}`
+                },
+                body: JSON.stringify({
+                    assistantId: assistantId || CONFIG.WATERMELON_PLUS_ID,
+                    messages: [
+                        { role: "system", content: "You are HeftCoder Plus (GPT-5.1). You provide creative UI perspectives and robust full-stack code. ENFORCE NO-PROSE: Return ONLY valid JSON." },
+                        { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Watermelon API Error: ${errText}`);
+            }
+
+            const data = await response.json();
+            return {
+                content: data.choices[0].message.content || "{}",
+                usage: data.usage
+            };
+        } catch (error: any) {
+            throw new Error(`Watermelon Integration Failed: ${error.message}`);
+        }
+    }
+
     private static parseSafeJSON(str: string): any {
         try {
             // Remove markdown formatting if present
@@ -209,18 +244,24 @@ export class AIEngine {
                 try {
                     response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID, true);
                 } catch (e: any) {
-                    console.error("Vibe Engine (Claude) Failed, Failover to Mistral Large:", e.message);
-                    response = await this.runMaaS("mistral-large", prompt, contextStr);
+                    console.error("Vibe Engine (Claude) Failed, Failover to HeftCoder Plus (Watermelon):", e.message);
+                    response = await this.runWatermelon(prompt, contextStr, CONFIG.WATERMELON_PLUS_ID);
                     response.failover = true;
                 }
                 break;
 
-            case "ui-architect":
-                response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_UI_ARCHITECT_ID);
+            case "heftcoder-plus":
+                response = await this.runWatermelon(prompt, contextStr, CONFIG.WATERMELON_PLUS_ID);
                 break;
 
             case "debugger-pro":
-                response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_DEBUGGER_PRO_ID);
+                response = await this.runLangdock(
+                    prompt,
+                    contextStr,
+                    CONFIG.LANGDOCK_DEBUGGER_PRO_ID,
+                    false,
+                    "You are a Senior Systems Architect. Your sole focus is analyzing Sandpack runtime errors. When a build fails, analyze the console output, identify the breaking line in the file system JSON, and provide the exact code fix. Do not provide high-level advice; provide code."
+                );
                 break;
 
             case "general-assistant":
