@@ -141,7 +141,7 @@ export class AIEngine {
         return { content: JSON.stringify({ url: "#", message: `Sora video generation (Mock: using deployment ${deploymentName})` }) };
     }
 
-    private static async runLangdock(prompt: string, context: string, assistantId?: string, extendedThinking: boolean = false, systemInstruction?: string): Promise<AIResponse> {
+    private static async runLangdock(prompt: string, context: string, assistantId?: string, systemInstruction?: string): Promise<AIResponse> {
         const id = assistantId || CONFIG.LANGDOCK_ASSISTANT_ID;
         const key = CONFIG.LANGDOCK_API_KEY;
 
@@ -149,43 +149,44 @@ export class AIEngine {
             throw new Error(`Langdock Configuration Missing: Ensure 'LANGDOCK_ASSISTANT_ID' and 'LANGDOCK_API_KEY' are correctly set in Coolify env.`);
         }
 
+        // STEP 5 - Logging (No secrets)
+        console.log(`[Langdock] Calling Agent: ${id}`);
+
         try {
-            const body: any = {
-                assistantId: id,
-                messages: [
-                    { role: "system", content: systemInstruction || "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
-                    { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
-                ],
-                // model: "claude-4.5-sonnet" // Omit model when assistantId is used to avoid conflicts
-            };
-
-            if (extendedThinking) {
-                body.thinking = {
-                    type: "enabled",
-                    budget_tokens: 16000
-                };
-            }
-
-            const response = await fetch("https://api.langdock.com/assistant/v1/chat/completions", {
+            // STEP 2 - Langdock Agent Call (v1 endpoint, no model, agent key)
+            const response = await fetch("https://api.langdock.com/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${CONFIG.LANGDOCK_API_KEY}`
+                    "Authorization": `Bearer ${key}`
                 },
-                body: JSON.stringify(body)
+                body: JSON.stringify({
+                    agent: id,
+                    messages: [
+                        { role: "system", content: systemInstruction || "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
+                        { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+                    ]
+                })
             });
 
             if (!response.ok) {
                 const errText = await response.text();
-                console.error(`Langdock API Error Details [ID: ${body.assistantId}]:`, errText);
+                console.error(`Langdock API Error [Agent: ${id}]:`, errText);
                 throw new Error(`Langdock API Error (${response.status}): ${errText}`);
             }
 
             const data = await response.json();
             let content = data.choices[0].message.content || "{}";
+            
+            // Handle reasoning tags if they appear in content (though Langdock agents usually clean this)
             content = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
-            return { content, usage: data.usage };
+            return { 
+                content, 
+                usage: data.usage,
+                provider: "langdock",
+                agent: "heftcoder-pro"
+            };
         } catch (error: any) {
             console.error("Langdock Connectivity/Runtime Error:", error.message);
             throw new Error(`Langdock Integration Failed: ${error.message}`);
@@ -200,7 +201,11 @@ export class AIEngine {
             throw new Error(`Mistral API Key Missing: Ensure 'MISTRAL_API_KEY' is set in Coolify env.`);
         }
 
+        // STEP 5 - Logging
+        console.log(`[Mistral] Calling Agent/Model: ${id}`);
+
         try {
+            // STEP 3 - Mistral Call (Explicit agent_id or model)
             const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -230,7 +235,9 @@ export class AIEngine {
                 usage: data.usage ? {
                     inputTokenCount: data.usage.prompt_tokens,
                     outputTokenCount: data.usage.completion_tokens
-                } : undefined
+                } : undefined,
+                provider: "mistral",
+                agent: "heftcoder-plus"
             };
         } catch (error: any) {
             console.error("Mistral Connectivity Error:", error.message);
@@ -242,7 +249,6 @@ export class AIEngine {
         try {
             // Remove markdown formatting if present
             let clean = str.replace(/```json/g, "").replace(/```/g, "").trim();
-            // Sometimes models add reasoning tags - we already handle that in runMaaS but let's be safe here too
             clean = clean.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
             return JSON.parse(clean);
         } catch (e) {
@@ -253,25 +259,14 @@ export class AIEngine {
 
     public static async generate(model: ModelID, prompt: string, fileContext: any): Promise<AIResponse> {
         const contextStr = JSON.stringify(fileContext);
-
         let response: AIResponse;
 
+        // STEP 1 - Strict Routing Logic
         switch (model) {
             case "heftcoder-pro":
             case "claude-4.5-sonnet":
-                try {
-                    response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID, true);
-                } catch (e: any) {
-                    console.error("Vibe Engine (Claude) Failed:", e.message);
-                    console.warn("Attempting Failover to HeftCoder Plus (Mistral)...");
-                    try {
-                        response = await this.runMistral(prompt, contextStr);
-                        response.failover = true;
-                    } catch (failoverError: any) {
-                        console.error("Failover Engine (Mistral) also failed:", failoverError.message);
-                        throw new Error(`Both PRO and PLUS engines failed. Last error: ${failoverError.message}`);
-                    }
-                }
+                // STEP 5 - Hard Fallback (No silent switch)
+                response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID);
                 break;
 
             case "heftcoder-plus":
@@ -283,7 +278,6 @@ export class AIEngine {
                     prompt,
                     contextStr,
                     CONFIG.LANGDOCK_DEBUGGER_PRO_ID,
-                    false,
                     "You are a Senior Systems Architect. Your sole focus is analyzing Sandpack runtime errors. When a build fails, analyze the console output, identify the breaking line in the file system JSON, and provide the exact code fix. Do not provide high-level advice; provide code."
                 );
                 break;
@@ -305,17 +299,15 @@ export class AIEngine {
                 break;
 
             case "heft-orchestrator":
-                // Deprecated Azure Model
                 throw new Error("Azure OpenAI (Heft Orchestrator) has been deprecated in favor of HeftCoder PRO.");
 
             default:
                 throw new Error(`Unsupported Model Selected: ${model}`);
         }
 
-        // Apply mandatory JSON cleaning across all code models (except image/video gen)
+        // STEP 4 - Normalize the Response (Content Cleanup)
         if (model !== "flux.2-pro" && model !== "sora") {
             try {
-                // Verify it's parsable, then return the stringified version
                 const parsed = this.parseSafeJSON(response.content);
                 response.content = JSON.stringify(parsed);
             } catch (e: any) {
