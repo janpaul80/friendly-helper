@@ -171,36 +171,36 @@ export class AIEngine {
             throw new Error(`Langdock Configuration Missing: Ensure 'LANGDOCK_ASSISTANT_ID' and 'LANGDOCK_API_KEY' are correctly set in Coolify env.`);
         }
 
-        // STEP 5 - Logging (No secrets)
-        console.log(`[Langdock] Calling Agent: ${id}`);
+        // Mask the key for logging
+        const maskedKey = `${key.substring(0, 8)}...${key.substring(key.length - 4)}`;
+        console.log(`[Langdock] Calling Agent: ${id} with Key: ${maskedKey}`);
 
         try {
-            // STEP 2 - Langdock Agent Call (v1 endpoint, no model, agent key)
+            const payload = {
+                agent: id,
+                messages: [
+                    { role: "system", content: systemInstruction || "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
+                    { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+                ]
+            };
+
             const response = await fetch("https://api.langdock.com/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${key}`
                 },
-                body: JSON.stringify({
-                    agent: id,
-                    messages: [
-                        { role: "system", content: systemInstruction || "You are HeftCoder Pro, the most advanced AI orchestrator. ENFORCE NO-PROSE: Return ONLY valid JSON representing file changes. No explanations." },
-                        { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
-                    ]
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
                 const errText = await response.text();
-                console.error(`Langdock API Error [Agent: ${id}]:`, errText);
+                console.error(`Langdock API Error [Agent: ${id}]: Status ${response.status}`, errText);
                 throw new Error(`Langdock API Error (${response.status}): ${errText}`);
             }
 
             const data = await response.json();
             let content = data.choices[0].message.content || "{}";
-
-            // Handle reasoning tags if they appear in content (though Langdock agents usually clean this)
             content = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
             return {
@@ -216,36 +216,39 @@ export class AIEngine {
     }
 
     private static async runMistral(prompt: string, context: string, agentId?: string): Promise<AIResponse> {
-        const id = agentId || CONFIG.MISTRAL_AGENT_ID;
+        let id = agentId || CONFIG.MISTRAL_AGENT_ID;
         const key = CONFIG.MISTRAL_API_KEY;
+
+        // Handle placeholder or 'None' values from environment
+        const isPlaceholder = !id || id === "None" || id.includes("Locked Secret");
+        if (isPlaceholder) {
+            console.log(`[Mistral] Warning: Agent ID is '${id}', falling back to model 'mistral-medium-latest'`);
+            id = "mistral-medium-latest";
+        }
 
         if (!key) {
             throw new Error(`Mistral API Key Missing: Ensure 'MISTRAL_API_KEY' is set in Coolify env.`);
         }
 
-        // STEP 5 - Logging
-        console.log(`[Mistral] Calling Agent/Model: ${id}`);
+        const isAgent = id?.startsWith("ag_");
+        const payload: any = {
+            messages: [
+                { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
+                { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
+            ],
+            temperature: 0.7,
+            max_tokens: 2048
+        };
+
+        if (isAgent) {
+            payload.agent_id = id;
+        } else {
+            payload.model = id || "mistral-medium-latest";
+        }
+
+        console.log(`[Mistral] Calling with ${isAgent ? "agent_id" : "model"}: ${isAgent ? payload.agent_id : payload.model}`);
 
         try {
-            // Determine if we are using an Agent or a Model
-            const isAgent = id?.startsWith("ag_");
-            const payload: any = {
-                messages: [
-                    { role: "system", content: "You are HeftCoder Plus (Mistral). Return ONLY valid JSON representing file changes." },
-                    { role: "user", content: `Context: ${context} \n\n Task: ${prompt}` }
-                ],
-                temperature: 0.7,
-                max_tokens: 2048
-            };
-
-            if (isAgent) {
-                payload.agent_id = id;
-            } else {
-                payload.model = id || "mistral-medium-latest";
-            }
-
-            console.log(`[Mistral] Sending Payload with ${isAgent ? "agent_id" : "model"}: ${isAgent ? payload.agent_id : payload.model}`);
-
             const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -257,7 +260,7 @@ export class AIEngine {
 
             if (!response.ok) {
                 const errText = await response.text();
-                console.error("Mistral API Error Details:", errText);
+                console.error(`Mistral API Error [Payload: ${JSON.stringify(payload)}]: Status ${response.status}`, errText);
                 throw new Error(`Mistral API Error (${response.status}): ${errText}`);
             }
 
