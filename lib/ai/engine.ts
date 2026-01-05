@@ -215,13 +215,14 @@ Your output format MUST be:
             const data = await response.json();
             console.log("[Langdock] FULL DEBUG RESPONSE:", JSON.stringify(data, null, 2));
             
-            // Try to find content in common Langdock fields
+            // Langdock Agent API returns: { "result": [{ "role": "assistant", "content": "..." }] }
             let content = 
-                data?.choices?.[0]?.message?.content || 
-                data?.message?.content || 
-                data?.content || 
-                data?.output || 
-                JSON.stringify(data); // Fallback to stringifying the whole object
+                data?.result?.[0]?.content ||           // Langdock Agent API format
+                data?.choices?.[0]?.message?.content || // OpenAI format
+                data?.message?.content ||               // Simple message format
+                data?.content ||                        // Direct content
+                data?.output ||                         // Output field
+                JSON.stringify(data);                   // Last resort fallback
             
             console.log("[Langdock] Extracted content:", content);
             
