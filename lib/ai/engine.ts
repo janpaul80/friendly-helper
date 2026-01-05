@@ -333,7 +333,8 @@ The output MUST be a single JSON object where keys are file paths and values are
     private static parseSafeJSON(str: string): any {
         try {
             return JSON.parse(str);
-        } catch {
+        } catch (initialError: any) {
+            console.error("[Parser Error] Initial JSON.parse failed:", initialError.message);
             // Attempt repair
             try {
                 let repaired = str.trim()
@@ -344,8 +345,10 @@ The output MUST be a single JSON object where keys are file paths and values are
                 repaired = repaired.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
                 return JSON.parse(repaired);
-            } catch (e) {
+            } catch (e: any) {
                 console.error("[Parser Error] Aggressive cleanup failed. Total length:", str.length);
+                console.error("[Parser Error] Parse error:", e.message);
+                console.error("[Parser Error] Last 200 chars:", str.substring(str.length - 200));
                 throw new Error("AI returned invalid JSON structure. Check logs for raw output.");
             }
         }
