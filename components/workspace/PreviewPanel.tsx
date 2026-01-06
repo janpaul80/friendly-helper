@@ -29,13 +29,12 @@ export function PreviewPanel({ isBuilding, isReady, port, error, buildStatus }: 
     if (!isBuilding && !isReady && !error) {
         return (
             <div className="h-full bg-[#0f0f0f] flex flex-col items-center justify-center">
-                {/* HashCoder Logo with Glow */}
+                {/* HashCoder Logo Static */}
                 <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-orange-500/20 blur-3xl rounded-full animate-pulse" />
-                    <div className="relative">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-600 to-orange-400 flex items-center justify-center">
-                            <span className="text-4xl font-bold text-white">HC</span>
-                        </div>
+                    <div className="h-16 w-16 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-[0_0_25px_rgba(234,88,12,0.3)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap">
+                            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                        </svg>
                     </div>
                 </div>
 
@@ -57,31 +56,24 @@ export function PreviewPanel({ isBuilding, isReady, port, error, buildStatus }: 
     if (isBuilding) {
         return (
             <div className="h-full bg-[#0f0f0f] flex flex-col items-center justify-center">
-                {/* Spinning Logo / Solar Icon */}
+                {/* Correct HeftCoder Logo */}
                 <div className="relative mb-8">
-                    <div className="absolute inset-0 bg-orange-500/20 blur-[50px] rounded-full" />
-                    <div className="relative w-24 h-24 flex items-center justify-center">
-                        <div className="absolute inset-0 bg-orange-500/20 rounded-full animate-pulse"></div>
-                        <div className="w-16 h-16 bg-gradient-to-t from-orange-600 to-orange-400 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/30">
-                            <div className="w-16 h-8 bg-white/10 rounded-t-full absolute top-0" />
-                            {/* Horizontal Lines for "Sun" effect */}
-                            <div className="w-full h-full flex flex-col justify-center items-center gap-1.5 opacity-40">
-                                <div className="w-10 h-1 bg-black/20 rounded-full" />
-                                <div className="w-12 h-1 bg-black/20 rounded-full" />
-                                <div className="w-8 h-1 bg-black/20 rounded-full" />
-                            </div>
+                    <div className="absolute inset-0 bg-orange-600/20 blur-[60px] rounded-full" />
+                    <div className="relative transform scale-150">
+                        <div className="h-12 w-12 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(234,88,12,0.4)] animate-pulse">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap">
+                                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                            </svg>
                         </div>
                     </div>
                 </div>
 
                 {/* Build Status */}
-                <h3 className="text-white text-lg font-medium mb-2 tracking-wide">
-                    Building your idea{dots}
+                <h3 className="text-white text-xl font-bold mb-2 tracking-tight">
+                    HeftCoder is building{dots}
                 </h3>
-                <p className="text-gray-400 text-sm max-w-md text-center flex flex-col items-center gap-2">
-                    <span>{buildStatus || 'Preparing your application'}</span>
-                    <span className="text-xs text-gray-600 mt-4">Did you know?</span>
-                    <span className="text-xs text-gray-500">Brainstorm ideas in Discussion Mode at 0.3 credits per request</span>
+                <p className="text-gray-500 text-sm max-w-md text-center flex flex-col items-center gap-1">
+                    <span className="font-mono text-xs text-orange-500/80">{buildStatus || 'Initializing environment...'}</span>
                 </p>
 
                 {/* Progress Indicators - HIDDEN for cleaner look, text update above is sufficient */}
