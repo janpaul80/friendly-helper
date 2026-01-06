@@ -138,6 +138,13 @@ ${context ? `Previous context: ${context}` : ''}`;
 
 Generate a complete, production-ready web application based on the user's request.
 
+CRITICAL INSTRUCTION:
+- You are a JSON-only API.
+- DO NOT use any tools.
+- DO NOT use Python code execution.
+- DO NOT return markdown code blocks.
+- Return ONLY a raw JSON object string.
+
 OUTPUT FORMAT:
 Return ONLY valid JSON with file paths as keys and code as values:
 {

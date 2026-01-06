@@ -217,18 +217,26 @@ Your output format MUST be:
             const data = await response.json();
             console.log("[Langdock] FULL DEBUG RESPONSE:", JSON.stringify(data, null, 2));
 
-            // Langdock Agent API returns: { "result": [{ "role": "assistant", "content": "..." }] }
-            let content =
-                data?.result?.[0]?.content ||           // Langdock Agent API format
-                data?.choices?.[0]?.message?.content || // OpenAI format
-                data?.message?.content ||               // Simple message format
-                data?.content ||                        // Direct content
-                data?.output ||                         // Output field
-                JSON.stringify(data);                   // Last resort fallback
+            // 1. Extract raw content from Langdock's new 'result' array or 'choices'
+            let rawContent = "";
+            if (data.result && Array.isArray(data.result)) {
+                // If result is an array, join content pieces (handling tool calls potentially returning multipart)
+                rawContent = data.result.map((item: any) => item.content || "").join("\n");
+            } else if (data.choices && data.choices[0]?.message?.content) {
+                // Standard OpenAI format
+                rawContent = data.choices[0].message.content;
+            } else {
+                // Fallback for single object or unknown shape
+                rawContent = typeof data === 'string' ? data : (data.content || data.message || JSON.stringify(data));
+            }
 
-            console.log("[Langdock] Extracted content:", content);
+            console.log("[Langdock] Extracted RAW content:", rawContent);
 
-            content = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
+            // 2. Safely perform the cleanup only after ensuring it's a string
+            if (typeof rawContent !== 'string') {
+                rawContent = JSON.stringify(rawContent);
+            }
+            let content = rawContent.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
             return {
                 content,
