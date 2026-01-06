@@ -34,8 +34,9 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const [loading, setLoading] = useState(true);
     const [showAttachMenu, setShowAttachMenu] = useState(false);
     const [isListening, setIsListening] = useState(false);
-    const [agentMode, setAgentMode] = useState<'discussion' | 'building'>('discussion');
+    const [agentMode, setAgentMode] = useState<'discussion' | 'planning' | 'building'>('discussion');
     const [thinkingAction, setThinkingAction] = useState<'thinking' | 'writing' | 'building'>('thinking');
+    const [currentStage, setCurrentStage] = useState<'planning' | 'approving' | 'coding'>('planning');
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
