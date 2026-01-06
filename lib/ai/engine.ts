@@ -1,6 +1,7 @@
 import { AzureOpenAI } from "openai";
 import ModelClient from "@azure-rest/ai-inference";
 import { AzureKeyCredential } from "@azure/core-auth";
+import { AGENT_REGISTRY } from "@/lib/agent/registry";
 
 const CONFIG = {
     AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT?.replace(/\/+$/, "")!,
@@ -10,9 +11,7 @@ const CONFIG = {
     AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION || "2024-02-15-preview",
     LANGDOCK_API_KEY: process.env.LANGDOCK_API_KEY!,
     LANGDOCK_ASSISTANT_ID: process.env.LANGDOCK_ASSISTANT_ID!,
-    LANGDOCK_UI_ARCHITECT_ID: process.env.LANGDOCK_UI_ARCHITECT_ID || process.env.LANGDOCK_ASSISTANT_ID!,
-    LANGDOCK_DEBUGGER_PRO_ID: process.env.LANGDOCK_DEBUGGER_PRO_ID || process.env.LANGDOCK_ASSISTANT_ID!,
-    MISTRAL_API_KEY: process.env.MISTRAL_API_KEY || process.env.MISTRAL_MEDIUM_API_KEY!,
+    MISTRAL_API_KEY: process.env.MISTRAL_API_KEY!,
     MISTRAL_AGENT_ID: process.env.MISTRAL_AGENT_ID || "ag_019b7df2cec2719aa68ad67ae2bd6927"
 };
 
@@ -399,26 +398,21 @@ The output MUST be a single JSON object where keys are file paths and values are
         // STEP 1 - Strict Routing Logic
         switch (model) {
             case "heftcoder-pro":
-            case "claude-4.5-sonnet":
-                // STEP 5 - Hard Fallback (No silent switch)
-                response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID);
+            case "debugger-pro":
+            case "ui-architect":
+            case "general-assistant":
+                // 1. Determine which Agent ID to use
+                let assistantId = CONFIG.LANGDOCK_ASSISTANT_ID;
+                if (model === "ui-architect") assistantId = AGENT_REGISTRY['ui-specialist']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
+                if (model === "debugger-pro") assistantId = AGENT_REGISTRY['heft-api-v2']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
+                if (model === "heftcoder-pro") assistantId = AGENT_REGISTRY['heft-coder-pro']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
+
+                // 2. Determine if we need a specialized system prompt (logic handled in runLangdock usually, but passing simple ID here)
+                response = await this.runLangdock(prompt, contextStr, assistantId);
                 break;
 
             case "heftcoder-plus":
                 response = await this.runMistral(prompt, contextStr);
-                break;
-
-            case "debugger-pro":
-                response = await this.runLangdock(
-                    prompt,
-                    contextStr,
-                    CONFIG.LANGDOCK_DEBUGGER_PRO_ID,
-                    "You are a Senior Systems Architect. Your sole focus is analyzing Sandpack runtime errors. When a build fails, analyze the console output, identify the breaking line in the file system JSON, and provide the exact code fix. Do not provide high-level advice; provide code."
-                );
-                break;
-
-            case "general-assistant":
-                response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID);
                 break;
 
             case "flux.2-pro":
