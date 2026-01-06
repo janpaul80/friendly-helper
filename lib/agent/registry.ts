@@ -20,7 +20,7 @@ export const AGENT_REGISTRY: Record<string, AgentDescriptor> = {
     name: 'HeftCoder Pro',
     role: 'Orchestrator',
     description: 'The main conversational agent for planning and general coding.',
-    langdockId: '62a310c1-449e-4301-b406-c66885263600', 
+    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
     capabilities: ['planning', 'coding', 'orchestration']
   },
   'heft-api-v2': {
@@ -61,11 +61,11 @@ export class AgentManager {
    */
   static selectAgent(taskDescription: string): AgentDescriptor {
     const desc = taskDescription.toLowerCase();
-    
+
     if (desc.includes('api') || desc.includes('backend') || desc.includes('database') || desc.includes('sql')) {
       return AGENT_REGISTRY['heft-api-v2'];
     }
-    
+
     if (desc.includes('ui') || desc.includes('design') || desc.includes('css') || desc.includes('animation')) {
       return AGENT_REGISTRY['ui-specialist'];
     }
