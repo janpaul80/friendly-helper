@@ -65,15 +65,28 @@ export async function POST(req: Request) {
             try {
                 content = JSON.parse(result.content);
 
+                // --- NEW LOGIC START ---
+                // If it's a conversation/plan, DO NOT update files
+                if (content.__isConversation) {
+                    return NextResponse.json({
+                        success: true,
+                        // Return special content so frontend knows it's a chat
+                        content: JSON.stringify(content),
+                        failover: result.failover
+                    });
+                }
+                // --- NEW LOGIC END ---
+
                 // NEW: Parse into structured actions
                 agentResponse = ActionParser.parseResponse(content);
 
             } catch (e) {
+                // Should not happen as engine now guarantees valid structure or conversation object
                 return NextResponse.json({ error: "AI returned invalid JSON" }, { status: 500 });
             }
         }
 
-        // 4. Update Supabase (Merge JSON)
+        // 4. Update Supabase (Merge JSON) - ONLY IF NOT CONVERSATION
         const { data: project } = await supabase
             .from("projects")
             .select("files")
@@ -107,10 +120,11 @@ export async function POST(req: Request) {
 
         return NextResponse.json({
             success: true,
-            changes: content,
+            changes: content, // This will be the actual file changes
+            // For frontend compatibility (it checks response.content sometimes - legacy)
+            content: JSON.stringify(content),
             imageUrl,
             failover: result.failover,
-            // NEW: Include agent response with actions
             agentResponse
         });
 
