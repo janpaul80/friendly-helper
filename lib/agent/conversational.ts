@@ -120,17 +120,16 @@ RESPONSE FORMAT (Strict Markdown):
 - [Component 1]
 - [Component 2]
 
-## Stage 3: Implementation Steps
+## Stage 3: Autonomous Implementation Strategy
 1. [Step 1]
 2. [Step 2]
 
 [THINKING]
-I have outlined the plan above. I am waiting for user approval.
+I have analyzed the requirements. I will now proceed to generate the solution autonomously.
 [/THINKING]
 
-**Status**: 🟡 WAITING FOR APPROVAL
-[WAIT]
-
+**Status**: 🟢 AUTO-EXECUTING PLAN
+[EXEC]
 ${context ? `Previous context: ${context}` : ''}`;
         }
 

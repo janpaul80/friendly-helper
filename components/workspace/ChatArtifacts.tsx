@@ -79,9 +79,12 @@ export function ArtifactMessage({ content, onApprove }: { content: string, onApp
     const [showThinking, setShowThinking] = useState(false);
 
     // Pre-processing to handle [WAIT] tag and [THINKING] blocks
+    // Pre-processing to handle [WAIT], [EXEC] tags and [THINKING] blocks
     let processedContent = content;
     const hasWaitTag = processedContent.includes('[WAIT]');
-    processedContent = processedContent.replace('[WAIT]', '');
+    const hasExecTag = processedContent.includes('[EXEC]');
+
+    processedContent = processedContent.replace('[WAIT]', '').replace('[EXEC]', '');
 
     // Extract thinking blocks if present (basic regex, robust parser would be better but this works for now)
     // We are trusting the AI to use markdown well, so we might just let standard markdown handle most things
@@ -162,6 +165,7 @@ export function ArtifactMessage({ content, onApprove }: { content: string, onApp
             </ReactMarkdown>
 
             {/* Resume / Approve Button */}
+            {/* Resume / Approve Button */}
             {hasWaitTag && (
                 <div className="mt-4 flex justify-end">
                     <button
@@ -171,6 +175,15 @@ export function ArtifactMessage({ content, onApprove }: { content: string, onApp
                         <Play className="w-3.5 h-3.5 fill-current" />
                         Execute Plan
                     </button>
+                </div>
+            )}
+
+            {hasExecTag && (
+                <div className="mt-4 flex justify-end">
+                    <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider animate-pulse">
+                        <Cpu className="w-3.5 h-3.5" />
+                        System Auto-Executing...
+                    </div>
                 </div>
             )}
         </div>
