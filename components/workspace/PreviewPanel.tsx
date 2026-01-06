@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Share2 } from 'lucide-react';
+import { SandpackPreview } from "@codesandbox/sandpack-react";
 
 interface PreviewPanelProps {
     isBuilding: boolean;
@@ -56,22 +57,35 @@ export function PreviewPanel({ isBuilding, isReady, port, error, buildStatus }: 
     if (isBuilding) {
         return (
             <div className="h-full bg-[#0f0f0f] flex flex-col items-center justify-center">
-                {/* Spinning Logo */}
-                <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-orange-500/20 blur-3xl rounded-full" />
-                    <Loader2 className="relative w-24 h-24 text-orange-500 animate-spin" />
+                {/* Spinning Logo / Solar Icon */}
+                <div className="relative mb-8">
+                    <div className="absolute inset-0 bg-orange-500/20 blur-[50px] rounded-full" />
+                    <div className="relative w-24 h-24 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-orange-500/20 rounded-full animate-pulse"></div>
+                        <div className="w-16 h-16 bg-gradient-to-t from-orange-600 to-orange-400 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/30">
+                            <div className="w-16 h-8 bg-white/10 rounded-t-full absolute top-0" />
+                            {/* Horizontal Lines for "Sun" effect */}
+                            <div className="w-full h-full flex flex-col justify-center items-center gap-1.5 opacity-40">
+                                <div className="w-10 h-1 bg-black/20 rounded-full" />
+                                <div className="w-12 h-1 bg-black/20 rounded-full" />
+                                <div className="w-8 h-1 bg-black/20 rounded-full" />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Build Status */}
-                <h3 className="text-white text-lg font-medium mb-2">
-                    Building{dots}
+                <h3 className="text-white text-lg font-medium mb-2 tracking-wide">
+                    Building your idea{dots}
                 </h3>
-                <p className="text-gray-400 text-sm max-w-md text-center">
-                    {buildStatus || 'Preparing your application'}
+                <p className="text-gray-400 text-sm max-w-md text-center flex flex-col items-center gap-2">
+                    <span>{buildStatus || 'Preparing your application'}</span>
+                    <span className="text-xs text-gray-600 mt-4">Did you know?</span>
+                    <span className="text-xs text-gray-500">Brainstorm ideas in Discussion Mode at 0.3 credits per request</span>
                 </p>
 
-                {/* Progress Indicators */}
-                <div className="mt-8 w-64 space-y-2">
+                {/* Progress Indicators - HIDDEN for cleaner look, text update above is sufficient */}
+                <div className="hidden mt-8 w-64 space-y-2">
                     <div className="flex items-center gap-3 text-xs text-gray-500">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                         <span>Dependencies installed</span>
@@ -106,20 +120,27 @@ export function PreviewPanel({ isBuilding, isReady, port, error, buildStatus }: 
     if (isReady && port) {
         return (
             <div className="h-full bg-white flex flex-col">
-                {/* Status Bar */}
-                <div className="h-8 bg-[#0a0a0a] border-b border-gray-800 flex items-center px-4 gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-xs text-gray-400">
-                        Preview running on port {port}
-                    </span>
+                <div className="h-10 bg-[#f3f4f6] flex items-center px-4 gap-2 border-b border-gray-200">
+                    <div className="flex gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+                        <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                        <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+                    </div>
+                    <div className="flex-1 bg-white mx-4 rounded-md text-[11px] text-center py-1 text-gray-400 font-mono border border-gray-200 shadow-sm overflow-hidden truncate">
+                        vibe-preview.heftcoder.app
+                    </div>
+                    <button className="p-1.5 hover:bg-gray-200 rounded text-gray-500">
+                        <Share2 className="w-3.5 h-3.5" />
+                    </button>
                 </div>
-
-                {/* Preview Iframe */}
-                <iframe
-                    src={`http://localhost:${port}`}
-                    className="flex-1 w-full"
-                    sandbox="allow-scripts allow-same-origin allow-forms"
-                />
+                <div className="flex-1 preview-container relative">
+                    <SandpackPreview
+                        showNavigator={false}
+                        showOpenInCodeSandbox={false}
+                        showRefreshButton={false}
+                        className="h-full w-full"
+                    />
+                </div>
             </div>
         );
     }

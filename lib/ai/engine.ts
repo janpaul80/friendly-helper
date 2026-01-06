@@ -32,7 +32,10 @@ export type ModelID =
     | "heft-orchestrator"
     | "mistral-large"
     | "flux.2-pro"
-    | "sora";
+    | "sora"
+    | "heft-coder-thinking" // ChatGPT 5 (Thinking Fast)
+    | "gemini-flash"        // Gemini 2.5 Flash
+    | "llama-70b";          // Llama 3.3 70B
 
 interface AIResponse {
     content: string;
@@ -401,11 +404,17 @@ The output MUST be a single JSON object where keys are file paths and values are
             case "debugger-pro":
             case "ui-architect":
             case "general-assistant":
+            case "heft-coder-thinking":
+            case "gemini-flash":
+            case "llama-70b":
                 // 1. Determine which Agent ID to use
                 let assistantId = CONFIG.LANGDOCK_ASSISTANT_ID;
                 if (model === "ui-architect") assistantId = AGENT_REGISTRY['ui-specialist']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
                 if (model === "debugger-pro") assistantId = AGENT_REGISTRY['heft-api-v2']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
                 if (model === "heftcoder-pro") assistantId = AGENT_REGISTRY['heft-coder-pro']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
+                if (model === "heft-coder-thinking") assistantId = AGENT_REGISTRY['heft-coder-thinking']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
+                if (model === "gemini-flash") assistantId = AGENT_REGISTRY['gemini-flash']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
+                if (model === "llama-70b") assistantId = AGENT_REGISTRY['llama-70b']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
 
                 // 2. Determine if we need a specialized system prompt (logic handled in runLangdock usually, but passing simple ID here)
                 response = await this.runLangdock(prompt, contextStr, assistantId);

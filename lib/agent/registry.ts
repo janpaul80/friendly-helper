@@ -45,6 +45,31 @@ Use:
 - HeftCoder Orange (#ff6b35)
 Focus on aesthetics and premium feel.`,
     capabilities: ['ui', 'animation', 'responsive']
+  },
+  'heft-coder-thinking': {
+    id: 'heft-coder-thinking',
+    name: 'ChatGPT 5 (Thinking Fast)',
+    role: 'Deep Thinker',
+    description: 'Advanced reasoning model for complex architectural planning and tough bugs.',
+    // User needs to provide this specific ID found in Langdock
+    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
+    capabilities: ['reasoning', 'planning', 'complex-logic']
+  },
+  'gemini-flash': {
+    id: 'gemini-flash',
+    name: 'Gemini 2.5 Flash',
+    role: 'Speed Coder',
+    description: 'Ultra-fast model for quick iterations, refactoring, and simple tasks.',
+    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
+    capabilities: ['speed', 'refactoring', 'quick-fixes']
+  },
+  'llama-70b': {
+    id: 'llama-70b',
+    name: 'Llama 3.3 70B',
+    role: 'Open Source Expert',
+    description: 'High-performance open model, great for general coding and explanation.',
+    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
+    capabilities: ['explanation', 'general-coding', 'open-source']
   }
 };
 
