@@ -162,7 +162,7 @@ export class AIEngine {
         };
     }
 
-    private static async runLangdock(prompt: string, context: string, assistantId?: string, systemInstruction?: string): Promise<AIResponse> {
+    public static async runLangdock(prompt: string, context: string, assistantId?: string, systemInstruction?: string): Promise<AIResponse> {
         const id = assistantId || CONFIG.LANGDOCK_ASSISTANT_ID;
         const key = CONFIG.LANGDOCK_API_KEY;
 
