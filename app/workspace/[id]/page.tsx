@@ -104,13 +104,31 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 }]);
             }
 
-            if (data.imageUrl) {
+            // 🔍 CHECK FOR CONVERSATION / PLAN
+            // Sometimes the engine returns a special object for text-only responses
+            let rawContent;
+            try {
+                rawContent = JSON.parse(data.content);
+            } catch (e) {
+                // If it's already an object or string
+                rawContent = data.content;
+            }
+
+            if (rawContent && rawContent.__isConversation) {
+                // IT IS A PLAN/CHAT MESSAGE
+                setMessages(prev => [...prev, {
+                    role: "ai",
+                    content: rawContent.message
+                }]);
+            } else if (data.imageUrl) {
+                // IT IS AN IMAGE
                 setMessages(prev => [...prev, {
                     role: "ai",
                     content: "I've generated this image for you:",
                     imageUrl: data.imageUrl
                 }]);
             } else {
+                // IT IS CODE
                 setMessages(prev => [...prev, { role: "ai", content: "I've updated the code for you!" }]);
             }
 

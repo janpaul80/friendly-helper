@@ -444,13 +444,43 @@ The output MUST be a single JSON object where keys are file paths and values are
         }
 
         // STEP 4 - Normalize the Response (Content Cleanup)
+        // STEP 4 - Normalize the Response (Content Cleanup)
         if (model !== "flux.2-pro" && model !== "sora") {
             try {
-                let parsed = this.parseSafeJSON(response.content);
-                // Unwrap nested content structure (e.g., from Mistral)
-                parsed = this.unwrapContent(parsed);
+                // Improved Hybrid Parser:
+                // If it's pure JSON, it returns the files object.
+                // If it's text (Conversation/Planning), it will fail JSON parsing.
+                // We catch that failure and return a "Message Object" instead.
+
+                // 1. Try to extract JSON if embedded in markdown code blocks
+                let contentToParse = response.content;
+                const jsonBlockRegex = /```json\s*([\s\S]*?)\s*```/;
+                const match = contentToParse.match(jsonBlockRegex);
+                if (match && match[1]) {
+                    contentToParse = match[1];
+                }
+
+                let parsed;
+                try {
+                    parsed = this.parseSafeJSON(contentToParse);
+                    // Unwrap nested content structure (e.g., from Mistral)
+                    parsed = this.unwrapContent(parsed);
+                } catch (e) {
+                    // JSON Parsing Failed -> Assume it's a Conversational/Planning response
+                    console.log('[AIEngine] Response is not JSON code. Treating as Conversation/Plan.');
+
+                    // Return a special object that the frontend understands is NOT a file update
+                    parsed = {
+                        __isConversation: true,
+                        message: response.content,
+                        // If it detected a plan, we can flag it
+                        isPlan: response.content.toLowerCase().includes('**plan:**')
+                    };
+                }
+
                 response.content = JSON.stringify(parsed);
             } catch (e: any) {
+                // This catch block should rarely be reached now since we handle non-JSON gracefully above
                 throw new Error(`Output Validation Failed: ${e.message}`);
             }
         }
