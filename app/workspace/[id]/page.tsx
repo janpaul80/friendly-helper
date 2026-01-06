@@ -43,14 +43,11 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     useEffect(() => {
         const fetchProject = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('projects')
-                    .select('*')
-                    .eq('id', params.id)
-                    .single();
+                const response = await fetch(`/api/projects/${params.id}`);
+                if (!response.ok) throw new Error("Failed to fetch project");
 
-                if (error) throw error;
-                setProject(data);
+                const data = await response.json();
+                setProject(data.project);
             } catch (err) {
                 console.error("Error fetching project:", err);
             } finally {
