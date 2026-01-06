@@ -3,22 +3,21 @@ import React, { useState, useRef, useEffect, use } from "react";
 import { Play, Share2, UploadCloud, Github, Send, FileCode, ChevronRight, ChevronDown, Loader2, ArrowLeft, Paperclip, AudioLines, Image, FileUp, Figma, Code2, Sparkles } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ModelSelector } from "./components/ModelSelector";
-import { SandpackProvider, SandpackLayout, SandpackCodeEditor, SandpackPreview, SandpackFileExplorer } from "@codesandbox/sandpack-react";
-import { atomDark } from "@codesandbox/sandpack-themes";
-import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
-import { ActionList } from '@/components/workspace/ActionBlock';
-import { AgentAction } from '@/lib/agent/actions';
-
-interface Message {
-    role: "user" | "ai";
-    content: string;
-    imageUrl?: string;
-    actions?: AgentAction[];
-    actionStatuses?: Record<string, 'pending' | 'running' | 'done' | 'error'>;
-    actionOutputs?: Record<string, string>;
-    actionErrors?: Record<string, string>;
-}
+import { ActionList } from "@/components/workspace/ActionBlock";
+import { PreviewPanel } from "@/components/workspace/PreviewPanel";
+import { ThinkingIndicator } from "@/components/workspace/ThinkingIndicator";
+import { ConversationalAgent } from "@/lib/agent/conversational";
+import { AgentAction } from "@/lib/agent/actions";
+import { Message } from "@/types/workspace";
+import {
+    SandpackProvider,
+    SandpackLayout,
+    SandpackCodeEditor,
+    SandpackFileExplorer
+} from "@codesandbox/sandpack-react";
+import { monokaiPro } from "@codesandbox/sandpack-themes";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const params = use(props.params);
@@ -34,6 +33,8 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const [loading, setLoading] = useState(true);
     const [showAttachMenu, setShowAttachMenu] = useState(false);
     const [isListening, setIsListening] = useState(false);
+    const [agentMode, setAgentMode] = useState<'discussion' | 'building'>('discussion');
+    const [thinkingAction, setThinkingAction] = useState<'thinking' | 'writing' | 'building'>('thinking');
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -179,7 +180,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     return (
         <SandpackProvider
             template="react"
-            theme={atomDark}
+            theme={monokaiPro}
             files={project?.files || { "/App.tsx": "// Vibe something into existence..." }}
             options={{
                 visibleFiles: Object.keys(project?.files || { "/App.tsx": "" }),
@@ -280,6 +281,12 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                                         </div>
                                                     </div>
                                                 ))}
+                                                {isGenerating && (
+                                                    <div className="flex gap-3">
+                                                        <div className="w-7 h-7 rounded-full bg-orange-600 text-white flex items-center justify-center text-[9px] uppercase font-bold shrink-0">AI</div>
+                                                        <ThinkingIndicator visible={true} action={thinkingAction} />
+                                                    </div>
+                                                )}
                                                 <div ref={chatEndRef} />
                                             </div>
 
@@ -329,24 +336,12 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
 
                         {/* Right: Live Preview */}
                         <ResizablePanel defaultSize={40} minSize={30}>
-                            <div className="h-full bg-white flex flex-col">
-                                <div className="h-10 bg-[#f3f4f6] flex items-center px-4 gap-2 border-b border-gray-200">
-                                    <div className="flex gap-1.5">
-                                        <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-                                        <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-                                        <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
-                                    </div>
-                                    <div className="flex-1 bg-white mx-4 rounded-md text-[11px] text-center py-1 text-gray-400 font-mono border border-gray-200 shadow-sm overflow-hidden truncate">
-                                        {project?.subdomain ? `${project.subdomain}.heftcoder.app` : "vibe-preview.heftcoder.app"}
-                                    </div>
-                                    <button className="p-1.5 hover:bg-gray-200 rounded text-gray-500">
-                                        <Share2 className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-                                <div className="flex-1 preview-container">
-                                    <SandpackPreview showNavigator={false} showOpenInCodeSandbox={false} />
-                                </div>
-                            </div>
+                            <PreviewPanel
+                                isBuilding={isGenerating}
+                                isReady={false}
+                                port={3000}
+                                buildStatus={thinkingAction === 'building' ? 'Building your project...' : 'Thinking...'}
+                            />
                         </ResizablePanel>
                     </ResizablePanelGroup>
                 </div>
