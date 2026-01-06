@@ -6,6 +6,7 @@ import { ModelSelector } from "./components/ModelSelector";
 import { ActionList } from "@/components/workspace/ActionBlock";
 import { PreviewPanel } from "@/components/workspace/PreviewPanel";
 import { ThinkingIndicator } from "@/components/workspace/ThinkingIndicator";
+import { StageProgress, PlanArtifact, TerminalArtifact } from "@/components/workspace/ChatArtifacts";
 import { ConversationalAgent } from "@/lib/agent/conversational";
 import { AgentAction } from "@/lib/agent/actions";
 import { Message } from "@/types/workspace";
@@ -116,6 +117,12 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
 
             if (rawContent && rawContent.__isConversation) {
                 // IT IS A PLAN/CHAT MESSAGE
+
+                // Update stage based on content
+                if (rawContent.message.includes("## Stage")) {
+                    setCurrentStage('approving');
+                }
+
                 setMessages(prev => [...prev, {
                     role: "ai",
                     content: rawContent.message
@@ -129,6 +136,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 }]);
             } else {
                 // IT IS CODE
+                setCurrentStage('coding'); // Move to Coding Stage
                 setMessages(prev => [...prev, { role: "ai", content: "I've updated the code for you!" }]);
             }
 
@@ -275,35 +283,49 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                     <ResizableHandle className="h-1 bg-white/5 hover:bg-orange-500/20 transition-all" />
 
                                     <ResizablePanel defaultSize={40}>
-                                        <div className="h-full flex flex-col bg-[#0d0d12]">
-                                            <div className="h-8 bg-[#0a0a0a] border-b border-white/5 flex items-center px-4 gap-2">
+                                        <div className="flex flex-col h-full bg-[#0d0d12]">
+                                            {/* Stage Progress Bar */}
+                                            <StageProgress currentStage={currentStage} />
+
+                                            <div className="h-8 bg-[#0a0a0a] border-b border-white/5 flex items-center px-4 gap-2 shrink-0">
                                                 <Sparkles className="w-3 h-3 text-orange-500" />
                                                 <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Vibe Engine</div>
                                             </div>
                                             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                                {messages.map((msg, i) => (
-                                                    <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'ai' ? 'bg-orange-600 text-white shadow-orange-500/20 shadow-lg' : 'bg-white/10 text-gray-400'}`}>
-                                                            {msg.role === 'ai' ? (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap">
-                                                                    <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
-                                                                </svg>
+                                                {messages.map((msg, i) => {
+                                                    // Detect if this is a Plan Artifact
+                                                    const isPlan = msg.content.includes("## Stage");
+                                                    return (
+                                                        <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'ai' ? 'bg-orange-600 text-white shadow-orange-500/20 shadow-lg' : 'bg-white/10 text-gray-400'}`}>
+                                                                {msg.role === 'ai' ? (
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap">
+                                                                        <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user">
+                                                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+
+                                                            {isPlan && msg.role === 'ai' ? (
+                                                                <div className="max-w-[90%] w-full">
+                                                                    <PlanArtifact content={msg.content} />
+                                                                </div>
                                                             ) : (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user">
-                                                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                                                                </svg>
-                                                            )}
-                                                        </div>
-                                                        <div className={`p-3 rounded-xl text-xs max-w-[85%] border shadow-sm ${msg.role === 'ai' ? 'bg-white/5 border-white/10 text-gray-300' : 'bg-orange-600/10 border-orange-600/20 text-orange-100 italic'}`}>
-                                                            {msg.content}
-                                                            {msg.imageUrl && (
-                                                                <div className="mt-3 rounded-lg overflow-hidden border border-white/10">
-                                                                    <img src={msg.imageUrl} alt="Generated" className="w-full h-auto" />
+                                                                <div className={`p-3 rounded-xl text-xs max-w-[85%] border shadow-sm ${msg.role === 'ai' ? 'bg-white/5 border-white/10 text-gray-300' : 'bg-orange-600/10 border-orange-600/20 text-orange-100 italic'}`}>
+                                                                    {msg.content}
+                                                                    {msg.imageUrl && (
+                                                                        <div className="mt-3 rounded-lg overflow-hidden border border-white/10">
+                                                                            <img src={msg.imageUrl} alt="Generated" className="w-full h-auto" />
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    )
+                                                })}
                                                 {isGenerating && (
                                                     <div className="flex gap-3">
                                                         <div className="w-7 h-7 rounded-full bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-orange-500/20 shadow-lg animate-pulse">
