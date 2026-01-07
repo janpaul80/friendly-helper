@@ -81,11 +81,11 @@ export function ThinkingIndicator({ visible, action = 'thinking' }: ThinkingIndi
     const getText = () => {
         switch (action) {
             case 'writing':
-                return `Writing code${dots}`;
+                return `HeftCoder is writing${dots}`;
             case 'building':
                 return `Building environment${dots}`;
             default:
-                return `thinking${dots}`;
+                return `HeftCoder thinking${dots}`;
         }
     };
 
@@ -124,7 +124,7 @@ export function ThinkingDots() {
             <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '0ms' }} />
             <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '150ms' }} />
             <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '300ms' }} />
-            <span className="text-xs text-gray-500 ml-1">thinking</span>
+            <span className="text-xs text-gray-500 ml-1">HeftCoder thinking</span>
         </div>
     );
 }

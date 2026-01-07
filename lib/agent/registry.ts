@@ -15,13 +15,61 @@ export interface AgentDescriptor {
 }
 
 export const AGENT_REGISTRY: Record<string, AgentDescriptor> = {
-  'heft-coder-pro': {
-    id: 'heft-coder-pro',
+  'heftcoder-pro': {
+    id: 'heftcoder-pro',
     name: 'HeftCoder Pro',
     role: 'Orchestrator',
-    description: 'The main conversational agent for planning and general coding.',
-    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
+    description: 'Master VibeCoding Orchestrator. Expert in rapid full-stack design.',
+    langdockId: process.env.HEFTCODER_PRO_ID || 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
     capabilities: ['planning', 'coding', 'orchestration']
+  },
+  'heftcoder-plus': {
+    id: 'heftcoder-plus',
+    name: 'HeftCoder Plus',
+    role: 'Engineering Core',
+    description: 'Robust VibeCoding Engineering Core for deep architectural tasks.',
+    langdockId: process.env.HEFTCODER_PLUS_ID || '7e95b06a-37c2-4a0b-9ce4-e0e64c8d5001',
+    capabilities: ['engineering', 'backend', 'high-context']
+  },
+  'opus-reasoning': {
+    id: 'opus-reasoning',
+    name: 'Opus 4.5 Reasoning',
+    role: 'Visionary',
+    description: 'Architectural VibeCoding Visionary. Highest level reasoning.',
+    langdockId: process.env.OPUS_REASONING_ID || 'da94e1f2-cc56-4c91-8a00-c4ae1240181e',
+    capabilities: ['reasoning', 'debug', 'migrations']
+  },
+  'claude-sonnet-4.5': {
+    id: 'claude-sonnet-4.5',
+    name: 'Claude Sonnet 4.5',
+    role: 'UI Specialist',
+    description: 'Creative VibeCoding UI Specialist. Expert in premium design.',
+    langdockId: process.env.CLAUDE_SONNET_45_ID || '8a134f99-ef2b-45f6-9782-da0971ef413a',
+    capabilities: ['ui', 'animation', 'tailwind']
+  },
+  'chatgpt-thinking': {
+    id: 'chatgpt-thinking',
+    name: 'ChatGPT 5.1 Thinking',
+    role: 'Logic Engine',
+    description: 'Logic-First VibeCoding Engine. Fast reasoning and prototyping.',
+    langdockId: process.env.CHATGPT_THINKING_ID || '08bef027-2353-44b5-8733-abf93a73245f',
+    capabilities: ['logic', 'api-design', 'prototyping']
+  },
+  'gemini-flash': {
+    id: 'gemini-flash',
+    name: 'Gemini 2.5 Flash',
+    role: 'Swift Specialist',
+    description: 'Swift VibeCoding Specialist. Fast iterations and explanations.',
+    langdockId: process.env.GEMINI_FLASH_ID || '87a78a43-dc3b-4c08-8062-b6d89a253dd5',
+    capabilities: ['speed', 'flash-refactor', 'iterations']
+  },
+  'llama-70b': {
+    id: 'llama-70b',
+    name: 'Llama 3.3 70B',
+    role: 'Open Source Expert',
+    description: 'High-performance open model, great for general coding.',
+    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609', // Fallback to Pro or specific ID if available
+    capabilities: ['explanation', 'general-coding', 'open-source']
   },
   'heft-api-v2': {
     id: 'heft-api-v2',
@@ -30,46 +78,6 @@ export const AGENT_REGISTRY: Record<string, AgentDescriptor> = {
     description: 'Specialized agent for robust API and Database design.',
     langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
     capabilities: ['api', 'database', 'security']
-  },
-  'ui-specialist': {
-    id: 'ui-specialist',
-    name: 'UI/UX Specialist',
-    role: 'Frontend Engineer',
-    description: 'Expert in building beautiful, responsive, and animated user interfaces.',
-    // We can stick to a prompt-based agent for UI if no specific Langdock ID exists, 
-    // or map it to Pro with a specific prompt override.
-    systemPrompt: `You are the UI/UX Specialist. Your goal is to build visually stunning components.
-Use:
-- Tailwind CSS
-- Framer Motion
-- HeftCoder Orange (#ff6b35)
-Focus on aesthetics and premium feel.`,
-    capabilities: ['ui', 'animation', 'responsive']
-  },
-  'heft-coder-thinking': {
-    id: 'heft-coder-thinking',
-    name: 'ChatGPT 5 (Thinking Fast)',
-    role: 'Deep Thinker',
-    description: 'Advanced reasoning model for complex architectural planning and tough bugs.',
-    // User needs to provide this specific ID found in Langdock
-    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
-    capabilities: ['reasoning', 'planning', 'complex-logic']
-  },
-  'gemini-flash': {
-    id: 'gemini-flash',
-    name: 'Gemini 2.5 Flash',
-    role: 'Speed Coder',
-    description: 'Ultra-fast model for quick iterations, refactoring, and simple tasks.',
-    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
-    capabilities: ['speed', 'refactoring', 'quick-fixes']
-  },
-  'llama-70b': {
-    id: 'llama-70b',
-    name: 'Llama 3.3 70B',
-    role: 'Open Source Expert',
-    description: 'High-performance open model, great for general coding and explanation.',
-    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
-    capabilities: ['explanation', 'general-coding', 'open-source']
   }
 };
 

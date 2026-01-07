@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
     const supabase = createServiceClient();
     const body = await req.json();
-    const { projectId, prompt, model, fileContext, workspaceState } = body;
+    const { projectId, prompt, model, fileContext, workspaceState, messages = [] } = body;
 
     console.log("[AIEngine] Incoming request", {
         model,
@@ -27,48 +27,7 @@ export async function POST(req: Request) {
         userAgent: req.headers.get("user-agent")
     });
 
-    // 2. Classify user intent
-    const intent = IntentClassifier.classify(prompt);
-    const mode = ConversationalAgent.intentToMode(intent, workspaceState || {
-        id: projectId,
-        currentPlan: null,
-        planStatus: "none"
-    });
-
-    console.log("[Intent] Classified as:", intent, "Mode:", mode);
-
-    // 3. Hard rule: Do not write files unless CODE_REQUEST or APPROVAL
-    if (!IntentClassifier.shouldModifyFiles(intent)) {
-        // For non-code intents, return chat response only
-        const chatResponse = getChatResponse(intent, prompt);
-
-        return NextResponse.json({
-            success: true,
-            intent,
-            mode,
-            response: {
-                type: "chat",
-                content: chatResponse
-            },
-            shouldModifyFiles: false
-        });
-    }
-
-    // 4. Check if plan is approved for code generation
-    if (intent === UserIntent.CODE_REQUEST && workspaceState?.planStatus !== "approved") {
-        return NextResponse.json({
-            success: true,
-            intent,
-            mode,
-            response: {
-                type: "chat",
-                content: "I need to create a plan first. Please describe what you want to build, and I'll propose a plan for your approval."
-            },
-            shouldModifyFiles: false
-        });
-    }
-
-    // 5. Get User from Supabase and Check Credits
+    // 3. Get User from Supabase and Check Credits
     const { data: userData, error: userError } = await supabase
         .from("users")
         .select("id, credits")
@@ -87,12 +46,39 @@ export async function POST(req: Request) {
     }
 
     try {
+        // 4. Classify user intent and determine mode
+        const intent = IntentClassifier.classify(prompt);
+        const mode = ConversationalAgent.intentToMode(intent, workspaceState || {
+            id: projectId,
+            currentPlan: null,
+            planStatus: "none"
+        });
+
+        console.log("[Intent] Classified as:", intent, "Mode:", mode);
+
+        // 5. Check if plan is approved for code generation requests
+        const isCodeRequest = intent === UserIntent.CODE_REQUEST;
+        if (isCodeRequest && workspaceState?.planStatus !== "approved") {
+            return NextResponse.json({
+                success: true,
+                intent,
+                mode,
+                response: {
+                    type: "chat",
+                    content: "I need to create a plan first. Please describe what you want to build, and I'll propose a plan for your approval."
+                },
+                shouldModifyFiles: false
+            });
+        }
+
         // 6. Call AI Engine for code generation
-        const result = await AIEngine.generate(model as ModelID, prompt, fileContext);
+        const systemPrompt = ConversationalAgent.getSystemPrompt(mode);
+        const result = await AIEngine.generate(model as ModelID, prompt, fileContext, messages, systemPrompt);
 
         let content;
         let imageUrl;
         let agentResponse;
+        let shouldModifyFiles = IntentClassifier.shouldModifyFiles(intent);
 
         if (isImage) {
             const parsed = JSON.parse(result.content);
@@ -105,31 +91,62 @@ export async function POST(req: Request) {
                 actions: [],
                 requiresConfirmation: false
             };
+            shouldModifyFiles = true;
         } else {
             try {
                 content = JSON.parse(result.content);
 
-                // Parse into structured actions
-                agentResponse = ActionParser.parseResponse(content);
-
+                // If result is the special conversation object from Hybrid Parser
+                if (content.__isConversation) {
+                    agentResponse = {
+                        conversationText: content.message,
+                        actions: [],
+                        requiresConfirmation: false
+                    };
+                } else {
+                    // Parse into structured actions
+                    agentResponse = ActionParser.parseResponse(content);
+                }
             } catch (e) {
-                return NextResponse.json({ error: "AI returned invalid JSON" }, { status: 500 });
+                // Not JSON - treat as chat response
+                agentResponse = {
+                    conversationText: result.content,
+                    actions: [],
+                    requiresConfirmation: false
+                };
+                shouldModifyFiles = false;
             }
         }
 
-        // 7. Update Supabase (Merge JSON)
+        // 7. Update Supabase (Files & History)
         const { data: project } = await supabase
             .from("projects")
             .select("files")
             .eq("id", projectId)
             .single();
 
-        const newFiles = { ...project?.files, ...content };
+        let updatedFiles = { ...project?.files };
+
+        // Save AI generated files if applicable
+        if (shouldModifyFiles && content && !content.__isConversation) {
+            updatedFiles = { ...updatedFiles, ...content };
+        }
+
+        // Always Update History in .heftcoder/chat.json
+        const aiMessage = {
+            role: "ai",
+            content: agentResponse?.conversationText || result.content,
+            intent,
+            timestamp: Date.now()
+        };
+
+        const currentHistory = [...messages, { role: "user", content: prompt }, aiMessage];
+        updatedFiles[".heftcoder/chat.json"] = JSON.stringify(currentHistory);
 
         await supabase
             .from("projects")
             .update({
-                files: newFiles,
+                files: updatedFiles,
                 last_modified: Date.now()
             })
             .eq("id", projectId);
@@ -152,12 +169,15 @@ export async function POST(req: Request) {
             success: true,
             intent,
             mode,
-            changes: content,
-            content: JSON.stringify(content),
+            changes: shouldModifyFiles ? content : null,
+            response: {
+                type: shouldModifyFiles ? "code" : "chat",
+                content: agentResponse?.conversationText || result.content
+            },
             imageUrl,
             failover: result.failover,
             agentResponse,
-            shouldModifyFiles: true
+            shouldModifyFiles
         });
 
     } catch (error: any) {
@@ -166,24 +186,4 @@ export async function POST(req: Request) {
     }
 }
 
-/**
- * Get chat response for non-code intents
- */
-function getChatResponse(intent: UserIntent, prompt: string): string {
-    switch (intent) {
-        case UserIntent.GREETING:
-            return "Hello! I'm your AI assistant in the HeftCoder workspace. How can I help you build something today?";
-
-        case UserIntent.QUESTION:
-            return "I'd be happy to help answer your questions. For building projects, please describe what you want to create and I'll propose a plan first.";
-
-        case UserIntent.PLAN_REQUEST:
-            return "Great! I'll create a plan for your project. Let me think through the requirements and propose a structured approach.";
-
-        case UserIntent.EDIT_PLAN:
-            return "I can help you modify the current plan. What changes would you like to make?";
-
-        default:
-            return "I'm here to help you build projects. Please describe what you'd like to create!";
-    }
-}
+// getChatResponse removed: Now we always use AIEngine for high-fidelity responses

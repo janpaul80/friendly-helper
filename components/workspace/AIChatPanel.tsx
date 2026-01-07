@@ -18,7 +18,19 @@ interface AIChatPanelProps {
     isGenerating: boolean;
     chatInput: string;
     setChatInput: (val: string) => void;
+    selectedModel: string;
 }
+
+const getModelName = (id: string) => {
+    switch (id) {
+        case 'heft-coder-thinking': return 'HeftCoder Thinking';
+        case 'heftcoder-pro': return 'HeftCoder Pro';
+        case 'heftcoder-plus': return 'HeftCoder Plus';
+        case 'claude-sonnet-4.5': return 'Claude Sonnet 4.5';
+        case 'ui-architect': return 'UI Architect';
+        default: return 'HeftCoder AI';
+    }
+};
 
 export default function AIChatPanel({
     projectName = 'VIBE ENGINE',
@@ -27,7 +39,8 @@ export default function AIChatPanel({
     onSendMessage,
     isGenerating,
     chatInput,
-    setChatInput
+    setChatInput,
+    selectedModel
 }: AIChatPanelProps) {
     const [isRecording, setIsRecording] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -147,18 +160,21 @@ export default function AIChatPanel({
             <div className="px-5 py-3 border-b border-[#1a1a1a] flex items-center justify-between bg-[#080808]">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_8px_rgba(234,88,12,0.6)]" />
-                    <span className="text-[10px] font-bold text-zinc-400 tracking-[0.2em] uppercase">
+                    <span className="text-[10px] font-black text-white tracking-[0.2em] uppercase">
+                        {getModelName(selectedModel)}
+                    </span>
+                    <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest ml-2 border-l border-zinc-800 pl-2">
                         {projectName}
                     </span>
                 </div>
                 {isGenerating && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 px-2 py-1 bg-orange-500/10 rounded-lg border border-orange-500/20">
                         <div className="flex gap-1">
                             <div className="w-1 h-1 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
                             <div className="w-1 h-1 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
                             <div className="w-1 h-1 bg-orange-500 rounded-full animate-bounce" />
                         </div>
-                        <span className="text-[9px] font-bold text-orange-500 uppercase tracking-tighter">AI Thinking</span>
+                        <span className="text-[9px] font-black text-orange-500 uppercase tracking-tighter">Thinking...</span>
                     </div>
                 )}
             </div>
@@ -180,7 +196,7 @@ export default function AIChatPanel({
                                 {msg.content}
                             </div>
                             <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-tight px-1">
-                                {msg.role === 'user' ? 'You' : 'HeftCoder AI'}
+                                {msg.role === 'user' ? 'You' : getModelName(selectedModel)}
                             </span>
                         </div>
                     ))}

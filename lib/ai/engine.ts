@@ -25,17 +25,15 @@ console.log(`[AIEngine] MISTRAL_AGENT_ID: ${process.env.MISTRAL_AGENT_ID ? "PRES
 export type ModelID =
     | "heftcoder-pro"
     | "heftcoder-plus"
+    | "opus-reasoning"
+    | "claude-sonnet-4.5"
+    | "chatgpt-thinking"
+    | "gemini-flash"
     | "ui-architect"
     | "debugger-pro"
-    | "general-assistant"
-    | "claude-4.5-sonnet"
-    | "heft-orchestrator"
     | "mistral-large"
-    | "flux.2-pro"
-    | "sora"
-    | "heft-coder-thinking" // ChatGPT 5 (Thinking Fast)
-    | "gemini-flash"        // Gemini 2.5 Flash
-    | "llama-70b";          // Llama 3.3 70B
+    | "mistral-medium"
+    | "llama-70b";
 
 interface AIResponse {
     content: string;
@@ -164,7 +162,13 @@ export class AIEngine {
         };
     }
 
-    public static async runLangdock(prompt: string, context: string, assistantId?: string, systemInstruction?: string): Promise<AIResponse> {
+    public static async runLangdock(
+        prompt: string,
+        context: string,
+        assistantId?: string,
+        history: { role: string, content: string }[] = [],
+        systemPrompt?: string
+    ): Promise<AIResponse> {
         const id = assistantId || CONFIG.LANGDOCK_ASSISTANT_ID;
         const key = CONFIG.LANGDOCK_API_KEY;
 
@@ -178,25 +182,30 @@ export class AIEngine {
         console.log(`[Langdock] Calling Agent: ${id} with Key: ${maskedKey}`);
 
         try {
-            const strictSystemPrompt = `You are HeftCoder PRO. Your soul mission is to generate code.
-You MUST respond with VALID JSON ONLY.
-No markdown.
-No explanations.
-No backticks.
-If unsure, return {}.
-The first character of your response must be '{' and the last character must be '}'.
+            const langdockMessages = [];
 
-Your output format MUST be:
-{
-  "path/to/file.ext": "complete file content",
-  "another/file.tsx": "content"
-}`;
+            // 1. Add System Prompt if provided
+            if (systemPrompt) {
+                langdockMessages.push({ role: "system", content: systemPrompt });
+            }
+
+            // 2. Add History
+            history.forEach(m => {
+                langdockMessages.push({
+                    role: m.role === 'ai' ? 'assistant' : 'user',
+                    content: m.content
+                });
+            });
+
+            // 3. Add latest prompt with context
+            langdockMessages.push({
+                role: "user",
+                content: `Instruction: ${prompt}\n\nExisting context (current files):\n${context}`
+            });
 
             const payload = {
                 assistantId: id,
-                messages: [
-                    { role: "user", content: `Generate code files for: ${prompt}\n\nExisting context:\n${context}` }
-                ]
+                messages: langdockMessages
             };
 
             const response = await fetch("https://api.langdock.com/assistant/v1/chat/completions", {
@@ -217,17 +226,18 @@ Your output format MUST be:
             const data = await response.json();
             console.log("[Langdock] FULL DEBUG RESPONSE:", JSON.stringify(data, null, 2));
 
-            // 1. Extract raw content from Langdock's new 'result' array or 'choices'
+            // 1. Extract raw content from Langdock's results
             let rawContent = "";
             if (data.result && Array.isArray(data.result)) {
-                // If result is an array, join content pieces (handling tool calls potentially returning multipart)
-                rawContent = data.result.map((item: any) => item.content || "").join("\n");
+                rawContent = data.result.map((item: any) => {
+                    // Collect all possible text pieces
+                    return item.content || item.text || (item.message?.content) || "";
+                }).join("\n").trim();
             } else if (data.choices && data.choices[0]?.message?.content) {
-                // Standard OpenAI format
                 rawContent = data.choices[0].message.content;
             } else {
-                // Fallback for single object or unknown shape
-                rawContent = typeof data === 'string' ? data : (data.content || data.message || JSON.stringify(data));
+                // Fallback for direct content or message keys
+                rawContent = data.content || data.message || (typeof data === 'string' ? data : JSON.stringify(data));
             }
 
             console.log("[Langdock] Extracted RAW content:", rawContent);
@@ -402,33 +412,41 @@ The output MUST be a single JSON object where keys are file paths and values are
         return unwrapped;
     }
 
-    public static async generate(model: ModelID, prompt: string, fileContext: any): Promise<AIResponse> {
+    public static async generate(
+        model: ModelID,
+        prompt: string,
+        fileContext: any,
+        history: any[] = [],
+        systemPrompt?: string
+    ): Promise<AIResponse> {
         const contextStr = JSON.stringify(fileContext);
         let response: AIResponse;
 
         // STEP 1 - Strict Routing Logic
         switch (model) {
             case "heftcoder-pro":
-            case "debugger-pro":
-            case "ui-architect":
-            case "general-assistant":
-            case "heft-coder-thinking":
+            case "heftcoder-plus":
+            case "opus-reasoning":
+            case "claude-sonnet-4.5":
+            case "chatgpt-thinking":
             case "gemini-flash":
+            case "ui-architect":
+            case "debugger-pro":
             case "llama-70b":
                 // 1. Determine which Agent ID to use
                 let assistantId = CONFIG.LANGDOCK_ASSISTANT_ID;
+                if (AGENT_REGISTRY[model]) assistantId = AGENT_REGISTRY[model].langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
+
+                // Specialized fallbacks for legacy or internal names
                 if (model === "ui-architect") assistantId = AGENT_REGISTRY['ui-specialist']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
                 if (model === "debugger-pro") assistantId = AGENT_REGISTRY['heft-api-v2']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
-                if (model === "heftcoder-pro") assistantId = AGENT_REGISTRY['heft-coder-pro']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
-                if (model === "heft-coder-thinking") assistantId = AGENT_REGISTRY['heft-coder-thinking']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
-                if (model === "gemini-flash") assistantId = AGENT_REGISTRY['gemini-flash']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
-                if (model === "llama-70b") assistantId = AGENT_REGISTRY['llama-70b']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
 
-                // 2. Determine if we need a specialized system prompt (logic handled in runLangdock usually, but passing simple ID here)
-                response = await this.runLangdock(prompt, contextStr, assistantId);
+                // 2. Run Langdock
+                response = await this.runLangdock(prompt, contextStr, assistantId, history, systemPrompt);
                 break;
 
-            case "heftcoder-plus":
+            case "mistral-medium":
+            case "mistral-large":
                 response = await this.runMistral(prompt, contextStr);
                 break;
 
@@ -452,8 +470,7 @@ The output MUST be a single JSON object where keys are file paths and values are
         }
 
         // STEP 4 - Normalize the Response (Content Cleanup)
-        // STEP 4 - Normalize the Response (Content Cleanup)
-        if (model !== "flux.2-pro" && model !== "sora") {
+        if (true) {
             try {
                 // Improved Hybrid Parser:
                 // If it's pure JSON, it returns the files object.

@@ -20,11 +20,11 @@ import {
 import { ModelID } from '@/lib/ai/engine';
 
 const models = [
-    { id: 'heft-coder-thinking', name: 'HeftCoder Pro', icon: HeftCoderProIcon, tag: 'Recommended' },
-    { id: 'llama-70b', name: 'HeftCoder Plus', icon: HeftCoderPlusIcon, tag: null },
-    { id: 'heft-coder-thinking', name: 'Opus 4.5 Reasoning Pro', icon: OpusIcon, tag: 'Reasoning' },
-    { id: 'claude-sonnet-4.5', name: 'Claude Sonnet 4.5 Pro', icon: ClaudeIcon, tag: null },
-    { id: 'gpt-4o', name: 'ChatGPT 5.1 Pro', icon: ChatGPTIcon, tag: 'Fast' },
+    { id: 'heftcoder-pro', name: 'HeftCoder Pro', icon: HeftCoderProIcon, tag: 'Recommended' },
+    { id: 'heftcoder-plus', name: 'HeftCoder Plus', icon: HeftCoderPlusIcon, tag: 'Robust' },
+    { id: 'opus-reasoning', name: 'Opus 4.5 Reasoning', icon: OpusIcon, tag: 'Reasoning' },
+    { id: 'claude-sonnet-4.5', name: 'Claude Sonnet 4.5', icon: ClaudeIcon, tag: 'Creative' },
+    { id: 'chatgpt-thinking', name: 'ChatGPT 5.1 Thinking', icon: ChatGPTIcon, tag: 'Fast' },
     { id: 'gemini-flash', name: 'Gemini 2.5 Flash', icon: GeminiIcon, tag: 'Flash' },
     { id: 'mistral-medium', name: 'Mistral Medium', icon: MistralIcon, tag: null },
 ];

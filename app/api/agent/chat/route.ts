@@ -36,9 +36,10 @@ export async function POST(req: NextRequest) {
         const fullPrompt = `${systemPrompt}\n\nUser: ${prompt}`;
 
         const response = await AIEngine['runLangdock'](
-            fullPrompt,
+            prompt,
             '', // No file context for discussion
             process.env.LANGDOCK_ASSISTANT_ID,
+            conversationHistory || [],
             systemPrompt
         );
 

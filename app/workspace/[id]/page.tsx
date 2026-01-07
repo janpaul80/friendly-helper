@@ -51,6 +51,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
 
     const [project, setProject] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [historyLoaded, setHistoryLoaded] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isListening, setIsListening] = useState(false);
     const [agentMode, setAgentMode] = useState<'discussion' | 'planning' | 'building'>('discussion');
@@ -100,11 +101,29 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
         fetchProject();
     }, [params.id]);
 
+    // Initialize messages from persisted chat history
+    useEffect(() => {
+        if (!project?.files || historyLoaded) return;
+        const persistedHistory = project.files[".heftcoder/chat.json"];
+        if (persistedHistory) {
+            try {
+                const history = JSON.parse(persistedHistory);
+                if (Array.isArray(history) && history.length > 0) {
+                    setMessages(history);
+                    setHistoryLoaded(true);
+                }
+            } catch (e) {
+                console.error("Failed to parse persisted history:", e);
+            }
+        }
+    }, [project?.id, historyLoaded]);
+
     const handleSendMessage = async (input?: string) => {
         const userPrompt = input || chatInput;
         if (!userPrompt || isGenerating) return;
 
-        setMessages(prev => [...prev, { role: "user", content: userPrompt }]);
+        const updatedMessages: Message[] = [...messages, { role: "user", content: userPrompt }];
+        setMessages(updatedMessages);
         setIsGenerating(true);
         setChatInput("");
 
@@ -135,7 +154,8 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                     prompt: userPrompt,
                     fileContext: project?.files,
                     model: selectedModel,
-                    workspaceState
+                    workspaceState,
+                    messages: messages // Pass prior history
                 })
             });
 
@@ -147,12 +167,14 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
             const data = await response.json();
 
             if (data.intent && !data.shouldModifyFiles) {
-                setMessages(prev => [...prev, { role: "ai", content: data.response.content }]);
-                if (data.intent === UserIntent.PLAN_REQUEST) {
+                const aiMsg = data.response.content;
+                setMessages(prev => [...prev, { role: "ai", content: aiMsg }]);
+
+                if (data.intent === UserIntent.PLAN_REQUEST || data.intent === UserIntent.EDIT_PLAN) {
                     setWorkspaceState(prev => ({
                         ...prev,
                         planStatus: "proposed",
-                        currentPlan: { summary: data.response.content, steps: [] }
+                        currentPlan: { summary: aiMsg, steps: [] }
                     }));
                     setCurrentStage('approving');
                 }
@@ -164,7 +186,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                     setWorkspaceState(prev => ({ ...prev, planStatus: "approved" }));
                 }
 
-                // Refetch project
+                // Refetch project to get latest files and updated history
                 const refetch = await fetch(`/api/projects/${params.id}`);
                 const updated = await refetch.json();
                 setProject(updated.project);
@@ -181,11 +203,13 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     // Transform flat project files for FileTree
     const getFileTree = () => {
         if (!project?.files) return [];
-        const files = Object.keys(project.files).map(path => {
-            const parts = path.split('/').filter(p => p);
-            return { name: parts[parts.length - 1], type: 'file' as const, path };
-        });
-        return files; // Simplification: showing all as flat list for now, or build hierarchy
+        const files = Object.keys(project.files)
+            .filter(path => !path.split('/').some(part => part.startsWith('.'))) // Hide hidden files/folders
+            .map(path => {
+                const parts = path.split('/').filter(p => p);
+                return { name: parts[parts.length - 1], type: 'file' as const, path };
+            });
+        return files;
     };
 
     if (loading) {
@@ -322,6 +346,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                     isGenerating={isGenerating}
                                     chatInput={chatInput}
                                     setChatInput={setChatInput}
+                                    selectedModel={selectedModel}
                                 />
                             </ResizablePanel>
 
