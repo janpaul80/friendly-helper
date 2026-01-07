@@ -164,7 +164,7 @@ export default function AIChatPanel({
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_8px_rgba(234,88,12,0.6)]" />
                     <span className="text-[10px] font-black text-white tracking-[0.2em] uppercase">
-                        {getModelName(selectedModel)}
+                        HEFTCODER PRO AI
                     </span>
                     <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest ml-2 border-l border-zinc-800 pl-2">
                         {projectName}
@@ -182,89 +182,14 @@ export default function AIChatPanel({
                 )}
             </div>
 
-            {/* Chat Content */}
-            <div className="flex-1 overflow-auto p-5 scrollbar-hide">
-                <div className="space-y-6">
-                    {messages.map((msg, i) => (
-                        <div key={i} className={cn(
-                            "flex flex-col gap-2 max-w-[90%]",
-                            msg.role === 'user' ? "ml-auto items-end" : "items-start"
-                        )}>
-                            <div className={cn(
-                                "px-4 py-3 rounded-2xl text-xs leading-relaxed shadow-sm",
-                                msg.role === 'user'
-                                    ? "bg-zinc-100 text-zinc-900 rounded-tr-none"
-                                    : "bg-white/5 text-zinc-300 border border-white/5 rounded-tl-none"
-                            )}>
-                                {msg.content}
-                            </div>
-                            <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-tight px-1">
-                                {msg.role === 'user' ? 'You' : getModelName(selectedModel)}
-                            </span>
-                        </div>
-                    ))}
-                    <div ref={chatEndRef} />
-                </div>
-            </div>
-
-            {/* Input Area */}
-            <div className="p-5 bg-gradient-to-t from-[#0a0a0a] to-transparent">
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*,.fig,.figma,application/pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
+            {/* Chat Content & Input - Replaced by LangDock Iframe */}
+            <div className="flex-1 relative overflow-hidden">
+                <iframe
+                    src="https://app.langdock.com/chat?a=bddc9537-f05f-47ce-ada1-c4573e2b9609"
+                    className="absolute inset-0 w-full h-full border-0"
+                    title="HeftCoder Pro AI"
+                    allow="clipboard-read; clipboard-write; microphone"
                 />
-                <div className="flex items-end gap-2 bg-[#121212] rounded-2xl px-4 py-3 border border-[#222] focus-within:border-orange-500/30 focus-within:ring-2 focus-within:ring-orange-500/10 transition-all duration-300 shadow-xl">
-                    <button
-                        onClick={handleFileClick}
-                        className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-zinc-300 transition-colors mb-0.5"
-                    >
-                        <Paperclip className="w-4 h-4" />
-                    </button>
-
-                    <textarea
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                if (chatInput.trim() && !isGenerating) onSendMessage(chatInput);
-                            }
-                        }}
-                        placeholder="Vibe something into existence..."
-                        rows={1}
-                        className="flex-1 bg-transparent text-sm text-zinc-200 placeholder:text-zinc-600 outline-none resize-none py-1.5 max-h-32"
-                    />
-
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                        <button
-                            onClick={handleVoiceClick}
-                            className={cn(
-                                "p-2 rounded-xl transition-all duration-300",
-                                isRecording
-                                    ? "bg-red-500 text-white animate-pulse"
-                                    : "hover:bg-white/5 text-zinc-500 hover:text-zinc-300"
-                            )}
-                        >
-                            <AudioWaveform className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => chatInput.trim() && !isGenerating && onSendMessage(chatInput)}
-                            disabled={!chatInput.trim() || isGenerating}
-                            className={cn(
-                                "p-2.5 rounded-xl transition-all duration-300 shadow-lg",
-                                chatInput.trim() && !isGenerating
-                                    ? "bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/40"
-                                    : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
-                            )}
-                        >
-                            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     );
