@@ -231,16 +231,28 @@ export class AIEngine {
 
             // 1. Extract raw content from Langdock's results
             let rawContent = "";
+
+            const extractText = (content: any): string => {
+                if (typeof content === 'string') return content;
+                if (Array.isArray(content)) {
+                    return content.map((c: any) => c.text || c.content || "").join("\n");
+                }
+                if (typeof content === 'object' && content !== null) {
+                    return content.text || content.content || JSON.stringify(content);
+                }
+                return "";
+            };
+
             if (data.result && Array.isArray(data.result)) {
                 rawContent = data.result.map((item: any) => {
-                    // Collect all possible text pieces
-                    return item.content || item.text || (item.message?.content) || "";
+                    const c = item.content || item.text || (item.message?.content);
+                    return extractText(c);
                 }).join("\n").trim();
             } else if (data.choices && data.choices[0]?.message?.content) {
-                rawContent = data.choices[0].message.content;
+                rawContent = extractText(data.choices[0].message.content);
             } else {
                 // Fallback for direct content or message keys
-                rawContent = data.content || data.message || (typeof data === 'string' ? data : JSON.stringify(data));
+                rawContent = extractText(data.content || data.message || data);
             }
 
             console.log("[Langdock] Extracted RAW content:", rawContent);
