@@ -23,11 +23,14 @@ interface AIChatPanelProps {
 
 const getModelName = (id: string) => {
     switch (id) {
-        case 'heft-coder-thinking': return 'HeftCoder Thinking';
         case 'heftcoder-pro': return 'HeftCoder Pro';
         case 'heftcoder-plus': return 'HeftCoder Plus';
+        case 'opus-reasoning': return 'Opus 4.5 Reasoning';
         case 'claude-sonnet-4.5': return 'Claude Sonnet 4.5';
+        case 'chatgpt-thinking': return 'ChatGPT 5.1 Thinking';
+        case 'gemini-flash': return 'Gemini 2.5 Flash';
         case 'ui-architect': return 'UI Architect';
+        case 'debugger-pro': return 'Debugger Pro';
         default: return 'HeftCoder AI';
     }
 };

@@ -43,7 +43,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const params = use(props.params);
     const [activeFile, setActiveFile] = useState("App.tsx");
     const [chatInput, setChatInput] = useState("");
-    const [selectedModel, setSelectedModel] = useState<ModelID>("heft-coder-thinking");
+    const [selectedModel, setSelectedModel] = useState<ModelID>("heftcoder-pro");
     const [isGenerating, setIsGenerating] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         { role: "ai", content: "Hello! I'm your orchestrator. How can I help you build today?" }
