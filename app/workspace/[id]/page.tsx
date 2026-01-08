@@ -40,7 +40,10 @@ import { cn } from "@/lib/utils";
 import { ModelID } from "@/lib/ai/engine";
 
 export default function Workspace(props: { params: Promise<{ id: string }> }) {
-    const params = use(props.params);
+    // Safely unwrap params using React.use() if it's a promise
+    const params = React.use(props.params);
+    const projectId = params?.id;
+
     const [activeFile, setActiveFile] = useState("App.tsx");
     const [chatInput, setChatInput] = useState("");
     const [selectedModel, setSelectedModel] = useState<ModelID>("heftcoder-pro");
@@ -58,7 +61,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const [thinkingAction, setThinkingAction] = useState<'thinking' | 'writing' | 'building'>('thinking');
     const [currentStage, setCurrentStage] = useState<'planning' | 'approving' | 'coding'>('planning');
     const [workspaceState, setWorkspaceState] = useState<WorkspaceState>({
-        id: params.id,
+        id: projectId || "",
         currentPlan: null,
         planStatus: "none"
     });
@@ -106,23 +109,27 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
         }
         const firstFile = Object.keys(project.files)[0];
         if (firstFile) setActiveFile(firstFile);
-    }, [project, activeFile]);
+    }, [project]);
 
+    // Fetch project data
     useEffect(() => {
+        if (!projectId) return;
+
         const fetchProject = async () => {
             try {
-                const response = await fetch(`/api/projects/${params.id}`);
-                if (!response.ok) throw new Error("Failed to fetch project");
+                const response = await fetch(`/api/projects/${projectId}`);
+                if (!response.ok) throw new Error("Project not found");
                 const data = await response.json();
                 setProject(data.project);
             } catch (err) {
-                console.error("Error fetching project:", err);
+                console.error("Fetch project error:", err);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchProject();
-    }, [params.id]);
+    }, [projectId]);
 
     // Initialize messages from persisted chat history
     useEffect(() => {
@@ -210,7 +217,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    projectId: params.id,
+                    projectId: projectId,
                     prompt: userPrompt,
                     fileContext: project?.files,
                     model: selectedModel,
@@ -248,7 +255,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 }
 
                 // Refetch project
-                const refetch = await fetch(`/api/projects/${params.id}`);
+                const refetch = await fetch(`/api/projects/${projectId}`);
                 const updated = await refetch.json();
                 if (updated.project) {
                     setProject(updated.project);
@@ -292,9 +299,9 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
         <SandpackProvider
             template="react"
             theme={monokaiPro}
-            files={project?.files || { "App.tsx": "// Vibe something into existence..." }}
+            files={project?.files && Object.keys(project.files).length > 0 ? project.files : { "App.tsx": "// Vibe something into existence..." }}
             options={{
-                visibleFiles: Object.keys(project?.files || { "App.tsx": "" }),
+                visibleFiles: Object.keys(project?.files && Object.keys(project.files).length > 0 ? project.files : { "App.tsx": "" }),
                 activeFile: activeFile,
             }}
         >
@@ -433,6 +440,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                     messages={messages}
                                     currentStage={currentStage}
                                     onSendMessage={handleSendMessage}
+                                    onApprove={() => handleSendMessage("build this")}
                                     isGenerating={isGenerating}
                                     chatInput={chatInput}
                                     setChatInput={setChatInput}

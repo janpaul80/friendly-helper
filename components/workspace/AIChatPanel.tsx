@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { Send, Paperclip, AudioWaveform, Sparkles, Check, Circle } from 'lucide-react';
+import { Send, Paperclip, AudioWaveform, Sparkles, Check, Circle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ArtifactMessage } from './ChatArtifacts';
+import { ThinkingIndicator } from './ThinkingIndicator';
 
 const STAGES = [
     { id: 'planning', label: 'Planning' },
@@ -19,6 +21,7 @@ interface AIChatPanelProps {
     chatInput: string;
     setChatInput: (val: string) => void;
     selectedModel: string;
+    onApprove?: () => void;
 }
 
 const getModelName = (id: string) => {
@@ -43,7 +46,8 @@ export default function AIChatPanel({
     isGenerating,
     chatInput,
     setChatInput,
-    selectedModel
+    selectedModel,
+    onApprove
 }: AIChatPanelProps) {
     const [isRecording, setIsRecording] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -207,12 +211,19 @@ export default function AIChatPanel({
                             )}
                         </div>
                         <div className={cn(
-                            "max-w-[85%] rounded-2xl px-5 py-3 text-sm font-medium leading-relaxed tracking-wide shadow-sm",
+                            "max-w-[90%] rounded-2xl px-5 py-3 text-sm font-medium leading-relaxed tracking-wide shadow-sm",
                             msg.role === 'user'
                                 ? "bg-[#1a1a1a] text-zinc-200 border border-[#2a2a2a]"
                                 : "bg-[#0a0a0a] text-zinc-300 border border-[#1f1f1f]"
                         )}>
-                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                            {msg.role === 'user' ? (
+                                <div className="whitespace-pre-wrap">{msg.content}</div>
+                            ) : (
+                                <ArtifactMessage
+                                    content={msg.content}
+                                    onApprove={onApprove}
+                                />
+                            )}
                         </div>
                     </div>
                 ))}
