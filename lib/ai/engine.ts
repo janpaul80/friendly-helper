@@ -184,12 +184,16 @@ export class AIEngine {
         try {
             const langdockMessages: any[] = [];
 
-            // 1. Add History (Translated to Langdock Roles)
+            // 1. Add History (Translated to Langdock Roles & Filtered)
             history.forEach(m => {
+                const content = m.content?.trim();
+                // Skip empty messages or system/tool roles which shouldn't be in standard chat history for this endpoint
+                if (!content || m.role === 'system' || m.role === 'tool') return;
+
                 const role = m.role === 'ai' || m.role === 'assistant' ? 'assistant' : 'user';
                 langdockMessages.push({
                     role,
-                    content: m.content
+                    content
                 });
             });
 
@@ -211,6 +215,9 @@ export class AIEngine {
                 messages: langdockMessages
             };
 
+            // Debug Payload (Brief)
+            console.log(`[Langdock] Payload Messages Count: ${langdockMessages.length}`);
+
             const response = await fetch("https://api.langdock.com/assistant/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -222,12 +229,21 @@ export class AIEngine {
 
             if (!response.ok) {
                 const errText = await response.text();
-                console.error(`Langdock API Error [Agent: ${id}]: Status ${response.status}`, errText);
+                console.error(`Langdock API Error [Agent: ${id}]: Status ${response.status} - Body: ${errText}`);
+
+                // Friendly error wrapper
+                if (response.status === 400) {
+                    throw new Error(`Langdock Request Validation Failed (400). This usually means an invalid Assistant ID or malformed message history. Check server logs.`);
+                }
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error(`Langdock Auth Failed (${response.status}). Check API Key.`);
+                }
+
                 throw new Error(`Langdock API Error (${response.status}): ${errText}`);
             }
 
             const data = await response.json();
-            console.log("[Langdock] FULL DEBUG RESPONSE:", JSON.stringify(data, null, 2));
+            console.log("[Langdock] Response received", { usage: data.usage });
 
             // 1. Extract raw content from Langdock's results
             let rawContent = "";

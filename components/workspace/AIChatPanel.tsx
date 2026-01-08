@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { Sparkles, Check, Circle } from 'lucide-react';
+import { Send, Paperclip, AudioWaveform, Sparkles, Check, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STAGES = [
@@ -12,21 +12,97 @@ const STAGES = [
 
 interface AIChatPanelProps {
     projectName?: string;
-    currentStage?: 'planning' | 'approving' | 'coding';
-    // Legacy props kept optional for compatibility
-    messages?: any[];
-    onSendMessage?: (msg: string) => void;
-    isGenerating?: boolean;
-    chatInput?: string;
-    setChatInput?: (val: string) => void;
-    selectedModel?: string;
+    messages: any[];
+    currentStage: 'planning' | 'approving' | 'coding';
+    onSendMessage: (msg: string) => void;
+    isGenerating: boolean;
+    chatInput: string;
+    setChatInput: (val: string) => void;
+    selectedModel: string;
 }
+
+const getModelName = (id: string) => {
+    switch (id) {
+        case 'heftcoder-pro': return 'HeftCoder Pro';
+        case 'heftcoder-plus': return 'HeftCoder Plus';
+        case 'opus-reasoning': return 'Opus 4.5 Reasoning';
+        case 'claude-sonnet-4.5': return 'Claude Sonnet 4.5';
+        case 'chatgpt-thinking': return 'ChatGPT 5.1 Thinking';
+        case 'gemini-flash': return 'Gemini 2.5 Flash';
+        case 'ui-architect': return 'UI Architect';
+        case 'debugger-pro': return 'Debugger Pro';
+        default: return 'HeftCoder AI';
+    }
+};
 
 export default function AIChatPanel({
     projectName = 'VIBE ENGINE',
-    currentStage = 'planning',
-    isGenerating = false,
+    messages,
+    currentStage,
+    onSendMessage,
+    isGenerating,
+    chatInput,
+    setChatInput,
+    selectedModel
 }: AIChatPanelProps) {
+    const [isRecording, setIsRecording] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const recognitionRef = useRef<any>(null);
+    const chatEndRef = useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    const handleFileClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            console.log('Files selected:', Array.from(files).map(f => f.name));
+        }
+    };
+
+    const handleVoiceClick = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Speech recognition is not supported in your browser');
+            return;
+        }
+
+        if (isRecording) {
+            recognitionRef.current?.stop();
+            setIsRecording(false);
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => setIsRecording(true);
+        recognition.onresult = (event: any) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            setChatInput(chatInput + transcript);
+        };
+        recognition.onerror = () => setIsRecording(false);
+        recognition.onend = () => setIsRecording(false);
+
+        recognitionRef.current = recognition;
+        recognition.start();
+    };
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (chatInput.trim()) onSendMessage(chatInput);
+        }
+    };
 
     const getStageStatus = (stageId: string) => {
         const stageOrder = ['planning', 'approving', 'coding'];
@@ -106,15 +182,121 @@ export default function AIChatPanel({
                 )}
             </div>
 
-            {/* Chat Content & Input - Replaced by LangDock Iframe */}
-            <div className="flex-1 relative overflow-hidden bg-[#0d0d0d]">
-                <iframe
-                    src="https://app.langdock.com/chat?a=bddc9537-f05f-47ce-ada1-c4573e2b9609"
-                    className="absolute inset-0 w-full h-full border-0"
-                    title="HeftCoder Pro AI"
-                    allow="clipboard-read; clipboard-write; microphone"
-                />
+            {/* Chat Messages */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
+                {messages.map((msg, idx) => (
+                    <div
+                        key={idx}
+                        className={cn(
+                            "flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300",
+                            msg.role === 'user' ? "flex-row-reverse" : "flex-row"
+                        )}
+                    >
+                        <div className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center shrink-0 border",
+                            msg.role === 'user'
+                                ? "bg-[#1a1a1a] border-[#2a2a2a]"
+                                : "bg-orange-500/10 border-orange-500/20"
+                        )}>
+                            {msg.role === 'user' ? (
+                                <div className="w-4 h-4 rounded-full bg-zinc-400" />
+                            ) : (
+                                <Sparkles className="w-4 h-4 text-orange-500" />
+                            )}
+                        </div>
+                        <div className={cn(
+                            "max-w-[85%] rounded-2xl px-5 py-3 text-sm font-medium leading-relaxed tracking-wide shadow-sm",
+                            msg.role === 'user'
+                                ? "bg-[#1a1a1a] text-zinc-200 border border-[#2a2a2a]"
+                                : "bg-[#0a0a0a] text-zinc-300 border border-[#1f1f1f]"
+                        )}>
+                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                        </div>
+                    </div>
+                ))}
+                {isGenerating && (
+                    <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2">
+                        <div className="w-8 h-8 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
+                            <Loader2 className="w-4 h-4 text-orange-500 animate-spin" />
+                        </div>
+                        <div className="flex items-center gap-1 bg-[#0a0a0a] px-4 py-3 rounded-2xl border border-[#1f1f1f]">
+                            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                            <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce" />
+                        </div>
+                    </div>
+                )}
+                <div ref={chatEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="p-5 bg-[#0a0a0a] border-t border-[#1a1a1a]">
+                <div className="relative flex items-center bg-[#0d0d0d] rounded-xl border border-[#1f1f1f] focus-within:border-orange-500/50 transition-colors shadow-lg shadow-black/50">
+                    <button
+                        onClick={handleFileClick}
+                        className="p-3 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                        <Paperclip className="w-4 h-4" />
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                        multiple
+                    />
+
+                    <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        placeholder={currentStage === 'approval' ? "Review and approve plan..." : "Brief the engine..."}
+                        className="flex-1 bg-transparent border-0 focus:ring-0 text-sm font-medium text-zinc-200 placeholder:text-zinc-700 py-3.5"
+                        disabled={isGenerating}
+                    />
+
+                    <div className="flex items-center gap-1 pr-2">
+                        <button
+                            onClick={handleVoiceClick}
+                            className={cn(
+                                "p-2 rounded-lg transition-all duration-300",
+                                isRecording
+                                    ? "text-red-500 bg-red-500/10 animate-pulse"
+                                    : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+                            )}
+                        >
+                            <AudioWaveform className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => chatInput.trim() && onSendMessage(chatInput)}
+                            disabled={!chatInput.trim() || isGenerating}
+                            className={cn(
+                                "p-2 rounded-lg transition-all duration-300",
+                                chatInput.trim() && !isGenerating
+                                    ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20 hover:scale-105"
+                                    : "bg-[#1a1a1a] text-zinc-600 cursor-not-allowed"
+                            )}
+                        >
+                            <Send className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+                <div className="flex justify-between items-center mt-3 px-1">
+                    <div className="flex gap-4">
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
+                            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">{getModelName(selectedModel)}</span>
+                        </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-zinc-700 uppercase tracking-widest">{chatInput.length} / 2000</span>
+                </div>
             </div>
         </div>
     );
 }
+
+// Simple internal icon for demo
+const Loader2 = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+);
