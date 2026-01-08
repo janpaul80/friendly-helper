@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { Send, Paperclip, AudioWaveform, Sparkles, Check, Circle } from 'lucide-react';
+import { Sparkles, Check, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STAGES = [
@@ -12,97 +12,21 @@ const STAGES = [
 
 interface AIChatPanelProps {
     projectName?: string;
-    messages: any[];
-    currentStage: 'planning' | 'approving' | 'coding';
-    onSendMessage: (msg: string) => void;
-    isGenerating: boolean;
-    chatInput: string;
-    setChatInput: (val: string) => void;
-    selectedModel: string;
+    currentStage?: 'planning' | 'approving' | 'coding';
+    // Legacy props kept optional for compatibility
+    messages?: any[];
+    onSendMessage?: (msg: string) => void;
+    isGenerating?: boolean;
+    chatInput?: string;
+    setChatInput?: (val: string) => void;
+    selectedModel?: string;
 }
-
-const getModelName = (id: string) => {
-    switch (id) {
-        case 'heftcoder-pro': return 'HeftCoder Pro';
-        case 'heftcoder-plus': return 'HeftCoder Plus';
-        case 'opus-reasoning': return 'Opus 4.5 Reasoning';
-        case 'claude-sonnet-4.5': return 'Claude Sonnet 4.5';
-        case 'chatgpt-thinking': return 'ChatGPT 5.1 Thinking';
-        case 'gemini-flash': return 'Gemini 2.5 Flash';
-        case 'ui-architect': return 'UI Architect';
-        case 'debugger-pro': return 'Debugger Pro';
-        default: return 'HeftCoder AI';
-    }
-};
 
 export default function AIChatPanel({
     projectName = 'VIBE ENGINE',
-    messages,
-    currentStage,
-    onSendMessage,
-    isGenerating,
-    chatInput,
-    setChatInput,
-    selectedModel
+    currentStage = 'planning',
+    isGenerating = false,
 }: AIChatPanelProps) {
-    const [isRecording, setIsRecording] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const recognitionRef = useRef<any>(null);
-    const chatEndRef = useRef<HTMLDivElement>(null);
-
-    React.useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-    const handleFileClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            console.log('Files selected:', Array.from(files).map(f => f.name));
-        }
-    };
-
-    const handleVoiceClick = () => {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert('Speech recognition is not supported in your browser');
-            return;
-        }
-
-        if (isRecording) {
-            recognitionRef.current?.stop();
-            setIsRecording(false);
-            return;
-        }
-
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-
-        recognition.onstart = () => setIsRecording(true);
-        recognition.onresult = (event: any) => {
-            let transcript = '';
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                transcript += event.results[i][0].transcript;
-            }
-            setChatInput(chatInput + transcript);
-        };
-        recognition.onerror = () => setIsRecording(false);
-        recognition.onend = () => setIsRecording(false);
-
-        recognitionRef.current = recognition;
-        recognition.start();
-    };
-
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            if (chatInput.trim()) onSendMessage(chatInput);
-        }
-    };
 
     const getStageStatus = (stageId: string) => {
         const stageOrder = ['planning', 'approving', 'coding'];
@@ -183,7 +107,7 @@ export default function AIChatPanel({
             </div>
 
             {/* Chat Content & Input - Replaced by LangDock Iframe */}
-            <div className="flex-1 relative overflow-hidden">
+            <div className="flex-1 relative overflow-hidden bg-[#0d0d0d]">
                 <iframe
                     src="https://app.langdock.com/chat?a=bddc9537-f05f-47ce-ada1-c4573e2b9609"
                     className="absolute inset-0 w-full h-full border-0"
@@ -194,8 +118,3 @@ export default function AIChatPanel({
         </div>
     );
 }
-
-// Simple internal icon for demo
-const Loader2 = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
-);
