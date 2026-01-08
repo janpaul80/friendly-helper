@@ -210,10 +210,27 @@ export class AIEngine {
                 content: combinedPrompt
             });
 
+            // --- TEST MODE START ---
+            // TEMPORARY BYPASS: Use 'assistant' object instead of 'assistantId' to isolate auth issues.
+            console.log("[Langdock] TEST MODE: Using Temporary Assistant Object (Bypass ID Auth)");
+
+            const payload = {
+                assistant: {
+                    name: "HeftCoder Pro (Temp)",
+                    description: "Temporary assistant for connectivity testing",
+                    instructions: systemPrompt || "You are a helpful AI coding assistant.",
+                    model: "gpt-4o"
+                },
+                messages: langdockMessages
+            };
+
+            /* ORIGINAL PAYLOAD (Restoration Target)
             const payload = {
                 assistantId: id,
                 messages: langdockMessages
             };
+            */
+            // --- TEST MODE END ---
 
             // Debug Payload (Brief)
             console.log(`[Langdock] Payload Messages Count: ${langdockMessages.length}`);
