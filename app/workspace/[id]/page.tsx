@@ -160,14 +160,19 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
             // Start Build Simulation
             setHasBuilt(false); // Reset built state
             const steps = [
-                "Initializing Vibe Engine...",
-                "Analyzing architectural requirements...",
-                "Scaffolding Next.js 14 project structure...",
-                "Resolving node_modules and dependencies...",
-                "Generating core components...",
-                "Writing Tailwind CSS utilities...",
-                "Implementing API routes...",
-                "Finalizing workspace configuration..."
+                "Thinking...",
+                "Analyzing requirements...",
+                "Planning app architecture...",
+                "Simulating npm install...",
+                "installing react@latest...",
+                "installing next@latest...",
+                "installing tailwindcss...",
+                "Generating UI components...",
+                "Writing API routes...",
+                "Validating syntax...",
+                "Checking type safety...",
+                "Self-correcting detected errors...",
+                "Finalizing build..."
             ];
             let stepIndex = 0;
             setBuildStep(steps[0]);

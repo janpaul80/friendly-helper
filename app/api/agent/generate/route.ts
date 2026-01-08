@@ -94,7 +94,9 @@ export async function POST(req: Request) {
             shouldModifyFiles = true;
         } else {
             try {
-                content = JSON.parse(result.content);
+                // Strip markdown code blocks if present (common LLM behavior)
+                const cleanJson = result.content.replace(/```json\n?|```/g, "").trim();
+                content = JSON.parse(cleanJson);
 
                 // If result is the special conversation object from Hybrid Parser
                 if (content.__isConversation) {
