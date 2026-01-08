@@ -49,16 +49,21 @@ export default function PreviewPanel({ isBuilding, isReady, port, error, buildSt
         return (
             <div className="h-full flex flex-col bg-[#0d0d0d] rounded-lg overflow-hidden border border-[#1f1f1f]">
                 {/* Browser Header Overlay */}
-                <div className="h-10 bg-[#0a0a0a] flex items-center px-4 gap-2 border-b border-[#1a1a1a]">
-                    <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
+                {/* Browser Header Overlay */}
+                <div className="h-10 bg-[#0a0a0a] flex items-center px-4 gap-3 border-b border-white/5">
+                    {/* Branded Icon */}
+                    <div className="w-5 h-5 bg-orange-500 rounded flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13 3L6 13h5l-2 8 7-10h-5l4-8z" />
+                        </svg>
                     </div>
-                    <div className="flex-1 bg-[#141414] mx-4 rounded-md text-[10px] text-center py-1 text-zinc-500 font-mono border border-[#2a2a2a] shadow-sm overflow-hidden truncate">
-                        vibe-preview.heftcoder.app
+
+                    {/* URL Bar */}
+                    <div className="flex-1 bg-[#141414] rounded-md text-[10px] py-1 px-3 text-zinc-500 font-mono border border-white/5 flex items-center justify-center">
+                        <span className="text-orange-500 mr-1">🔒</span> vibe-preview.heftcoder.app
                     </div>
-                    <button className="p-1 hover:bg-[#2a2a2a] rounded text-zinc-500">
+
+                    <button className="p-1.5 hover:bg-white/5 rounded text-zinc-500 transition-colors">
                         <Share2 className="w-3.5 h-3.5" />
                     </button>
                 </div>
