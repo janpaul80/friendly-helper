@@ -93,7 +93,7 @@ export default function PreviewPanel({ isBuilding, isReady, port, error, buildSt
                         </div>
 
                         <div className="flex flex-col items-center gap-3">
-                            <h2 className="text-sm font-bold text-white tracking-widest uppercase">
+                            <h2 className="text-xs font-medium text-white text-center">
                                 HeftCoder is working...
                             </h2>
 
