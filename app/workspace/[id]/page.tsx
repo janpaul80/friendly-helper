@@ -128,12 +128,25 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
         setChatInput("");
 
         const intent = ConversationalAgent.detectIntent(userPrompt);
-        const mode = ConversationalAgent.intentToMode(intent, workspaceState);
         setCurrentIntent(intent);
+
+        // --- GREETING GUARD (Client-side Short Circuit) ---
+        if (intent === UserIntent.GREETING) {
+            setAgentMode('discussion');
+            setThinkingAction('thinking');
+            setTimeout(() => {
+                setMessages(prev => [...prev, { role: "ai", content: "Hey 👋 What would you like to build or change today?" }]);
+                setIsGenerating(false);
+            }, 600); // Small fake delay for natural feel
+            return;
+        }
+
+        const mode = ConversationalAgent.intentToMode(intent, workspaceState);
         setAgentMode(mode.type);
 
-        if (intent === UserIntent.GREETING || intent === UserIntent.QUESTION) {
+        if (intent === UserIntent.QUESTION) {
             setThinkingAction('thinking');
+            setCurrentStage('planning'); // Or 'discussion' visuals if you have them, reusing planning for now
         } else if (intent === UserIntent.PLAN_REQUEST || intent === UserIntent.EDIT_PLAN) {
             setThinkingAction('thinking');
             setCurrentStage('planning');
