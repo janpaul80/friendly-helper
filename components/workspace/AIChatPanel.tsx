@@ -201,7 +201,9 @@ export default function AIChatPanel({
                             {msg.role === 'user' ? (
                                 <div className="w-4 h-4 rounded-full bg-zinc-400" />
                             ) : (
-                                <Sparkles className="w-4 h-4 text-orange-500" />
+                                <svg className="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M13 3L6 13h5l-2 8 7-10h-5l4-8z" />
+                                </svg>
                             )}
                         </div>
                         <div className={cn(
@@ -237,7 +239,7 @@ export default function AIChatPanel({
 
             {/* Input Area */}
             <div className="p-5 bg-[#0a0a0a] border-t border-[#1a1a1a]">
-                <div className="relative flex items-end bg-[#0d0d0d] rounded-xl border border-[#1f1f1f] focus-within:border-orange-500/50 transition-colors shadow-lg shadow-black/50">
+                <div className="relative flex items-end bg-[#0d0d0d] rounded-xl border border-[#1f1f1f] focus-within:border-orange-500/50 transition-colors shadow-lg shadow-black/50 overflow-hidden">
                     <button
                         onClick={handleFileClick}
                         className="p-3 mb-0.5 text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -267,9 +269,9 @@ export default function AIChatPanel({
                         }}
                         rows={1}
                         placeholder={currentStage === 'approving' ? "Review and approve plan..." : "Brief the engine..."}
-                        className="flex-1 bg-transparent border-0 focus:ring-0 text-sm font-medium text-zinc-200 placeholder:text-zinc-700 py-3.5 px-0 min-h-[44px] max-h-[200px] resize-none overflow-y-auto"
+                        className="flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-none shadow-none appearance-none text-sm font-medium text-zinc-200 placeholder:text-zinc-700 py-3.5 px-0 min-h-[44px] max-h-[200px] resize-none overflow-y-auto"
                         disabled={isGenerating}
-                        style={{ height: 'auto' }}
+                        style={{ height: 'auto', outline: 'none', boxShadow: 'none' }}
                     />
 
                     <div className="flex items-center gap-1 pr-2 pb-2">

@@ -64,6 +64,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     });
     const [currentIntent, setCurrentIntent] = useState<UserIntent | null>(null);
     const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
+    const [hasBuilt, setHasBuilt] = useState(false);
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -194,6 +195,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
             } else if (data.shouldModifyFiles) {
                 setAgentEvents(data.agentResponse?.events || []);
                 setMessages(prev => [...prev, { role: "ai", content: "✅ Code generation complete! I've updated your files." }]);
+                setHasBuilt(true);
 
                 if (data.intent === UserIntent.APPROVAL) {
                     setWorkspaceState(prev => ({ ...prev, planStatus: "approved" }));
@@ -246,7 +248,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
         >
             <div className="h-screen bg-[#0a0a0a] text-zinc-200 flex flex-col overflow-hidden font-sans">
                 {/* Header */}
-                <header className="h-14 bg-[#070707] border-b border-white/5 flex items-center justify-between px-6 flex-shrink-0 z-20">
+                <header className="h-14 bg-[#070707] border-b border-white/5 flex items-center justify-between px-6 flex-shrink-0 z-50 relative">
                     <div className="flex items-center gap-6">
                         <Link href="/dashboard" className="flex items-center gap-3 group">
                             <div className="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-900/40 group-hover:scale-110 transition-transform">
@@ -272,25 +274,25 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                         />
 
                         <div className="flex items-center bg-[#141414] rounded-xl p-1 border border-white/5">
-                            <button className="group relative flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all uppercase tracking-tight">
+                            <button onClick={() => alert("Connecting to GitHub...")} className="group relative flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all uppercase tracking-tight active:scale-95">
                                 <Github className="w-3.5 h-3.5" />
                                 Push
-                                <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black border border-white/10 rounded text-[9px] text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">Push to GitHub</span>
+                                <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black border border-white/10 rounded text-[9px] text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[60] pointer-events-none">Push to GitHub</span>
                             </button>
-                            <button className="group relative flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all uppercase tracking-tight">
+                            <button onClick={() => alert("Connecting to Vercel...")} className="group relative flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all uppercase tracking-tight active:scale-95">
                                 <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1L24 22H0L12 1Z" /></svg>
                                 Deploy
-                                <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black border border-white/10 rounded text-[9px] text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">Deploy to Vercel</span>
+                                <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black border border-white/10 rounded text-[9px] text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[60] pointer-events-none">Deploy to Vercel</span>
                             </button>
 
-                            <div className="relative group">
-                                <button className="flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg transition-all shadow-lg shadow-orange-900/20 uppercase tracking-tight">
+                            <div className="relative group z-50">
+                                <button className="flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg transition-all shadow-lg shadow-orange-900/20 uppercase tracking-tight active:scale-95">
                                     <Globe className="w-3.5 h-3.5" />
                                     Publish
                                     <ChevronDown className="w-3 h-3 ml-1 opacity-70" />
                                 </button>
                                 {/* Dropdown Menu (Pure CSS Group Hover) */}
-                                <div className="absolute top-full right-0 mt-2 w-48 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl p-1 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto scale-95 group-hover:scale-100 origin-top-right z-50 flex flex-col gap-1">
+                                <div className="absolute top-full right-0 mt-2 w-48 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl p-1 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto scale-95 group-hover:scale-100 origin-top-right z-[60] flex flex-col gap-1">
                                     <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors text-left w-full">
                                         <div className="w-4 h-4 rounded-full bg-orange-500/20 flex items-center justify-center text-[10px] text-orange-500">h</div>
                                         <div>
@@ -393,7 +395,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                             {/* Preview */}
                             <ResizablePanel defaultSize={25}>
                                 <PreviewPanel
-                                    isBuilding={isGenerating && currentStage === 'coding'}
+                                    isBuilding={!hasBuilt || (isGenerating && currentStage === 'coding')}
                                     isReady={!isGenerating}
                                     port={3000}
                                 />
