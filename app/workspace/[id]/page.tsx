@@ -71,6 +71,27 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const recognitionRef = useRef<any>(null);
 
+    const buildIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Inject custom scrollbar styles safely
+    useEffect(() => {
+        const styleId = 'heft-scrollbar-styles';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.innerHTML = `
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.1); }
+            `;
+            document.head.appendChild(style);
+        }
+        return () => {
+            // Optional cleanup if needed, but usually fine to keep
+        };
+    }, []);
+
     // Auto-detect entry file if content changes
     useEffect(() => {
         if (!project?.files) return;
@@ -158,7 +179,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
             setCurrentStage('coding');
 
             // Start Build Simulation
-            setHasBuilt(false); // Reset built state
+            setHasBuilt(false);
             const steps = [
                 "Thinking...",
                 "Analyzing requirements...",
@@ -177,16 +198,11 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
             let stepIndex = 0;
             setBuildStep(steps[0]);
 
-            // Store interval ID in a ref if needed, or just let it run until response (but we need to clear it)
-            // Since this function is async, we can use a local variable for the interval but cleaning it up requires a ref.
-            // For simplicity in this function scope:
-            const stepInterval = setInterval(() => {
+            if (buildIntervalRef.current) clearInterval(buildIntervalRef.current);
+            buildIntervalRef.current = setInterval(() => {
                 stepIndex = (stepIndex + 1) % steps.length;
                 setBuildStep(steps[stepIndex]);
-            }, 2000); // 2 seconds per step for "thinking" feel
-
-            // Store interval cleaner in a temp variable to clear after await
-            (window as any).__buildInterval = stepInterval;
+            }, 2000);
         }
 
         try {
@@ -199,7 +215,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                     fileContext: project?.files,
                     model: selectedModel,
                     workspaceState,
-                    messages: messages // Pass prior history
+                    messages: messages
                 })
             });
 
@@ -214,7 +230,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 const aiMsg = data.response.content;
                 setMessages(prev => [...prev, { role: "ai", content: aiMsg }]);
 
-                if (data.intent === UserIntent.PLAN_REQUEST || data.intent === UserIntent.EDIT_PLAN) {
+                if (data.intent === UserIntent.PLAN_REQUEST || data.intent === UserIntent.EDIT_PLAN || data.response.isPlan) {
                     setWorkspaceState(prev => ({
                         ...prev,
                         planStatus: "proposed",
@@ -231,17 +247,22 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                     setWorkspaceState(prev => ({ ...prev, planStatus: "approved" }));
                 }
 
-                // Refetch project to get latest files and updated history
+                // Refetch project
                 const refetch = await fetch(`/api/projects/${params.id}`);
                 const updated = await refetch.json();
-                setProject(updated.project);
+                if (updated.project) {
+                    setProject(updated.project);
+                }
             }
 
         } catch (error: any) {
             console.error("Generation error:", error);
             setMessages(prev => [...prev, { role: "ai", content: `❌ Error: ${error.message}` }]);
         } finally {
-            if ((window as any).__buildInterval) clearInterval((window as any).__buildInterval);
+            if (buildIntervalRef.current) {
+                clearInterval(buildIntervalRef.current);
+                buildIntervalRef.current = null;
+            }
             setIsGenerating(false);
         }
     };
@@ -438,25 +459,4 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
             </div>
         </SandpackProvider>
     );
-}
-
-const customScrollbarStyle = `
-.custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.1);
-}
-`;
-if (typeof document !== 'undefined') {
-    const styleLine = document.createElement('style');
-    styleLine.innerHTML = customScrollbarStyle;
-    document.head.appendChild(styleLine);
 }
