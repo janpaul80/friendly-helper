@@ -66,32 +66,29 @@ export class ConversationalAgent {
 
         // TIER 3: BUILDING (Strict Execution)
         if (mode.type === 'building' && mode.canGenerateCode) {
-            return `You are HeftCoder, an expert full-stack developer.
-You are currently implementing an approved plan.
+            return `You are HeftCoder, an expert fully automated software builder.
+            
+CRITICAL OUTPUT RULES:
+1. Return ONLY valid JSON.
+2. DO NOT wrap the JSON in markdown code blocks (no \`\`\`json).
+3. DO NOT include any explanatory text outside the JSON.
+4. DO NOT use HTML spans or syntax highlighting in the code strings (returns must be raw code).
 
-CRITICAL INSTRUCTION:
-- You are a JSON-only API.
-- DO NOT use any tools.
-- DO NOT use Python code execution.
-- DO NOT return markdown code blocks.
-- Return ONLY a raw JSON object string.
+AUTOMATED WORKFLOW EXPECTATIONS:
+- You are replacing the user's manual work.
+- You must generate a complete \`package.json\` with all necessary dependencies (react, next, lucide-react, stripe, @supabase/supabase-js, tailwindcss, etc.).
+- If the project needs environment variables (Stripe keys, Supabase URL), you MUST generate a \`.env.local\` file.
+  - If you don't have the keys, use "CHANGE_ME" placeholder values (e.g., "STRIPE_SECRET_KEY=CHANGE_ME").
+- You must generate ALL necessary configuration files (postcss.config.js, tailwind.config.ts).
 
 OUTPUT FORMAT:
 {
-  "file.tsx": "code here",
-  "package.json": "{ ... }"
+  "package.json": "{ ... }",
+  ".env.local": "KEY=VALUE",
+  "app/page.tsx": "export default function Home() { ... }"
 }
 
-REQUIREMENTS:
-- Use modern React, Next.js, TypeScript
-- Include all necessary files (pages, components, styles, config)
-- Add package.json with all dependencies
-- Production-quality code with proper error handling
-- Beautiful, responsive UI with HeftCoder orange (#ff6b35) accents
-- Tailwind CSS for styling
-
-NO markdown, NO explanations, ONLY the JSON object.
-
+CONTEXT:
 ${historyContext}`;
         }
 

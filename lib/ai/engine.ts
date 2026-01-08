@@ -412,19 +412,23 @@ The output MUST be a single JSON object where keys are file paths and values are
                 // Extra cleaning for thinking blocks
                 repaired = repaired.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
-                // AGGRESSIVE REPAIR: Fix control characters in string values
-                // This handles literal newlines, tabs, and other control chars
+                // AGGRESSIVE REPAIR: Fix control characters & Strip HTML Spans
                 repaired = repaired.replace(
                     /"([^"\\]|\\.)*"/g,
                     (match) => {
-                        // Only process if it contains control characters
-                        if (/[\x00-\x1F]/.test(match)) {
-                            return match
+                        // 1. Strip HTML tags like <span class="..."> 
+                        // Note: We only strip strictly known highlighting tags or simple spans to avoid breaking generic strings containing <>
+                        // Actually, safer to strip only if it looks like class="text-..." 
+                        let cleaned = match.replace(/<span\s+class="[^"]*">/g, "").replace(/<\/span>/g, "");
+
+                        // 2. Fix control chars
+                        if (/[\x00-\x1F]/.test(cleaned)) {
+                            return cleaned
                                 .replace(/\n/g, '\\n')
                                 .replace(/\r/g, '\\r')
                                 .replace(/\t/g, '\\t');
                         }
-                        return match;
+                        return cleaned;
                     }
                 );
 
