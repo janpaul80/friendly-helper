@@ -76,25 +76,29 @@ export default function PreviewPanel({ isBuilding, isReady, port, error, buildSt
 
     // Fallback / Building State
     return (
-        <div className="h-full flex flex-col bg-[#0d0d0d] rounded-lg overflow-hidden border border-[#1f1f1f]">
-            <div className="flex-1 flex flex-col items-center justify-center p-8">
-                <div className={`w-16 h-16 rounded-2xl bg-orange-500 flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20 ${isBuilding ? 'animate-pulse' : ''}`}>
-                    <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+        <div className="h-full flex flex-col bg-[#050505] rounded-xl overflow-hidden border border-white/5 relative">
+            {/* Background Grid Pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
+
+            <div className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
+                <div className={`w-16 h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-6 ring-1 ring-orange-500/20 ${isBuilding ? 'animate-pulse' : ''}`}>
+                    <svg className={`w-8 h-8 text-orange-500 ${isBuilding ? 'animate-pulse' : ''}`} viewBox="0 0 24 24" fill="currentColor">
                         <path d="M13 3L6 13h5l-2 8 7-10h-5l4-8z" />
                     </svg>
                 </div>
 
-                <h2 className="text-xl font-semibold text-zinc-200 mb-2">
-                    {isBuilding ? `Building your idea${dots}` : 'HeftCoder AI'}
-                </h2>
-                <p className="text-sm text-zinc-500 mb-8 text-center max-w-xs">
-                    {isBuilding ? (buildStatus || 'Initializing environment...') : 'Ready to build something amazing'}
-                </p>
+                <div className="flex flex-col items-center gap-2">
+                    <h2 className="text-sm font-bold text-white tracking-widest uppercase">
+                        {isBuilding ? 'HeftCoding is working' : 'Vibe Engine Ready'}
+                    </h2>
 
-                <div className="flex gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${isBuilding ? 'bg-orange-500/40 animate-bounce' : 'bg-green-500'}`} style={{ animationDelay: '0ms' }} />
-                    <span className={`w-2 h-2 rounded-full ${isBuilding ? 'bg-orange-500/60 animate-bounce' : 'bg-yellow-500'}`} style={{ animationDelay: '150ms' }} />
-                    <span className={`w-2 h-2 rounded-full ${isBuilding ? 'bg-orange-500/80 animate-bounce' : 'bg-orange-500'}`} style={{ animationDelay: '300ms' }} />
+                    {isBuilding && (
+                        <div className="flex items-center gap-1.5 h-4">
+                            <span className="w-1 h-1 rounded-full bg-orange-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1 h-1 rounded-full bg-orange-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1 h-1 rounded-full bg-orange-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
