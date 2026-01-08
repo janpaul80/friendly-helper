@@ -370,8 +370,8 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                             {/* Preview */}
                             <ResizablePanel defaultSize={25}>
                                 <PreviewPanel
-                                    isBuilding={isGenerating && thinkingAction === 'building'}
-                                    isReady={true}
+                                    isBuilding={isGenerating && currentStage === 'coding'}
+                                    isReady={!isGenerating}
                                     port={3000}
                                 />
                             </ResizablePanel>
