@@ -18,8 +18,9 @@ import {
     MistralIcon
 } from './ModelIcons';
 import { ModelID } from '@/lib/ai/engine';
+import { AIModel } from '@/types/workspace';
 
-const models = [
+export const MODELS: AIModel[] = [
     { id: 'heftcoder-pro', name: 'HeftCoder Pro', icon: HeftCoderProIcon, tag: 'Recommended' },
     { id: 'heftcoder-plus', name: 'HeftCoder Plus', icon: HeftCoderPlusIcon, tag: 'Robust' },
     { id: 'opus-reasoning', name: 'Opus 4.5 Reasoning', icon: OpusIcon, tag: 'Reasoning' },
@@ -31,13 +32,13 @@ const models = [
 
 interface ModelSelectorProps {
     selectedModel: ModelID;
-    onModelChange: (id: ModelID) => void;
+    onModelChange: (model: AIModel) => void;
 }
 
 export default function ModelSelector({ selectedModel, onModelChange }: ModelSelectorProps) {
     // Map internal technical IDs to the display models
-    const currentModel = models.find(m => m.id === selectedModel) || models[0];
-    const IconComponent = currentModel.icon;
+    const currentModel = MODELS.find(m => m.id === selectedModel) || MODELS[0];
+    const IconComponent = currentModel.icon as React.ComponentType<{ className?: string }>;
 
     return (
         <DropdownMenu>
@@ -55,13 +56,13 @@ export default function ModelSelector({ selectedModel, onModelChange }: ModelSel
                 <div className="px-3 py-2 mb-1">
                     <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Select Intelligence</span>
                 </div>
-                {models.map((model) => {
-                    const Icon = model.icon;
+                {MODELS.map((model) => {
+                    const Icon = model.icon as React.ComponentType<{ className?: string }>;
                     const isSelected = model.id === selectedModel;
                     return (
                         <DropdownMenuItem
                             key={model.id}
-                            onClick={() => onModelChange(model.id as ModelID)}
+                            onClick={() => onModelChange(model)}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 mb-1 focus:bg-white/5 focus:text-white ${isSelected ? 'bg-orange-500/10 border border-orange-500/20' : 'hover:bg-white/5 border border-transparent'
                                 }`}
                         >

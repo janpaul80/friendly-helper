@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, Folder, FolderOpen, FileCode, FileJson, FileText, File } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FolderOpen, FileCode, FileJson, FileText, File, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FileItem {
@@ -24,18 +24,19 @@ const getFileIcon = (name: string) => {
     switch (ext) {
         case 'tsx':
         case 'jsx':
+            return <FileCode className="w-3.5 h-3.5 text-cyan-400" />;
         case 'ts':
         case 'js':
-            return <FileCode className="w-4 h-4 text-blue-400" />;
+            return <FileCode className="w-3.5 h-3.5 text-blue-400" />;
         case 'json':
-            return <FileJson className="w-4 h-4 text-yellow-400" />;
+            return <FileJson className="w-3.5 h-3.5 text-amber-400" />;
         case 'css':
         case 'scss':
-            return <FileText className="w-4 h-4 text-pink-400" />;
+            return <FileText className="w-3.5 h-3.5 text-pink-400" />;
         case 'html':
-            return <FileText className="w-4 h-4 text-orange-400" />;
+            return <FileText className="w-3.5 h-3.5 text-orange-400" />;
         default:
-            return <File className="w-4 h-4 text-zinc-500" />;
+            return <File className="w-3.5 h-3.5 text-muted-foreground/50" />;
     }
 };
 
@@ -45,7 +46,10 @@ function TreeItem({ item, depth = 0, selectedFile, onSelectFile }: TreeItemProps
     const isSelected = selectedFile === item.path;
 
     return (
-        <div>
+        <div className="relative">
+            {isSelected && (
+                <div className="absolute inset-y-0 left-0 w-0.5 bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)] z-10" />
+            )}
             <button
                 onClick={() => {
                     if (isFolder) {
@@ -55,33 +59,41 @@ function TreeItem({ item, depth = 0, selectedFile, onSelectFile }: TreeItemProps
                     }
                 }}
                 className={cn(
-                    "w-full flex items-center gap-1.5 px-2 py-1 text-left text-xs transition-colors rounded-md group overflow-hidden",
+                    "w-full flex items-center gap-2 px-3 py-1.5 text-left text-[11px] transition-all duration-200 rounded-lg group/item",
                     isSelected
-                        ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                        : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                        ? "bg-primary/10 text-primary font-bold"
+                        : "text-muted-foreground/70 hover:text-foreground hover:bg-muted/50"
                 )}
-                style={{ paddingLeft: `${depth * 12 + 8}px` }}
+                style={{ paddingLeft: `${depth * 12 + 12}px` }}
             >
-                {isFolder ? (
-                    <>
-                        {isOpen ? (
-                            <ChevronDown className="w-3 h-3 text-zinc-500" />
-                        ) : (
-                            <ChevronRight className="w-3 h-3 text-zinc-500" />
-                        )}
-                        {isOpen ? (
-                            <FolderOpen className="w-3.5 h-3.5 text-amber-500/80" />
-                        ) : (
-                            <Folder className="w-3.5 h-3.5 text-amber-500/80" />
-                        )}
-                    </>
-                ) : (
-                    <>
-                        <span className="w-3" />
-                        {getFileIcon(item.name)}
-                    </>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {isFolder ? (
+                        <div className="flex items-center gap-2">
+                            <div className="shrink-0 w-3 h-3 flex items-center justify-center">
+                                {isOpen ? (
+                                    <ChevronDown className="w-3 h-3 text-muted-foreground/30 group-hover/item:text-muted-foreground transition-colors" />
+                                ) : (
+                                    <ChevronRight className="w-3 h-3 text-muted-foreground/30 group-hover/item:text-muted-foreground transition-colors" />
+                                )}
+                            </div>
+                            {isOpen ? (
+                                <FolderOpen className="w-4 h-4 text-primary/60" />
+                            ) : (
+                                <Folder className="w-4 h-4 text-primary/40" />
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <div className="w-3" />
+                            {getFileIcon(item.name)}
+                        </div>
+                    )}
+                    <span className="truncate tracking-wide">{item.name}</span>
+                </div>
+
+                {isSelected && (
+                    <Sparkles className="w-3 h-3 text-primary/50 animate-pulse ml-2 shrink-0" />
                 )}
-                <span className="truncate">{item.name}</span>
             </button>
             {isFolder && isOpen && item.children && (
                 <div className="mt-0.5">
@@ -109,12 +121,8 @@ export default function FileTree({
     selectedFile: string,
     onSelectFile: (path: string) => void
 }) {
-    // Convert flat path object to hierarchy if needed, but for now we assume nested structure
-    // provided by the caller or use the flat logic if it's easier.
-    // The provided sampleFiles was already nested.
-
     return (
-        <div className="py-2 px-1">
+        <div className="py-3 px-2 space-y-0.5">
             {files.map((item, i) => (
                 <TreeItem
                     key={item.path || i}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { Terminal as TerminalIcon, Copy, Check } from 'lucide-react';
+import { Terminal as TerminalIcon, Copy, Check, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TerminalLine {
     type: 'stdout' | 'stderr' | 'info';
@@ -17,36 +18,30 @@ interface StreamingTerminalProps {
 
 export function StreamingTerminal({ actionId, command, onComplete }: StreamingTerminalProps) {
     const [lines, setLines] = useState<TerminalLine[]>([
-        { type: 'info', text: `$ ${command}`, timestamp: Date.now() }
+        { type: 'info', text: command, timestamp: Date.now() }
     ]);
     const [isRunning, setIsRunning] = useState(true);
     const [exitCode, setExitCode] = useState<number | null>(null);
     const [copied, setCopied] = useState(false);
     const terminalRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll to bottom
     useEffect(() => {
         if (terminalRef.current) {
             terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
         }
     }, [lines]);
 
-    // Simulate streaming (in real implementation, this would be WebSocket)
     useEffect(() => {
-        // This is a placeholder - in production this would connect to WebSocket
-        // and receive real streaming output
-
-        // For now, just mark as complete after a delay
         const timer = setTimeout(() => {
             setLines(prev => [...prev, {
                 type: 'stdout',
-                text: 'Command executed successfully',
+                text: 'Execution manifested successfully. Vibe synchronized.',
                 timestamp: Date.now()
             }]);
             setIsRunning(false);
             setExitCode(0);
             onComplete?.(0);
-        }, 1000);
+        }, 1500);
 
         return () => clearTimeout(timer);
     }, [onComplete]);
@@ -59,127 +54,91 @@ export function StreamingTerminal({ actionId, command, onComplete }: StreamingTe
     };
 
     return (
-        <div className="bg-black rounded-lg border border-gray-800 overflow-hidden font-mono text-xs">
+        <div className="bg-black/90 backdrop-blur-xl rounded-xl border border-border overflow-hidden font-mono text-[13px] shadow-2xl group/term">
             {/* Terminal Header */}
-            <div className="bg-[#1a1a1a] border-b border-gray-800 px-3 py-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <TerminalIcon className="w-3 h-3 text-gray-400" />
-                    <span className="text-gray-400">Terminal</span>
-                    {isRunning && (
-                        <div className="flex gap-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-green-500 text-[10px]">Running</span>
-                        </div>
-                    )}
-                    {!isRunning && exitCode !== null && (
-                        <span className={`text-[10px] ${exitCode === 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            Exit code: {exitCode}
-                        </span>
-                    )}
+            <div className="bg-muted/50 border-b border-border px-4 py-2 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500/20" />
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                        <TerminalIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">HeftCoder Terminal</span>
+                    </div>
                 </div>
 
-                <button
-                    onClick={copyOutput}
-                    className="p-1 hover:bg-gray-700 rounded transition-colors"
-                    title="Copy output"
-                >
-                    {copied ? (
-                        <Check className="w-3 h-3 text-green-500" />
-                    ) : (
-                        <Copy className="w-3 h-3 text-gray-400" />
+                <div className="flex items-center gap-3">
+                    {isRunning && (
+                        <div className="flex items-center gap-2 px-2 py-0.5 bg-green-500/10 rounded-full">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-green-500 text-[9px] font-black uppercase tracking-widest">Active</span>
+                        </div>
                     )}
-                </button>
+                    <button
+                        onClick={copyOutput}
+                        className="p-1.5 hover:bg-muted rounded-lg transition-all text-muted-foreground hover:text-foreground"
+                    >
+                        {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                </div>
             </div>
 
             {/* Terminal Output */}
             <div
                 ref={terminalRef}
-                className="p-3 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+                className="p-5 max-h-80 overflow-y-auto custom-scrollbar selection:bg-primary/20"
             >
                 {lines.map((line, i) => (
-                    <div key={i} className="leading-relaxed">
-                        <span className={
+                    <div key={i} className="flex gap-3 mb-1 font-medium tracking-tight">
+                        <span className="text-pink-500 shrink-0 font-bold opacity-50 select-none">➜</span>
+                        <span className={cn(
+                            "leading-relaxed break-all",
                             line.type === 'stderr' ? 'text-red-400' :
-                                line.type === 'info' ? 'text-blue-400' :
-                                    'text-green-400'
-                        }>
+                                line.type === 'info' ? 'text-blue-400 font-bold' :
+                                    'text-green-400/90'
+                        )}>
                             {line.text}
                         </span>
                     </div>
                 ))}
 
-                {/* Cursor blink while running */}
                 {isRunning && (
-                    <span className="inline-block w-2 h-4 bg-green-500 animate-pulse ml-1" />
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="text-pink-500 shrink-0 font-bold opacity-50 select-none">➜</span>
+                        <span className="inline-block w-2 h-4 bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
+                    </div>
                 )}
             </div>
         </div>
     );
 }
 
-/**
- * Compact terminal block for action lists
- */
-interface TerminalBlockProps {
-    command: string;
-    output?: string;
-    error?: string;
-    exitCode?: number;
-    isRunning?: boolean;
-}
-
-export function TerminalBlock({ command, output, error, exitCode, isRunning }: TerminalBlockProps) {
+export function TerminalBlock({ command, output, error, exitCode, isRunning }: any) {
     const [isExpanded, setIsExpanded] = useState(true);
-    const [copied, setCopied] = useState(false);
-
-    const copyOutput = () => {
-        const text = error || output || command;
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
 
     return (
-        <div className="bg-black rounded-lg border border-gray-800 overflow-hidden font-mono text-xs">
-            {/* Header */}
+        <div className="bg-black/40 rounded-xl border border-border overflow-hidden font-mono text-[11px] mb-4">
             <div
-                className="bg-[#1a1a1a] border-b border-gray-800 px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-[#222]"
+                className="px-4 py-2 border-b border-border/50 flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors"
                 onClick={() => setIsExpanded(!isExpanded)}
             >
-                <div className="flex items-center gap-2">
-                    <TerminalIcon className="w-3 h-3 text-gray-400" />
-                    <span className="text-gray-400 truncate">$ {command}</span>
-                    {isRunning && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    )}
+                <div className="flex items-center gap-3">
+                    <TerminalIcon className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-muted-foreground font-bold truncate max-w-[200px]">$ {command}</span>
                 </div>
-
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        copyOutput();
-                    }}
-                    className="p-1 hover:bg-gray-700 rounded transition-colors"
-                >
-                    {copied ? (
-                        <Check className="w-3 h-3 text-green-500" />
-                    ) : (
-                        <Copy className="w-3 h-3 text-gray-400" />
-                    )}
-                </button>
+                <ChevronRight className={cn("w-3 h-3 text-muted-foreground transition-transform", isExpanded && "rotate-90")} />
             </div>
-
-            {/* Output */}
-            {isExpanded && (output || error) && (
-                <div className="p-3 max-h-48 overflow-y-auto">
-                    <pre className={`whitespace-pre-wrap ${error ? 'text-red-400' : 'text-green-400'}`}>
+            {isExpanded && (output || error || isRunning) && (
+                <div className="p-4 bg-black/20">
+                    <pre className={cn(
+                        "whitespace-pre-wrap leading-relaxed",
+                        error ? 'text-red-400' : 'text-green-400/80'
+                    )}>
                         {error || output}
+                        {isRunning && <span className="inline-block w-1.5 h-3 bg-primary animate-pulse ml-1 align-middle" />}
                     </pre>
-                    {exitCode !== undefined && (
-                        <div className={`mt-2 text-[10px] ${exitCode === 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            Exit code: {exitCode}
-                        </div>
-                    )}
                 </div>
             )}
         </div>

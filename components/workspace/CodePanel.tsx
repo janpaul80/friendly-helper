@@ -1,7 +1,9 @@
 "use client";
 
 import React from 'react';
-import { X, FileCode } from 'lucide-react';
+import { X, FileCode, Circle } from 'lucide-react';
+import { SandpackCodeEditor } from "@codesandbox/sandpack-react";
+import { cn } from '@/lib/utils';
 
 interface CodePanelProps {
     fileName: string;
@@ -9,54 +11,53 @@ interface CodePanelProps {
     onClose?: () => void;
 }
 
-function highlightCode(code: string) {
-    if (!code) return null;
-    const lines = code.split('\n');
-    return lines.map((line, idx) => {
-        let highlighted = line
-            .replace(/(import|from|export|default|function|return|const|let|var)/g, '<span class="text-purple-400">$1</span>')
-            .replace(/('.*?'|".*?")/g, '<span class="text-green-400">$1</span>')
-            .replace(/(\{|\}|\(|\)|\[|\])/g, '<span class="text-yellow-300">$1</span>')
-            .replace(/(className)/g, '<span class="text-cyan-400">$1</span>')
-            .replace(/(&lt;\/?\w+)/g, '<span class="text-blue-400">$1</span>')
-            .replace(/(React|App)/g, '<span class="text-amber-300">$1</span>');
-
-        return (
-            <div key={idx} className="flex min-w-full">
-                <span className="w-12 text-right pr-4 text-zinc-700 select-none text-[10px] bg-[#050505] sticky left-0 font-mono">
-                    {idx + 1}
-                </span>
-                <span
-                    className="flex-1 text-zinc-300 font-mono text-xs pl-2"
-                    dangerouslySetInnerHTML={{ __html: highlighted || '&nbsp;' }}
-                />
-            </div>
-        );
-    });
-}
-
-export default function CodePanel({ fileName = 'App.tsx', code = '', onClose }: CodePanelProps) {
+export default function CodePanel({ fileName = 'App.tsx', onClose }: CodePanelProps) {
     return (
-        <div className="h-full flex flex-col bg-[#0d0d0d] rounded-lg overflow-hidden border border-[#1f1f1f] shadow-2xl">
-            {/* Tab Bar */}
-            <div className="flex items-center bg-[#070707] border-b border-[#1a1a1a]">
-                <div className="flex items-center gap-2 px-4 py-2 bg-[#0d0d0d] border-r border-[#1a1a1a] border-t-2 border-t-orange-500/50 relative">
-                    <FileCode className="w-3.5 h-3.5 text-blue-400" />
-                    <span className="text-xs font-semibold text-zinc-200">{fileName}</span>
-                    <button
-                        onClick={onClose}
-                        className="ml-2 p-0.5 rounded hover:bg-[#2a2a2a] text-zinc-500 hover:text-zinc-300 transition-colors"
-                    >
-                        <X className="w-3 h-3" />
-                    </button>
+        <div className="h-full flex flex-col bg-background/50 backdrop-blur-xl rounded-2xl overflow-hidden border border-border shadow-2xl relative group/code">
+            {/* Header / Tab Bar */}
+            <div className="flex items-center justify-between bg-muted/30 backdrop-blur-md border-b border-border px-4 h-12">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-background/50 border border-border rounded-lg shadow-sm">
+                        <FileCode className="w-3.5 h-3.5 text-primary" />
+                        <span className="text-[10px] font-black text-foreground tracking-widest uppercase">{fileName}</span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <div className="flex gap-1.5 px-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500/30" />
+                        <div className="w-2 h-2 rounded-full bg-yellow-500/30" />
+                        <div className="w-2 h-2 rounded-full bg-green-500/30" />
+                    </div>
                 </div>
             </div>
 
             {/* Code Content */}
-            <div className="flex-1 overflow-auto p-0 bg-[#080808]">
-                <div className="font-mono text-xs leading-6 py-4 min-w-fit">
-                    {highlightCode(code)}
+            <div className="flex-1 overflow-hidden relative">
+                <SandpackCodeEditor
+                    showTabs={false}
+                    showLineNumbers={true}
+                    showInlineErrors={true}
+                    showRunButton={false}
+                    wrapContent={true}
+                    closableTabs={false}
+                    style={{ height: "100%", width: "100%" }}
+                />
+
+                {/* Decorative overlay */}
+                <div className="absolute inset-0 pointer-events-none border-l border-white/5" />
+            </div>
+
+            {/* Footer / Status Bar */}
+            <div className="h-8 bg-muted/20 border-t border-border px-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                        <Circle className="w-1.5 h-1.5 fill-primary text-primary" />
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">UTF-8</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">React TypeScript</span>
                 </div>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Line 1, Col 1</span>
             </div>
         </div>
     );

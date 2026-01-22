@@ -13,6 +13,23 @@ export interface Message {
     actionStatuses?: Record<string, 'pending' | 'running' | 'done' | 'error'>;
     actionOutputs?: Record<string, string>;
     actionErrors?: Record<string, string>;
+    attachments?: Attachment[];
+    id?: string;
+}
+
+export interface Attachment {
+    id: string;
+    name: string;
+    type: 'code' | 'pdf' | 'image' | 'zip' | 'figma';
+    content?: string;
+}
+
+export interface AIModel {
+    id: string;
+    name: string;
+    icon: string | React.ComponentType<{ className?: string }>;
+    description?: string;
+    tag?: string | null;
 }
 
 /**

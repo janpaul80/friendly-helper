@@ -38,6 +38,11 @@ import CodePanel from "@/components/workspace/CodePanel";
 import AIChatPanel from "@/components/workspace/AIChatPanel";
 import { cn } from "@/lib/utils";
 import { ModelID } from "@/lib/ai/engine";
+import { Attachment, AIModel } from "@/types/workspace";
+import { MODELS } from "@/components/workspace/ModelSelector";
+import Image from "next/image";
+import { Toaster } from "@/components/ui/toaster";
+import { toast } from "@/hooks/use-toast";
 
 export default function Workspace(props: { params: Promise<{ id: string }> }) {
     // Safely unwrap params using React.use() if it's a promise
@@ -46,10 +51,10 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
 
     const [activeFile, setActiveFile] = useState("App.tsx");
     const [chatInput, setChatInput] = useState("");
-    const [selectedModel, setSelectedModel] = useState<ModelID>("heftcoder-pro");
+    const [selectedModel, setSelectedModel] = useState<AIModel>(MODELS[0]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
-        { role: "ai", content: "Hello! I'm your orchestrator. How can I help you build today?" }
+        { id: '1', role: "ai", content: "Hello! I'm HeftCoder, your expert builder. What are we building today? 🚀" }
     ]);
 
     const [project, setProject] = useState<any>(null);
@@ -158,16 +163,24 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
         }
     }, [project?.id, historyLoaded]);
 
-    const handleSendMessage = async (input?: string) => {
-        const userPrompt = input || chatInput;
-        if (!userPrompt || isGenerating) return;
+    const handleSendMessage = async (input: string, attachments: Attachment[] = [], model: AIModel = selectedModel) => {
+        if (!input.trim() && attachments.length === 0) return;
+        if (isGenerating) return;
 
-        const updatedMessages: Message[] = [...messages, { role: "user", content: userPrompt }];
+        const updatedMessages: Message[] = [
+            ...messages,
+            {
+                id: crypto.randomUUID(),
+                role: "user",
+                content: input,
+                attachments
+            }
+        ];
         setMessages(updatedMessages);
         setIsGenerating(true);
-        setChatInput("");
+        setSelectedModel(model);
 
-        const intent = ConversationalAgent.detectIntent(userPrompt);
+        const intent = ConversationalAgent.detectIntent(input);
         setCurrentIntent(intent);
 
         // --- GREETING GUARD (Client-side Short Circuit) ---
@@ -228,11 +241,11 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     projectId: projectId,
-                    prompt: userPrompt,
+                    prompt: input,
                     fileContext: project?.files,
-                    model: selectedModel,
+                    model: model.id,
                     workspaceState,
-                    messages: messages
+                    messages: updatedMessages
                 })
             });
 
@@ -245,7 +258,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
 
             if (data.intent && !data.shouldModifyFiles) {
                 const aiMsg = data.response.content;
-                setMessages(prev => [...prev, { role: "ai", content: aiMsg }]);
+                setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "ai", content: aiMsg }]);
 
                 if (data.intent === UserIntent.PLAN_REQUEST || data.intent === UserIntent.EDIT_PLAN || data.response.isPlan) {
                     setWorkspaceState(prev => ({
@@ -257,7 +270,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 }
             } else if (data.shouldModifyFiles) {
                 setAgentEvents(data.agentResponse?.events || []);
-                setMessages(prev => [...prev, { role: "ai", content: "✅ Code generation complete! I've updated your files." }]);
+                setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "ai", content: "✅ Code generation complete! I've updated your files." }]);
                 setHasBuilt(true);
 
                 if (data.intent === UserIntent.APPROVAL) {
@@ -274,7 +287,12 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
 
         } catch (error: any) {
             console.error("Generation error:", error);
-            setMessages(prev => [...prev, { role: "ai", content: `❌ Error: ${error.message}` }]);
+            setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "ai", content: `❌ Error: ${error.message}` }]);
+            toast({
+                title: "Generation Error",
+                description: error.message,
+                variant: "destructive"
+            });
         } finally {
             if (buildIntervalRef.current) {
                 clearInterval(buildIntervalRef.current);
@@ -315,17 +333,38 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 activeFile: activeFile,
             }}
         >
-            <div className="h-screen bg-[#0a0a0a] text-zinc-200 flex flex-col overflow-hidden font-sans">
+            <div className="h-screen bg-[#050505] text-zinc-100 flex flex-col overflow-hidden font-sans relative selection:bg-primary/30 selection:text-white">
+                {/* Background Decorations */}
+                <div className="absolute inset-0 pointer-events-none z-0">
+                    <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 blur-[150px] rounded-full opacity-50" />
+                    <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-secondary/5 blur-[120px] rounded-full opacity-30" />
+                    <Image
+                        src="/assets/wave-speech.jpg"
+                        alt="Background Vibe"
+                        fill
+                        className="object-cover opacity-[0.03] mix-blend-screen"
+                        priority
+                    />
+                </div>
+
                 {/* Header */}
-                <header className="h-14 bg-[#070707] border-b border-white/5 flex items-center justify-between px-6 flex-shrink-0 z-50 relative">
-                    <div className="flex items-center gap-6">
-                        <Link href="/dashboard" className="flex items-center gap-3 group">
-                            <div className="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-900/40 group-hover:scale-110 transition-transform">
-                                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M13 3L6 13h5l-2 8 7-10h-5l4-8z" />
-                                </svg>
+                <header className="h-16 bg-background/40 backdrop-blur-2xl border-b border-white/5 flex items-center justify-between px-6 flex-shrink-0 z-50 relative">
+                    <div className="flex items-center gap-8">
+                        <Link href="/dashboard" className="flex items-center gap-4 group">
+                            <div className="w-10 h-10 relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 p-[1px] shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] group-hover:scale-110 transition-all duration-500">
+                                <div className="absolute inset-0 bg-black rounded-[15px]" />
+                                <Image
+                                    src="/assets/hc-icon.png"
+                                    alt="HeftCoder"
+                                    width={40}
+                                    height={40}
+                                    className="relative z-10 w-full h-full object-contain p-1.5"
+                                />
                             </div>
-                            <span className="font-black text-white tracking-tighter text-lg uppercase">HEFTCoder</span>
+                            <div className="flex flex-col -gap-1">
+                                <span className="font-black text-white tracking-[-0.05em] text-xl uppercase leading-tight italic">HEFT<span className="text-primary not-italic">CODER</span></span>
+                                <span className="text-[9px] font-black text-white/40 tracking-[0.3em] uppercase ml-0.5">Vibe Engine 2.0</span>
+                            </div>
                         </Link>
 
                         <div className="h-4 w-px bg-white/10" />
@@ -336,10 +375,10 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-6">
                         <ModelSelector
-                            selectedModel={selectedModel}
-                            onModelChange={setSelectedModel}
+                            selectedModel={selectedModel.id as ModelID}
+                            onModelChange={(model) => setSelectedModel(model)}
                         />
 
                         <div className="flex items-center bg-[#141414] rounded-xl p-1 border border-white/5">
@@ -450,10 +489,8 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                     messages={messages}
                                     currentStage={currentStage}
                                     onSendMessage={handleSendMessage}
-                                    onApprove={() => handleSendMessage("build this")}
+                                    onApprove={() => handleSendMessage("build this", [])}
                                     isGenerating={isGenerating}
-                                    chatInput={chatInput}
-                                    setChatInput={setChatInput}
                                     selectedModel={selectedModel}
                                 />
                             </ResizablePanel>
@@ -474,6 +511,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                         </ResizablePanelGroup>
                     </div>
                 </main>
+                <Toaster />
             </div>
         </SandpackProvider>
     );
