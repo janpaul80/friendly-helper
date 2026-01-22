@@ -84,8 +84,8 @@ function ErrorState({ message }: { message?: string }) {
 
 export function PreviewPanel({ status, previewUrl }: PreviewPanelProps) {
   return (
-    <div className="h-full bg-workspace-bg p-4">
-      <div className="h-full rounded-lg border border-border bg-card overflow-hidden">
+    <div className="h-full bg-background p-4">
+      <div className="h-full rounded-lg border border-border bg-[#0a0a0a] overflow-hidden">
         {status.status === 'idle' && <IdleState />}
         {status.status === 'working' && <WorkingIndicator />}
         {status.status === 'complete' && previewUrl && <LivePreview url={previewUrl} />}

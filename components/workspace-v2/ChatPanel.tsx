@@ -17,7 +17,7 @@ export function ChatPanel({ messages, onSendMessage, isLoading }: ChatPanelProps
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full bg-card">
+    <div className="flex flex-col h-full bg-[#0a0a0a]">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
         {messages.length === 0 ? (
