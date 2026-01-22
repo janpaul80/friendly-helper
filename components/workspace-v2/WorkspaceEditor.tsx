@@ -153,6 +153,26 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
 
   return (
     <div className="h-screen flex flex-col bg-background">
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #333;
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #444;
+        }
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: #333 #0a0a0a;
+        }
+      `}</style>
       <TopNav
         onFileExplorerOpen={() => setFileExplorerOpen(true)}
         userTier={userTier}

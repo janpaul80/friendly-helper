@@ -13,7 +13,7 @@ function WorkingIndicator() {
       <div className="relative mb-8">
         <div className="absolute inset-0 bg-primary/30 blur-3xl rounded-full scale-150 animate-pulse-subtle" />
         <Image
-          src="/assets/hc-icon.png"
+          src="/assets/lightning-icon.png"
           alt="HeftCoder"
           width={96}
           height={96}
@@ -40,7 +40,7 @@ function IdleState() {
       {/* Logo */}
       <div className="mb-6 opacity-60">
         <Image
-          src="/assets/hc-icon.png"
+          src="/assets/lightning-icon.png"
           alt="HeftCoder"
           width={80}
           height={80}

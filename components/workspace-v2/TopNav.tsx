@@ -15,7 +15,7 @@ export function TopNav({ onFileExplorerOpen, userTier }: TopNavProps) {
     <header className="h-14 border-b border-border bg-[#0a0a0a] flex items-center justify-between px-4">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <Image src="/assets/hc-icon.png" alt="HeftCoder" width={32} height={32} className="h-8 w-8 rounded-lg" />
+          <Image src="/assets/lightning-icon.png" alt="HeftCoder" width={32} height={32} className="h-8 w-8 rounded-lg" />
           <span className="text-lg font-semibold text-foreground">HeftCoder</span>
         </div>
 

@@ -19,7 +19,10 @@ export function ChatPanel({ messages, onSendMessage, isLoading }: ChatPanelProps
   return (
     <div className="flex flex-col h-full bg-[#0a0a0a]">
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#333 #0a0a0a'
+      }}>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="text-2xl font-semibold text-foreground mb-2">
