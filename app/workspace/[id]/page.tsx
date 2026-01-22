@@ -81,7 +81,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     }, [projectId, workspaceState.id]);
     const [currentIntent, setCurrentIntent] = useState<UserIntent | null>(null);
     const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
-    const [hasBuilt, setHasBuilt] = useState(false);
+    const [hasBuilt, setHasBuilt] = useState(true);
     const [buildStep, setBuildStep] = useState<string>('');
 
     const chatEndRef = useRef<HTMLDivElement>(null);
