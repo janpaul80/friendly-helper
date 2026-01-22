@@ -5,13 +5,9 @@ import {
     Share2,
     UploadCloud,
     Github,
-    PanelLeftClose,
-    PanelLeftOpen,
     GitBranch,
     Rocket,
     Globe,
-    Search,
-    Settings,
     MoreHorizontal,
     ChevronRight,
     ChevronDown,
@@ -33,7 +29,7 @@ import {
 } from "@codesandbox/sandpack-react";
 import { monokaiPro } from "@codesandbox/sandpack-themes";
 import Link from "next/link";
-import FileTree from "@/components/workspace/FileTree";
+
 import CodePanel from "@/components/workspace/CodePanel";
 import AIChatPanel from "@/components/workspace/AIChatPanel";
 import { cn } from "@/lib/utils";
@@ -59,7 +55,7 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
     const [project, setProject] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [historyLoaded, setHistoryLoaded] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+
     const [isListening, setIsListening] = useState(false);
     const [agentMode, setAgentMode] = useState<'discussion' | 'planning' | 'building'>('discussion');
     const [thinkingAction, setThinkingAction] = useState<'thinking' | 'writing' | 'building'>('thinking');
@@ -424,68 +420,11 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                 </header>
 
                 <main className="flex-1 flex overflow-hidden relative">
-                    {/* Sidebar */}
-                    <aside className={cn(
-                        "bg-[#070707] border-r border-white/5 flex flex-col transition-all duration-500 ease-in-out relative z-10",
-                        sidebarOpen ? "w-64" : "w-0"
-                    )}>
-                        {sidebarOpen && (
-                            <div className="flex flex-col h-full overflow-hidden">
-                                <div className="h-12 flex items-center justify-between px-4 border-b border-white/5 bg-[#0a0a0a]">
-                                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Workspace Explorer</span>
-                                    <button className="p-1 rounded hover:bg-white/5 text-zinc-500 transition-colors">
-                                        <Search className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-                                <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 custom-scrollbar">
-                                    <FileTree
-                                        files={getFileTree()}
-                                        selectedFile={activeFile}
-                                        onSelectFile={setActiveFile}
-                                    />
-                                </div>
-                                <div className="p-3 border-t border-white/5">
-                                    <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold text-zinc-500 hover:text-zinc-200 hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">
-                                        <Settings className="w-3.5 h-3.5" />
-                                        Settings
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </aside>
-
-                    {/* Toggle Sidebar Button */}
-                    <button
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className={cn(
-                            "absolute top-6 z-20 p-1.5 bg-[#141414] border border-white/10 hover:border-orange-500/50 rounded-full transition-all duration-300 shadow-2xl",
-                            sidebarOpen ? "left-60" : "left-4"
-                        )}
-                    >
-                        {sidebarOpen ? (
-                            <PanelLeftClose className="w-3.5 h-3.5 text-zinc-400" />
-                        ) : (
-                            <PanelLeftOpen className="w-3.5 h-3.5 text-zinc-400" />
-                        )}
-                    </button>
-
                     {/* Editor Content Area */}
                     <div className="flex-1 flex overflow-hidden p-4 gap-4">
                         <ResizablePanelGroup direction="horizontal">
-                            {/* Editor */}
-                            <ResizablePanel defaultSize={45}>
-                                <CodePanel
-                                    fileName={activeFile}
-                                    code={project?.files?.[activeFile] || ""}
-                                />
-                            </ResizablePanel>
-
-                            <ResizableHandle className="bg-transparent w-2 group">
-                                <div className="h-8 w-1 bg-white/10 rounded-full mx-auto group-hover:bg-orange-500/50 transition-colors" />
-                            </ResizableHandle>
-
-                            {/* AI Chat */}
-                            <ResizablePanel defaultSize={30}>
+                            {/* AI Chat - ALWAYS ON LEFT */}
+                            <ResizablePanel defaultSize={50} minSize={30}>
                                 <AIChatPanel
                                     projectName={project?.name || "VIBE ENGINE"}
                                     messages={messages}
@@ -501,8 +440,8 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                                 <div className="h-8 w-1 bg-white/10 rounded-full mx-auto group-hover:bg-orange-500/50 transition-colors" />
                             </ResizableHandle>
 
-                            {/* Preview */}
-                            <ResizablePanel defaultSize={25}>
+                            {/* Preview/Manifesting Panel - ALWAYS ON RIGHT */}
+                            <ResizablePanel defaultSize={50} minSize={30}>
                                 <PreviewPanel
                                     isBuilding={!hasBuilt || (isGenerating && currentStage === 'coding')}
                                     isReady={!isGenerating}

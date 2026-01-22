@@ -97,7 +97,7 @@ export default function PreviewPanel({ isBuilding, isReady, port, error, buildSt
                     <div className="relative z-10 w-full max-w-xs">
                         <div className="w-24 h-24 mx-auto relative mb-12">
                             <div className="absolute inset-0 bg-primary/20 blur-[40px] rounded-full animate-pulse" />
-                            <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 p-[1px] shadow-[0_0_30px_rgba(var(--primary-rgb),0.3)] animate-bounce duration-[2000ms]">
+                            <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 p-[1px] shadow-[0_0_30px_rgba(var(--primary-rgb),0.3)] animate-pulse">
                                 <div className="absolute inset-0 bg-black rounded-[23px]" />
                                 <Image
                                     src="/assets/hc-icon.png"
