@@ -24,9 +24,9 @@ export async function createProjectInSupabase(name: string) {
     }
 
     const currentCredits = user.credits || 0;
-    if (currentCredits < 100) {
-        throw new Error(`Insufficient credits (100 required, you have ${currentCredits})`);
-    }
+    // if (currentCredits < 100) {
+    //     throw new Error(`Insufficient credits (100 required, you have ${currentCredits})`);
+    // }
 
     // 2. Deduct credits
     const { error: updateError } = await supabase
