@@ -1,21 +1,76 @@
 "use client";
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { TopNav } from './TopNav';
 import { ChatPanel } from './ChatPanel';
 import { PreviewPanel } from './PreviewPanel';
 import { FileExplorerModal } from './FileExplorerModal';
 import type { Message, Attachment, AIModel, ProjectStatus, UserTier } from '@/types/workspace-v2';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { useUser } from '@clerk/nextjs';
+import { toast } from '@/hooks/use-toast';
 
-export function WorkspaceEditor() {
+interface WorkspaceEditorProps {
+  projectId?: string;
+}
+
+export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
+  const { user } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [projectStatus, setProjectStatus] = useState<ProjectStatus>({ status: 'idle' });
   const [isLoading, setIsLoading] = useState(false);
   const [fileExplorerOpen, setFileExplorerOpen] = useState(false);
-  const [userTier] = useState<UserTier>('pro'); // Mock user tier
+  const [userTier, setUserTier] = useState<UserTier>('basic'); // Default to basic
+  const [project, setProject] = useState<any>(null);
+
+  // Fetch user tier and project data
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!projectId) return;
+
+      try {
+        // Fetch project
+        const projectRes = await fetch(`/api/projects/${projectId}`);
+        if (projectRes.ok) {
+          const data = await projectRes.json();
+          setProject(data.project);
+
+          // Load chat history if exists
+          const chatHistory = data.project?.files?.['.heftcoder/chat.json'];
+          if (chatHistory) {
+            const history = JSON.parse(chatHistory);
+            const formatted = history.map((msg: any) => ({
+              id: crypto.randomUUID(),
+              role: msg.role === 'ai' ? 'assistant' : msg.role,
+              content: msg.content,
+              timestamp: new Date(msg.timestamp || Date.now()),
+            }));
+            setMessages(formatted);
+          }
+        }
+
+        // Fetch user tier (from subscription)
+        // TODO: Implement actual subscription check
+        // For now, set to 'pro' for testing
+        setUserTier('pro');
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+
+    fetchData();
+  }, [projectId]);
 
   const handleSendMessage = useCallback(
     async (content: string, attachments: Attachment[], model: AIModel) => {
+      if (!projectId) {
+        toast({
+          title: "Error",
+          description: "No project selected",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const userMessage: Message = {
         id: crypto.randomUUID(),
         role: 'user',
@@ -28,40 +83,72 @@ export function WorkspaceEditor() {
       setIsLoading(true);
       setProjectStatus({ status: 'working' });
 
-      // Simulate AI response
-      setTimeout(() => {
+      try {
+        const response = await fetch('/api/agent/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId,
+            prompt: content,
+            model: model.id,
+            fileContext: project?.files || {},
+            messages: messages.map(m => ({
+              role: m.role === 'assistant' ? 'ai' : m.role,
+              content: m.content,
+            })),
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Generation failed');
+        }
+
+        const data = await response.json();
+
         const aiMessage: Message = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: `I'll help you build that using ${model.name}. Here's what I'm creating:
-
-\`\`\`typescript
-// Setting up your project structure
-import React from 'react';
-
-export default function App() {
-  return (
-    <div className="min-h-screen bg-gray-900">
-      <h1>Your Project</h1>
-    </div>
-  );
-}
-\`\`\`
-
-I'm now generating your project. You can see the live preview on the right panel.`,
+          content: data.response?.content || data.agentResponse?.conversationText || 'Response received',
           timestamp: new Date(),
         };
 
         setMessages((prev) => [...prev, aiMessage]);
-        setIsLoading(false);
 
-        // Simulate project completion after a delay
-        setTimeout(() => {
+        // Update project status
+        if (data.shouldModifyFiles) {
           setProjectStatus({ status: 'complete' });
-        }, 2000);
-      }, 1500);
+
+          // Refetch project to get updated files
+          const projectRes = await fetch(`/api/projects/${projectId}`);
+          if (projectRes.ok) {
+            const updated = await projectRes.json();
+            setProject(updated.project);
+          }
+        } else {
+          setProjectStatus({ status: 'idle' });
+        }
+      } catch (error: any) {
+        console.error('Generation error:', error);
+        const errorMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: `❌ Error: ${error.message}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setProjectStatus({ status: 'error', message: error.message });
+
+        toast({
+          title: "Generation Error",
+          description: error.message,
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
     },
-    []
+    [projectId, project, messages]
   );
 
   return (
@@ -94,4 +181,3 @@ I'm now generating your project. You can see the live preview on the right panel
     </div>
   );
 }
-
