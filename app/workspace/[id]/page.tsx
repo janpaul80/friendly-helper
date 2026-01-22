@@ -19,7 +19,7 @@ import {
     Loader2
 } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import ModelSelector from "@/components/workspace/ModelSelector";
+import ModelSelector, { MODELS } from "@/components/workspace/ModelSelector";
 import PreviewPanel from "@/components/workspace/PreviewPanel";
 import { ThinkingIndicator } from "@/components/workspace/ThinkingIndicator";
 import { StageProgress, ArtifactMessage } from "@/components/workspace/ChatArtifacts";
@@ -39,7 +39,6 @@ import AIChatPanel from "@/components/workspace/AIChatPanel";
 import { cn } from "@/lib/utils";
 import { ModelID } from "@/lib/ai/engine";
 import { Attachment, AIModel } from "@/types/workspace";
-import { MODELS } from "@/components/workspace/ModelSelector";
 import Image from "next/image";
 import { Toaster } from "@/components/ui/toaster";
 import { toast } from "@/hooks/use-toast";
@@ -378,7 +377,10 @@ export default function Workspace(props: { params: Promise<{ id: string }> }) {
                     <div className="flex items-center gap-6">
                         <ModelSelector
                             selectedModel={selectedModel.id as ModelID}
-                            onModelChange={(model) => setSelectedModel(model)}
+                            onModelChange={(modelId) => {
+                                const fullModel = MODELS.find(m => m.id === modelId) || MODELS[0];
+                                setSelectedModel(fullModel);
+                            }}
                         />
 
                         <div className="flex items-center bg-[#141414] rounded-xl p-1 border border-white/5">

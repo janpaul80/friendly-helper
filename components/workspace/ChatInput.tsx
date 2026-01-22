@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import ModelSelector, { MODELS } from './ModelSelector';
 import { VoiceButton } from './VoiceButton';
+import { ModelID } from '@/lib/ai/engine';
 import type { AIModel, Attachment } from '@/types/workspace';
 
 interface ChatInputProps {
@@ -14,16 +15,17 @@ interface ChatInputProps {
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const [attachments, setAttachments] = useState<Attachment[]>([]);
-    const [selectedModel, setSelectedModel] = useState<AIModel>(MODELS[0]);
+    const [selectedModelId, setSelectedModelId] = useState<ModelID>(MODELS[0].id as ModelID);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const handleSend = useCallback(() => {
         if (!message.trim() && attachments.length === 0) return;
-        onSend(message, attachments, selectedModel);
+        const fullModel = MODELS.find(m => m.id === selectedModelId) || MODELS[0];
+        onSend(message, attachments, fullModel);
         setMessage('');
         setAttachments([]);
-    }, [message, attachments, selectedModel, onSend]);
+    }, [message, attachments, selectedModelId, onSend]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -109,9 +111,10 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
                 </Button>
 
                 {/* Model selector */}
+                {/* Model selector */}
                 <ModelSelector
-                    selectedModel={selectedModel}
-                    onModelChange={setSelectedModel}
+                    selectedModel={selectedModelId}
+                    onModelChange={setSelectedModelId}
                 />
 
                 {/* Text input */}

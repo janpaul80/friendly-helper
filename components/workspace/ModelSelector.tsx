@@ -32,7 +32,7 @@ export const MODELS: AIModel[] = [
 
 interface ModelSelectorProps {
     selectedModel: ModelID;
-    onModelChange: (model: AIModel) => void;
+    onModelChange: (modelId: ModelID) => void;
 }
 
 export default function ModelSelector({ selectedModel, onModelChange }: ModelSelectorProps) {
@@ -62,7 +62,7 @@ export default function ModelSelector({ selectedModel, onModelChange }: ModelSel
                     return (
                         <DropdownMenuItem
                             key={model.id}
-                            onClick={() => onModelChange(model)}
+                            onClick={() => onModelChange(model.id as ModelID)}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 mb-1 focus:bg-white/5 focus:text-white ${isSelected ? 'bg-orange-500/10 border border-orange-500/20' : 'hover:bg-white/5 border border-transparent'
                                 }`}
                         >
