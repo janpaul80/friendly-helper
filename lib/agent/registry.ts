@@ -1,7 +1,7 @@
 /**
  * HashCoder IDE - Agent Registry
  * 
- * Manages specialized agents and their capabilities, now mapped to Langdock IDs.
+ * Manages the 6 specialized agents for the automated orchestration pipeline.
  */
 
 export interface AgentDescriptor {
@@ -9,75 +9,58 @@ export interface AgentDescriptor {
   name: string;
   role: string;
   description: string;
-  langdockId?: string; // Optional: If the agent is powered by a specific Langdock agent
-  systemPrompt?: string; // Internal prompt if no Langdock ID
+  langdockId?: string;
   capabilities: string[];
 }
 
 export const AGENT_REGISTRY: Record<string, AgentDescriptor> = {
-  'heftcoder-pro': {
-    id: 'heftcoder-pro',
-    name: 'HeftCoder Pro',
-    role: 'Orchestrator',
-    description: 'Master VibeCoding Orchestrator. Expert in rapid full-stack design.',
-    langdockId: process.env.HEFTCODER_PRO_ID || 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
-    capabilities: ['planning', 'coding', 'orchestration']
+  'agent-architect': {
+    id: 'agent-architect',
+    name: 'The Architect',
+    role: 'Planner',
+    description: 'Strategy & Tech Stack decision. Defines the repo structure and creates the execution plan.',
+    langdockId: process.env.AGENT_ARCHITECT_ID || 'architect-uuid-placeholder',
+    capabilities: ['planning', 'strategy', 'repo-structure']
   },
-  'heftcoder-plus': {
-    id: 'heftcoder-plus',
-    name: 'HeftCoder Plus',
-    role: 'Engineering Core',
-    description: 'Robust VibeCoding Engineering Core for deep architectural tasks.',
-    langdockId: process.env.HEFTCODER_PLUS_ID || 'a33eccf4-f6d3-4ba0-9e98-2f0edc615e2b',
-    capabilities: ['engineering', 'backend', 'high-context']
+  'agent-backend': {
+    id: 'agent-backend',
+    name: 'Backend Engineer',
+    role: 'Foundations & API',
+    description: 'Scaffolds backend, sets up DB schema, Auth, and Validation. Installs backend dependencies.',
+    langdockId: process.env.AGENT_BACKEND_ID || 'backend-uuid-placeholder',
+    capabilities: ['api', 'database', 'auth', 'backend-scaffold']
   },
-  'opus-reasoning': {
-    id: 'opus-reasoning',
-    name: 'Opus 4.5 Reasoning',
-    role: 'Visionary',
-    description: 'Architectural VibeCoding Visionary. Highest level reasoning.',
-    langdockId: process.env.OPUS_REASONING_ID || 'da94e1f2-cc56-4c91-8a00-c4ae1240181e',
-    capabilities: ['reasoning', 'debug', 'migrations']
+  'agent-frontend': {
+    id: 'agent-frontend',
+    name: 'Frontend Engineer',
+    role: 'UI & Wiring',
+    description: 'Scaffolds frontend, builds UI components, connects to API, handles loading/error states.',
+    langdockId: process.env.AGENT_FRONTEND_ID || 'frontend-uuid-placeholder',
+    capabilities: ['ui', 'components', 'wiring', 'frontend-scaffold']
   },
-  'claude-sonnet-4.5': {
-    id: 'claude-sonnet-4.5',
-    name: 'Claude Sonnet 4.5',
-    role: 'UI Specialist',
-    description: 'Creative VibeCoding UI Specialist. Expert in premium design.',
-    langdockId: process.env.CLAUDE_SONNET_45_ID || '8a134f99-ef2b-45f6-9782-da0971ef413a',
-    capabilities: ['ui', 'animation', 'tailwind']
+  'agent-integrator': {
+    id: 'agent-integrator',
+    name: 'The Integrator',
+    role: 'Environment & Glue',
+    description: 'Verifies Frontend <-> Backend connection. Aligns Env variables and CORS. Ensures clean scripts.',
+    langdockId: process.env.AGENT_INTEGRATOR_ID || 'integrator-uuid-placeholder',
+    capabilities: ['integration', 'env-vars', 'cors', 'scripts']
   },
-  'chatgpt-thinking': {
-    id: 'chatgpt-thinking',
-    name: 'ChatGPT 5.1 Thinking',
-    role: 'Logic Engine',
-    description: 'Logic-First VibeCoding Engine. Fast reasoning and prototyping.',
-    langdockId: process.env.CHATGPT_THINKING_ID || '08bef027-2353-44b5-8733-abf93a73245f',
-    capabilities: ['logic', 'api-design', 'prototyping']
+  'agent-qa': {
+    id: 'agent-qa',
+    name: 'QA & Hardening',
+    role: 'Debug & Polish',
+    description: 'Fixes runtime errors, validates API responses, checks edge cases and security basics.',
+    langdockId: process.env.AGENT_QA_ID || 'qa-uuid-placeholder',
+    capabilities: ['debug', 'testing', 'security', 'polish']
   },
-  'gemini-flash': {
-    id: 'gemini-flash',
-    name: 'Gemini 2.5 Flash',
-    role: 'Swift Specialist',
-    description: 'Swift VibeCoding Specialist. Fast iterations and explanations.',
-    langdockId: process.env.GEMINI_FLASH_ID || '87a78a43-dc3b-4c08-8062-b6d89a253dd5',
-    capabilities: ['speed', 'flash-refactor', 'iterations']
-  },
-  'llama-70b': {
-    id: 'llama-70b',
-    name: 'Llama 3.3 70B',
-    role: 'Open Source Expert',
-    description: 'High-performance open model, great for general coding.',
-    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609', // Fallback to Pro or specific ID if available
-    capabilities: ['explanation', 'general-coding', 'open-source']
-  },
-  'heft-api-v2': {
-    id: 'heft-api-v2',
-    name: 'HeftCoder API v2',
-    role: 'Backend Specialist',
-    description: 'Specialized agent for robust API and Database design.',
-    langdockId: 'bddc9537-f05f-47ce-ada1-c4573e2b9609',
-    capabilities: ['api', 'database', 'security']
+  'agent-devops': {
+    id: 'agent-devops',
+    name: 'DevOps',
+    role: 'Deployment',
+    description: 'Initializes Git, configures build settings, deploys to live URL.',
+    langdockId: process.env.AGENT_DEVOPS_ID || 'devops-uuid-placeholder',
+    capabilities: ['git', 'deployment', 'ci-cd']
   }
 };
 
@@ -90,20 +73,18 @@ export class AgentManager {
   }
 
   /**
-   * Determine best agent for a task
+   * Determine best agent for a task (Fallback for manual mode if needed)
    */
   static selectAgent(taskDescription: string): AgentDescriptor {
     const desc = taskDescription.toLowerCase();
 
-    if (desc.includes('api') || desc.includes('backend') || desc.includes('database') || desc.includes('sql')) {
-      return AGENT_REGISTRY['heft-api-v2'];
-    }
+    if (desc.includes('deploy') || desc.includes('git')) return AGENT_REGISTRY['agent-devops'];
+    if (desc.includes('debug') || desc.includes('fix') || desc.includes('error')) return AGENT_REGISTRY['agent-qa'];
+    if (desc.includes('connect') || desc.includes('cors') || desc.includes('env')) return AGENT_REGISTRY['agent-integrator'];
+    if (desc.includes('ui') || desc.includes('css') || desc.includes('component')) return AGENT_REGISTRY['agent-frontend'];
+    if (desc.includes('api') || desc.includes('schema') || desc.includes('database')) return AGENT_REGISTRY['agent-backend'];
 
-    if (desc.includes('ui') || desc.includes('design') || desc.includes('css') || desc.includes('animation')) {
-      return AGENT_REGISTRY['ui-specialist'];
-    }
-
-    // Default to the Pro Orchestrator
-    return AGENT_REGISTRY['heft-coder-pro'];
+    // Default to Architect for planning/unknown
+    return AGENT_REGISTRY['agent-architect'];
   }
 }

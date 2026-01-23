@@ -11,12 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import type { AIModel } from '@/types/workspace-v2';
 
 const MODELS: AIModel[] = [
-  { id: 'claude-sonnet-4.5', name: 'Claude 4.5 Sonnet', provider: 'claude' },
-  { id: 'opus-reasoning', name: 'Claude 4.5 Opus', provider: 'claude', badge: 'pro' },
-  { id: 'chatgpt-thinking', name: 'ChatGPT 5.1', provider: 'openai', badge: 'hot' },
-  { id: 'mistral-medium', name: 'Mistral Medium', provider: 'mistral' },
-  { id: 'heftcoder-plus', name: 'HeftCoder Plus', provider: 'heftcoder', badge: 'new' },
-  { id: 'heftcoder-pro', name: 'HeftCoder Pro', provider: 'heftcoder', badge: 'pro' },
+  { id: 'agent-architect', name: 'Agent 1: The Architect', provider: 'heftcoder', badge: 'pro' },
+  { id: 'agent-backend', name: 'Agent 2: Backend Eng.', provider: 'heftcoder', badge: 'new' },
+  { id: 'agent-frontend', name: 'Agent 3: Frontend Eng.', provider: 'claude' },
+  { id: 'agent-integrator', name: 'Agent 4: Integrator', provider: 'mistral' },
+  { id: 'agent-qa', name: 'Agent 5: QA & Polish', provider: 'openai' },
+  { id: 'agent-devops', name: 'Agent 6: DevOps', provider: 'mistral', badge: 'hot' },
 ];
 
 interface ModelSelectorProps {

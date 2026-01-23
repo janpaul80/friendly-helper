@@ -33,7 +33,13 @@ export type ModelID =
     | "debugger-pro"
     | "mistral-large"
     | "mistral-medium"
-    | "llama-70b";
+    | "llama-70b"
+    | "agent-architect"
+    | "agent-backend"
+    | "agent-frontend"
+    | "agent-integrator"
+    | "agent-qa"
+    | "agent-devops";
 
 interface AIResponse {
     content: string;
@@ -153,8 +159,6 @@ export class AIEngine {
 
     private static async runSora(prompt: string): Promise<AIResponse> {
         const deploymentName = process.env.AZURE_DEPLOYMENT_SORA || "sora";
-        // Sora on AOAI typically uses a specific preview SDK or endpoint, 
-        // but for now we follow the same deployment pattern.
         return {
             content: JSON.stringify({ url: "#", message: `Sora video generation (Mock: using deployment ${deploymentName})` }),
             provider: "azure",
@@ -177,52 +181,32 @@ export class AIEngine {
             throw new Error(`Langdock Configuration Missing: Ensure 'LANGDOCK_ASSISTANT_ID' and 'LANGDOCK_API_KEY' are correctly set in Coolify env.`);
         }
 
-        // Mask the key for logging
         const maskedKey = `${key.substring(0, 8)}...${key.substring(key.length - 4)}`;
         console.log(`[Langdock] Calling Agent: ${id} with Key: ${maskedKey}`);
 
         try {
             const langdockMessages: any[] = [];
-
-            // 1. Add History (Translated to Langdock Roles & Filtered)
             history.forEach(m => {
                 const content = m.content?.trim();
-                // Skip empty messages or system/tool roles which shouldn't be in standard chat history for this endpoint
                 if (!content || m.role === 'system' || m.role === 'tool') return;
-
                 const role = m.role === 'ai' || m.role === 'assistant' ? 'assistant' : 'user';
-                langdockMessages.push({
-                    role,
-                    content
-                });
+                langdockMessages.push({ role, content });
             });
 
-            // 2. Prepare the latest content (System Prompt + User Prompt + Current Context)
             let combinedPrompt = "";
-            if (systemPrompt) {
-                combinedPrompt += `[SYSTEM INSTRUCTIONS]:\n${systemPrompt}\n\n`;
-            }
+            if (systemPrompt) combinedPrompt += `[SYSTEM INSTRUCTIONS]:\n${systemPrompt}\n\n`;
             combinedPrompt += `Instruction: ${prompt}\n\nExisting context (current files):\n${context}`;
 
-            // 3. Add latest prompt
-            langdockMessages.push({
-                role: "user",
-                content: combinedPrompt
-            });
+            langdockMessages.push({ role: "user", content: combinedPrompt });
 
-            // 4. Construct Payload (Dynamic Agent to bypass explicit linking)
-            // This allows us to use any model (gpt-4o, claude, etc.) without pre-configuring it in the dashboard for this specific API key.
             const payload = {
                 assistant: {
                     name: `HeftCoder Dynamic (${id})`,
                     instructions: systemPrompt || "You are a helpful AI coding assistant.",
-                    model: "gpt-4o", // Default, but can be switched based on the requested ID
+                    model: "gpt-4o",
                 },
                 messages: langdockMessages
             };
-
-            // Debug Payload (Brief)
-            console.log(`[Langdock] Payload Messages Count: ${langdockMessages.length}`);
 
             const response = await fetch("https://api.langdock.com/assistant/v1/chat/completions", {
                 method: "POST",
@@ -235,54 +219,28 @@ export class AIEngine {
 
             if (!response.ok) {
                 const errText = await response.text();
-                console.error(`Langdock API Error [Agent: ${id}]: Status ${response.status} - Body: ${errText}`);
-
-                // Friendly error wrapper
-                if (response.status === 400) {
-                    throw new Error(`Langdock Request Validation Failed (400). This usually means an invalid Assistant ID or malformed message history. Check server logs.`);
-                }
-                if (response.status === 401 || response.status === 403) {
-                    throw new Error(`Langdock Auth Failed (${response.status}). Check API Key.`);
-                }
-
                 throw new Error(`Langdock API Error (${response.status}): ${errText}`);
             }
 
             const data = await response.json();
-            console.log("[Langdock] Response received", { usage: data.usage });
 
-            // 1. Extract raw content from Langdock's results
             let rawContent = "";
-
             const extractText = (content: any): string => {
                 if (typeof content === 'string') return content;
-                if (Array.isArray(content)) {
-                    return content.map((c: any) => c.text || c.content || "").join("\n");
-                }
-                if (typeof content === 'object' && content !== null) {
-                    return content.text || content.content || JSON.stringify(content);
-                }
+                if (Array.isArray(content)) return content.map((c: any) => c.text || c.content || "").join("\n");
+                if (typeof content === 'object' && content !== null) return content.text || content.content || JSON.stringify(content);
                 return "";
             };
 
             if (data.result && Array.isArray(data.result)) {
-                rawContent = data.result.map((item: any) => {
-                    const c = item.content || item.text || (item.message?.content);
-                    return extractText(c);
-                }).join("\n").trim();
+                rawContent = data.result.map((item: any) => extractText(item.content || item.text || item.message?.content)).join("\n").trim();
             } else if (data.choices && data.choices[0]?.message?.content) {
                 rawContent = extractText(data.choices[0].message.content);
             } else {
-                // Fallback for direct content or message keys
                 rawContent = extractText(data.content || data.message || data);
             }
 
-            console.log("[Langdock] Extracted RAW content:", rawContent);
-
-            // 2. Safely perform the cleanup only after ensuring it's a string
-            if (typeof rawContent !== 'string') {
-                rawContent = JSON.stringify(rawContent);
-            }
+            if (typeof rawContent !== 'string') rawContent = JSON.stringify(rawContent);
             let content = rawContent.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
 
             return {
@@ -297,7 +255,7 @@ export class AIEngine {
         }
     }
 
-    private static async runMistral(prompt: string, context: string, modelOverride?: string): Promise<AIResponse> {
+    private static async runMistral(prompt: string, context: string, modelOverride?: string, systemPrompt?: string): Promise<AIResponse> {
         // ALWAYS use model-based chat completions (not agents API)
         const model = modelOverride || "mistral-medium-latest";
         const key = CONFIG.MISTRAL_API_KEY;
@@ -309,6 +267,15 @@ export class AIEngine {
         const maxAttempts = 2;
         let lastError: any = null;
         let mistralUsage: AIResponse['usage'] | undefined;
+
+        // Define default system prompt if none provided
+        const defaultSystem = `You are HeftCoder PLUS.
+You MUST respond with VALID JSON ONLY.
+No markdown.
+No explanations.
+No backticks.
+If unsure, return {}.
+The output MUST be a single JSON object where keys are file paths and values are file contents.`;
 
         while (attempts < maxAttempts) {
             attempts++;
@@ -325,13 +292,7 @@ export class AIEngine {
                         messages: [
                             {
                                 role: "system",
-                                content: `You are HeftCoder PLUS.
-You MUST respond with VALID JSON ONLY.
-No markdown.
-No explanations.
-No backticks.
-If unsure, return {}.
-The output MUST be a single JSON object where keys are file paths and values are file contents.`
+                                content: systemPrompt || defaultSystem
                             },
                             { role: "user", content: `Generate code files for: ${prompt}\n\nExisting context:\n${context}` }
                         ],
@@ -465,8 +426,10 @@ The output MUST be a single JSON object where keys are file paths and values are
 
         // STEP 1 - Strict Routing Logic
         switch (model) {
+            case "agent-architect":
+            case "agent-qa":
+            case "agent-frontend": // Frontend needs high creativity (Claude/GPT-4o)
             case "heftcoder-pro":
-            // case "heftcoder-plus": // MOVED TO MISTRAL
             case "opus-reasoning":
             case "claude-sonnet-4.5":
             case "chatgpt-thinking":
@@ -476,26 +439,31 @@ The output MUST be a single JSON object where keys are file paths and values are
             case "llama-70b":
                 // 1. Determine which Agent ID to use
                 let assistantId = CONFIG.LANGDOCK_ASSISTANT_ID;
-                if (AGENT_REGISTRY[model]) assistantId = AGENT_REGISTRY[model].langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
 
-                // Specialized fallbacks for legacy or internal names
-                if (model === "ui-architect") assistantId = AGENT_REGISTRY['ui-specialist']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
-                if (model === "debugger-pro") assistantId = AGENT_REGISTRY['heft-api-v2']?.langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
+                // If the model exists in registry, try to use its custom Langdock ID
+                if (AGENT_REGISTRY[model]?.langdockId) {
+                    assistantId = AGENT_REGISTRY[model].langdockId || CONFIG.LANGDOCK_ASSISTANT_ID;
+                }
 
                 // 2. Run Langdock
                 response = await this.runLangdock(prompt, contextStr, assistantId, history, systemPrompt);
                 break;
 
+            case "agent-backend": // Backend needs consistency (Mistral Large is great for this)
+            case "agent-integrator":
+            case "agent-devops":
             case "heftcoder-plus":
             case "mistral-medium":
             case "mistral-large":
                 // Map internal ID to Mistral ID
-                const mistralModel = model === 'mistral-large' ? 'mistral-large-latest' : 'mistral-medium-latest';
-                response = await this.runMistral(prompt, contextStr, mistralModel);
+                const mistralModel = 'mistral-large-latest'; // Default to Large for all these robust tasks
+                response = await this.runMistral(prompt, contextStr, mistralModel, systemPrompt);
                 break;
 
             default:
-                throw new Error(`Unsupported Model Selected: ${model}`);
+                // Fallback to Pro (Langdock) if unknown
+                console.warn(`[AIEngine] Unknown model '${model}', defaulting to HeftCoder Pro`);
+                response = await this.runLangdock(prompt, contextStr, CONFIG.LANGDOCK_ASSISTANT_ID, history, systemPrompt);
         }
 
         // STEP 4 - Normalize the Response (Content Cleanup)

@@ -191,7 +191,7 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
 
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
           <PreviewPanel
-            status={projectStatus.status === 'idle' && project?.subdomain ? { status: 'complete' } : projectStatus}
+            status={projectStatus}
             previewUrl={project?.subdomain ? `https://${project.subdomain}.heftcoder.icu` : undefined}
           />
         </ResizablePanel>

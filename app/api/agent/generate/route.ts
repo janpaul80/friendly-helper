@@ -46,33 +46,44 @@ export async function POST(req: Request) {
     }
 
     try {
-        // 4. Classify user intent and determine mode
+        // 4. Load Workspace State (Persistence)
+        let currentWorkspaceState: WorkspaceState = workspaceState;
+
+        if (fileContext && fileContext['.heftcoder/workspace_state.json']) {
+            try {
+                currentWorkspaceState = JSON.parse(fileContext['.heftcoder/workspace_state.json']);
+            } catch (e) {
+                console.warn("[AIEngine] Failed to parse workspace state", e);
+            }
+        }
+
+        if (!currentWorkspaceState) {
+            currentWorkspaceState = {
+                id: projectId,
+                currentPlan: null,
+                planStatus: "none"
+            };
+        }
+
+        // 5. Classify user intent and determine mode
         const intent = IntentClassifier.classify(prompt);
-        const mode = ConversationalAgent.intentToMode(intent, workspaceState || {
-            id: projectId,
-            currentPlan: null,
-            planStatus: "none"
-        });
+        const mode = ConversationalAgent.intentToMode(intent, currentWorkspaceState);
 
-        console.log("[Intent] Classified as:", intent, "Mode:", mode);
+        console.log("[Intent] Classified as:", intent, "Mode:", mode, "PlanStatus:", currentWorkspaceState.planStatus);
 
-        // 5. Check if plan is approved for code generation requests
+        // 6. Check if plan is approved for code generation requests
         const isCodeRequest = intent === UserIntent.CODE_REQUEST;
-        if (isCodeRequest && workspaceState?.planStatus !== "approved") {
-            return NextResponse.json({
-                success: true,
-                intent,
-                mode,
-                response: {
-                    type: "chat",
-                    content: "I need to create a plan first. Please describe what you want to build, and I'll propose a plan for your approval."
-                },
-                shouldModifyFiles: false
-            });
+
+        // If it's a code request but there is no plan, we don't BLOCK it anymore.
+        // We simply let the agent (in planning mode) respond with a plan.
+        // The ConversationalAgent.intentToMode will ensure it goes to 'planning' if not approved.
+        if (isCodeRequest && currentWorkspaceState.planStatus !== "approved") {
+            console.log("[Route] Code Request without approval -> Delegating to Planning Agent");
+            // Do NOT return early. Let the AI generate the plan.
         }
 
         // 6. Call AI Engine for code generation
-        const systemPrompt = ConversationalAgent.getSystemPrompt(mode);
+        const systemPrompt = ConversationalAgent.getSystemPrompt(mode, messages, model as string);
         const result = await AIEngine.generate(model as ModelID, prompt, fileContext, messages, systemPrompt);
 
         let content;
@@ -110,14 +121,22 @@ export async function POST(req: Request) {
                     agentResponse = ActionParser.parseResponse(content);
                 }
             } catch (e) {
-                // Not JSON - treat as chat response
                 agentResponse = {
                     conversationText: result.content,
                     actions: [],
                     requiresConfirmation: false
                 };
-                shouldModifyFiles = false;
+                shouldModifyFiles = false; // Default false for chat, but might be overridden by state change
             }
+        }
+
+        // 8. Compute and Persist New State
+        const nextState = ConversationalAgent.computeNextState(currentWorkspaceState, intent, result.content);
+        const stateHasChanged = JSON.stringify(nextState) !== JSON.stringify(currentWorkspaceState);
+
+        if (stateHasChanged) {
+            shouldModifyFiles = true; // Force file update to save state
+            console.log("[State] Transitioned to:", nextState.planStatus);
         }
 
         // 7. Update Supabase (Files & History)
@@ -130,8 +149,15 @@ export async function POST(req: Request) {
         let updatedFiles = { ...project?.files };
 
         // Save AI generated files if applicable
-        if (shouldModifyFiles && content && !content.__isConversation) {
-            updatedFiles = { ...updatedFiles, ...content };
+        if (shouldModifyFiles) {
+            if (content && !content.__isConversation) {
+                updatedFiles = { ...updatedFiles, ...content };
+            }
+
+            // Inject State File
+            if (stateHasChanged) {
+                updatedFiles['.heftcoder/workspace_state.json'] = JSON.stringify(nextState, null, 2);
+            }
         }
 
         // Always Update History in .heftcoder/chat.json

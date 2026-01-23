@@ -26,7 +26,7 @@ export class IntentClassifier {
       'howdy', 'greetings', 'sup', 'yo', 'what\'s up', 'how are you'
     ];
     if (greetingPatterns.some(pattern => lowerMsg.includes(pattern)) &&
-        lowerMsg.length < 50) {
+      lowerMsg.length < 50) {
       return UserIntent.GREETING;
     }
 
@@ -39,10 +39,20 @@ export class IntentClassifier {
       return UserIntent.APPROVAL;
     }
 
+    // QUESTION patterns (Explicit)
+    const questionPatterns = [
+      'how to', 'how do i', 'explain', 'what is', 'why is', 'can you tell me',
+      'where is', 'does the', 'is there'
+    ];
+    if (questionPatterns.some(pattern => lowerMsg.includes(pattern))) {
+      return UserIntent.QUESTION;
+    }
+
     // CODE_REQUEST patterns
     const codePatterns = [
       'build this', 'create this', 'make this', 'code this', 'implement',
-      'generate', 'write the code', 'code it', 'build me', 'create me'
+      'generate', 'write the code', 'code it', 'build me', 'create me',
+      'fix', 'update', 'change', 'refactor', 'optimize', 'add'
     ];
     if (codePatterns.some(pattern => lowerMsg.includes(pattern))) {
       return UserIntent.CODE_REQUEST;
@@ -51,7 +61,7 @@ export class IntentClassifier {
     // PLAN_REQUEST patterns
     const planPatterns = [
       'i want to build', 'i need to create', 'let\'s build', 'plan for',
-      'i want a', 'i need a', 'build a', 'create a', 'make a'
+      'i want a', 'i need a', 'build a', 'create a', 'make a', 'scaffold'
     ];
     if (planPatterns.some(pattern => lowerMsg.includes(pattern))) {
       return UserIntent.PLAN_REQUEST;
