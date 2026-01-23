@@ -419,8 +419,9 @@ The output MUST be a single JSON object where keys are file paths and values are
         prompt: string,
         fileContext: any,
         history: any[] = [],
-        systemPrompt?: string
-    ): Promise<AIResponse> {
+        systemPrompt?: string,
+        tools?: any[] // NEW: Tool definitions for orchestration
+    ): Promise<AIResponse & { toolCalls?: any[] }> {
         const contextStr = JSON.stringify(fileContext);
         let response: AIResponse;
 
@@ -507,6 +508,65 @@ The output MUST be a single JSON object where keys are file paths and values are
             }
         }
 
+        // STEP 5 - Tool Call Detection (for Orchestration)
+        const toolCalls = this.detectToolCalls(response.content, tools);
+        if (toolCalls.length > 0) {
+            console.log('[AIEngine] Detected tool calls:', toolCalls);
+            return { ...response, toolCalls };
+        }
+
         return response;
+    }
+
+    /**
+     * Detect tool calls in agent response
+     * Supports both explicit tool syntax and keyword-based fallback
+     */
+    private static detectToolCalls(content: string, tools?: any[]): any[] {
+        if (!tools || tools.length === 0) return [];
+
+        const detectedCalls: any[] = [];
+
+        // Strategy 1: Detect explicit tool call syntax
+        // Format: TOOL_CALL: function_name({"param": "value"})
+        const explicitPattern = /TOOL_CALL:\s*(\w+)\((.*?)\)/g;
+        let match;
+        while ((match = explicitPattern.exec(content)) !== null) {
+            const [, functionName, paramsJson] = match;
+            try {
+                const parameters = JSON.parse(paramsJson);
+                detectedCalls.push({ name: functionName, parameters });
+            } catch (e) {
+                console.warn(`[AIEngine] Failed to parse tool params: ${paramsJson}`);
+            }
+        }
+
+        // Strategy 2: Keyword-based detection for orchestration handoffs
+        // This catches when agents say things like "handoff to backend" in natural language
+        const handoffPatterns = [
+            { pattern: /\b(handoff|delegate|pass|transfer)\s+(to\s+)?backend\b/i, tool: 'handoff_to_backend' },
+            { pattern: /\b(handoff|delegate|pass|transfer)\s+(to\s+)?frontend\b/i, tool: 'handoff_to_frontend' },
+            { pattern: /\b(handoff|delegate|pass|transfer)\s+(to\s+)?integrator\b/i, tool: 'handoff_to_integrator' },
+            { pattern: /\b(handoff|delegate|pass|transfer)\s+(to\s+)?qa\b/i, tool: 'handoff_to_qa' },
+            { pattern: /\b(handoff|delegate|pass|transfer)\s+(to\s+)?devops\b/i, tool: 'handoff_to_devops' },
+            { pattern: /\b(deployment|deploy)\s+(complete|successful|done)\b/i, tool: 'mark_complete' }
+        ];
+
+        for (const { pattern, tool } of handoffPatterns) {
+            if (pattern.test(content)) {
+                // Extract plan JSON if this is a backend handoff
+                if (tool === 'handoff_to_backend') {
+                    // Try to extract structured plan from the response
+                    const planMatch = content.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+                    const plan_json = planMatch ? JSON.parse(planMatch[1]) : { raw: content };
+                    detectedCalls.push({ name: tool, parameters: { plan_json } });
+                } else {
+                    detectedCalls.push({ name: tool, parameters: {} });
+                }
+                break; // Only trigger one handoff per response
+            }
+        }
+
+        return detectedCalls;
     }
 }

@@ -82,9 +82,18 @@ export async function POST(req: Request) {
             // Do NOT return early. Let the AI generate the plan.
         }
 
-        // 6. Call AI Engine for code generation
+        // 6. Prepare orchestration tools for Architect agent
+        let tools: any[] | undefined;
+        if (model === 'agent-architect') {
+            // Import tools dynamically
+            const { HANDOFF_TOOLS } = await import('@/lib/orchestration/engine');
+            tools = Object.values(HANDOFF_TOOLS);
+            console.log('[Orchestration] Passing handoff tools to Architect');
+        }
+
+        // 7. Call AI Engine for code generation
         const systemPrompt = ConversationalAgent.getSystemPrompt(mode, messages, model as string);
-        const result = await AIEngine.generate(model as ModelID, prompt, fileContext, messages, systemPrompt);
+        const result = await AIEngine.generate(model as ModelID, prompt, fileContext, messages, systemPrompt, tools);
 
         let content;
         let imageUrl;
@@ -128,6 +137,33 @@ export async function POST(req: Request) {
                 };
                 shouldModifyFiles = false; // Default false for chat, but might be overridden by state change
             }
+        }
+
+        // 8. Handle Tool Calls (Orchestration Handoffs)
+        if (result.toolCalls && result.toolCalls.length > 0) {
+            console.log('[Orchestration] Tool calls detected:', result.toolCalls);
+
+            // Import orchestrator dynamically
+            const { getOrchestrator } = await import('@/lib/orchestration/engine');
+            const orchestrator = getOrchestrator();
+
+            // Execute each tool call
+            for (const toolCall of result.toolCalls) {
+                console.log(`[Orchestration] Executing tool: ${toolCall.name}`);
+                await orchestrator.handleToolCall(toolCall.name, toolCall.parameters);
+            }
+
+            // Get updated orchestration state
+            const orchState = orchestrator.getState();
+            console.log('[Orchestration] New state:', orchState.phase, orchState.progress);
+
+            // Add orchestration status to the response
+            agentResponse = {
+                conversationText: `${agentResponse?.conversationText || result.content}\n\n🤖 Orchestration: ${orchState.phase} (${orchState.progress}%)`,
+                actions: agentResponse?.actions || [],
+                requiresConfirmation: false,
+                orchestrationState: orchState
+            };
         }
 
         // 8. Compute and Persist New State
