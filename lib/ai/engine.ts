@@ -321,7 +321,7 @@ export class AIEngine {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        model: "mistral-medium-latest",
+                        model: model,
                         messages: [
                             {
                                 role: "system",
@@ -466,7 +466,7 @@ The output MUST be a single JSON object where keys are file paths and values are
         // STEP 1 - Strict Routing Logic
         switch (model) {
             case "heftcoder-pro":
-            case "heftcoder-plus":
+            // case "heftcoder-plus": // MOVED TO MISTRAL
             case "opus-reasoning":
             case "claude-sonnet-4.5":
             case "chatgpt-thinking":
@@ -486,9 +486,12 @@ The output MUST be a single JSON object where keys are file paths and values are
                 response = await this.runLangdock(prompt, contextStr, assistantId, history, systemPrompt);
                 break;
 
+            case "heftcoder-plus":
             case "mistral-medium":
             case "mistral-large":
-                response = await this.runMistral(prompt, contextStr);
+                // Map internal ID to Mistral ID
+                const mistralModel = model === 'mistral-large' ? 'mistral-large-latest' : 'mistral-medium-latest';
+                response = await this.runMistral(prompt, contextStr, mistralModel);
                 break;
 
             default:

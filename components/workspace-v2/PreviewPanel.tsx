@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { Zap } from 'lucide-react';
 import type { ProjectStatus } from '@/types/workspace-v2';
 
 interface PreviewPanelProps {
@@ -36,20 +37,16 @@ function WorkingIndicator() {
 
 function IdleState() {
   return (
-    <div className="flex flex-col items-center justify-center h-full">
+    <div className="flex flex-col items-center justify-center h-full bg-[#0a0a0a]">
       {/* Logo */}
-      <div className="mb-6 opacity-60">
-        <Image
-          src="/assets/lightning-icon.png"
-          alt="HeftCoder"
-          width={80}
-          height={80}
-          className="w-20 h-20 rounded-2xl"
-        />
+      <div className="mb-6">
+        <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(234,88,12,0.3)]">
+          <Zap size={32} className="text-white fill-white" />
+        </div>
       </div>
 
       {/* Text */}
-      <p className="text-lg text-muted-foreground text-center max-w-md">
+      <p className="text-sm text-muted-foreground text-center max-w-md font-medium">
         Your project preview will appear here once generation starts
       </p>
     </div>

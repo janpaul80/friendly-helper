@@ -35,10 +35,13 @@ export class ConversationalAgent {
                 return { type: 'planning', canGenerateCode: false };
 
             case UserIntent.CODE_REQUEST:
-                // Only allow code generation if plan is approved
+                // STRICT FLOW: If plan is not approved, force Planning Mode
+                if (workspaceState.planStatus !== 'approved') {
+                    return { type: 'planning', canGenerateCode: false };
+                }
                 return {
                     type: 'building',
-                    canGenerateCode: workspaceState.planStatus === 'approved'
+                    canGenerateCode: true
                 };
 
             case UserIntent.APPROVAL:
@@ -91,6 +94,11 @@ ${historyContext}`;
             
 You are in STRATEGY MODE.
 The user wants to manifest a digital product.
+
+CRITICAL PROTOCOL:
+1. You MUST NOT generate any code files yet.
+2. You MUST output a "Plan of Action" first.
+3. You MUST Wait for user approval.
 
 ROLE:
 - Be a DECISIVE ARCHITECT.
