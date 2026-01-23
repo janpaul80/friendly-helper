@@ -11,9 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import type { AIModel } from '@/types/workspace-v2';
 
 const MODELS: AIModel[] = [
-  { id: 'claude-4.5-sonnet', name: 'Claude 4.5 Sonnet', provider: 'claude' },
-  { id: 'claude-4.5-opus', name: 'Claude 4.5 Opus', provider: 'claude', badge: 'pro' },
-  { id: 'chatgpt-5.1', name: 'ChatGPT 5.1', provider: 'openai', badge: 'hot' },
+  { id: 'claude-sonnet-4.5', name: 'Claude 4.5 Sonnet', provider: 'claude' },
+  { id: 'opus-reasoning', name: 'Claude 4.5 Opus', provider: 'claude', badge: 'pro' },
+  { id: 'chatgpt-thinking', name: 'ChatGPT 5.1', provider: 'openai', badge: 'hot' },
   { id: 'mistral-medium', name: 'Mistral Medium', provider: 'mistral' },
   { id: 'heftcoder-plus', name: 'HeftCoder Plus', provider: 'heftcoder', badge: 'new' },
   { id: 'heftcoder-pro', name: 'HeftCoder Pro', provider: 'heftcoder', badge: 'pro' },
@@ -57,7 +57,7 @@ function ProviderIcon({ provider }: { provider: AIModel['provider'] }) {
 
 function ModelBadge({ badge }: { badge?: AIModel['badge'] }) {
   if (!badge) return null;
-  
+
   const variants = {
     hot: 'bg-destructive/20 text-destructive border-destructive/30',
     new: 'bg-model-openai/20 text-model-openai border-model-openai/30',
@@ -87,9 +87,9 @@ export function ModelSelector({ selectedModel, onModelChange }: ModelSelectorPro
           <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
         </Button>
       </DropdownMenuTrigger>
-      
-      <DropdownMenuContent 
-        align="start" 
+
+      <DropdownMenuContent
+        align="start"
         className="w-56 bg-card border-border"
       >
         {MODELS.map((model) => (
@@ -99,9 +99,8 @@ export function ModelSelector({ selectedModel, onModelChange }: ModelSelectorPro
               onModelChange(model);
               setOpen(false);
             }}
-            className={`flex items-center gap-3 cursor-pointer py-2.5 px-3 ${
-              selectedModel.id === model.id ? 'bg-secondary' : ''
-            }`}
+            className={`flex items-center gap-3 cursor-pointer py-2.5 px-3 ${selectedModel.id === model.id ? 'bg-secondary' : ''
+              }`}
           >
             <ProviderIcon provider={model.provider} />
             <span className="flex-1 text-sm">{model.name}</span>

@@ -28,7 +28,7 @@ export const AGENT_REGISTRY: Record<string, AgentDescriptor> = {
     name: 'HeftCoder Plus',
     role: 'Engineering Core',
     description: 'Robust VibeCoding Engineering Core for deep architectural tasks.',
-    langdockId: process.env.HEFTCODER_PLUS_ID || '7e95b06a-37c2-4a0b-9ce4-e0e64c8d5001',
+    langdockId: process.env.HEFTCODER_PLUS_ID || 'a33eccf4-f6d3-4ba0-9e98-2f0edc615e2b',
     capabilities: ['engineering', 'backend', 'high-context']
   },
   'opus-reasoning': {

@@ -1,0 +1,21 @@
+{
+  "status": 400,
+  "headers": {
+    "cf-cache-status": "DYNAMIC",
+    "cf-ray": "9c27ab699e6b94d3-LHR",
+    "connection": "keep-alive",
+    "content-length": "313",
+    "content-type": "application/json; charset=utf-8",
+    "date": "Fri, 23 Jan 2026 13:34:37 GMT",
+    "etag": "\"1822amn0caa8p\"",
+    "permissions-policy": "camera=(self), geolocation=(), fullscreen=(self \"https://supercut.ai\" \"https://*.supercut.ai\"), payment=()",
+    "server": "cloudflare",
+    "strict-transport-security": "max-age=31536000; includeSubDomains",
+    "vary": "Accept-Encoding",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "x-ratelimit-limit-requests": "500",
+    "x-ratelimit-remaining-requests": "499"
+  },
+  "body": "{\"message\":\"INVALID REQUEST: The provided API key is not authorized to use this assistant. Please make sure that the assistant is shared with this API key. To verify, go to: Assistants -> Select Assistant -> Share (Top right). If you want to use a temporary Assistant, please use the 'assistant' request object.\"}"
+}
