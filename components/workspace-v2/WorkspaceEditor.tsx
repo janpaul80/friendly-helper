@@ -8,6 +8,8 @@ import type { Message, Attachment, AIModel, ProjectStatus, UserTier } from '@/ty
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useUser } from '@clerk/nextjs';
 import { toast } from '@/hooks/use-toast';
+import { useOrchestration } from '@/hooks/useOrchestration';
+import { OrchestrationStatus } from '@/components/orchestration/OrchestrationStatus';
 
 interface WorkspaceEditorProps {
   projectId?: string;
@@ -21,6 +23,9 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
   const [fileExplorerOpen, setFileExplorerOpen] = useState(false);
   const [userTier, setUserTier] = useState<UserTier>('basic'); // Default to basic
   const [project, setProject] = useState<any>(null);
+
+  // Orchestration hook
+  const { state: orchState, approvePlan } = useOrchestration();
 
   // Fetch user tier and project data
   useEffect(() => {
@@ -82,6 +87,21 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
       setProjectStatus({ status: 'working' });
+
+      // Check for approval keywords (triggers orchestration)
+      const isApproval = /\b(approved|proceed|yes|build it|start building)\b/i.test(content);
+      if (isApproval && messages.length > 0) {
+        // Find the last assistant message with a plan
+        const lastPlanMessage = messages.slice().reverse().find(m =>
+          m.role === 'assistant' && m.content.includes('# Execution Plan')
+        );
+
+        if (lastPlanMessage) {
+          console.log('[Orchestration] Approval detected, triggering plan execution');
+          // Extract plan from message (simplified - just pass the content for now)
+          await approvePlan({ raw: lastPlanMessage.content });
+        }
+      }
 
       try {
         const response = await fetch('/api/agent/generate', {
@@ -180,11 +200,20 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
 
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
-          <ChatPanel
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            isLoading={isLoading}
-          />
+          <div className="flex flex-col h-full">
+            {/* Orchestration Status Banner */}
+            {orchState && orchState.phase !== 'idle' && (
+              <div className="p-3 border-b">
+                <OrchestrationStatus state={orchState} />
+              </div>
+            )}
+
+            <ChatPanel
+              messages={messages}
+              onSendMessage={handleSendMessage}
+              isLoading={isLoading}
+            />
+          </div>
         </ResizablePanel>
 
         <ResizableHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />

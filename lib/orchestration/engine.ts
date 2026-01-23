@@ -264,19 +264,131 @@ export class OrchestrationEngine {
 
     /**
      * Execute an agent with context
+     * This is where the magic happens - it calls the AI and triggers the next agent
      */
     private async executeAgent(agentId: AgentID, context?: any): Promise<void> {
         console.log(`[Orchestration] Executing agent: ${agentId}`);
 
-        // This would call the AI engine with the agent's specialized prompt
-        // and pass the context from the previous agent
+        try {
+            // Dynamically import AI engine to avoid circular dependencies
+            const { AIEngine } = await import('@/lib/ai/engine');
+            const { ConversationalAgent } = await import('@/lib/agent/conversational');
 
-        // For now, this is a placeholder that would integrate with your AI engine
-        // In production, this would:
-        // 1. Call AIEngine.generate() with the agent's model ID
-        // 2. Pass the context from the previous agent
-        // 3. Include the handoff tools in the function definitions
-        // 4. Monitor for tool calls and handle them
+            // Get the agent's specialized prompt based on phase and context
+            const prompt = this.getAgentPrompt(agentId, context);
+            const systemPrompt = ConversationalAgent.getSystemPrompt('planning' as any, [], agentId);
+
+            // Prepare tools for this agent (each agent needs its handoff tool)
+            const tools = this.getToolsForAgent(agentId);
+
+            console.log(`[Orchestration] Calling ${agentId} with prompt:`, prompt.substring(0, 100) + '...');
+
+            // Call the AI engine with the agent's model ID
+            const result = await AIEngine.generate(
+                agentId as any, // ModelID
+                prompt,
+                context?.fileContext || {},
+                [], // No conversation history in orchestration mode
+                systemPrompt,
+                tools
+            );
+
+            console.log(`[Orchestration] ${agentId} response received`);
+
+            // If the agent invoked a tool, it will be handled by the API route
+            // which will call handleToolCall() and trigger the next agent
+
+            // For now, we simulate a delay to show the "working" state
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+        } catch (error: any) {
+            console.error(`[Orchestration] Agent execution failed:`, error);
+            this.handleError(`${agentId} failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Generate prompt for an agent based on phase and context
+     */
+    private getAgentPrompt(agentId: AgentID, context?: any): string {
+        const prompts: Record<AgentID, string> = {
+            'agent-backend': `You are the Backend Engineer. Build the backend based on this plan:
+                ${JSON.stringify(context?.plan_json || {}, null, 2)}
+                
+                Create:
+                1. API routes and endpoints
+                2. Database schema and models
+                3. Authentication/authorization
+                4. Server configuration
+                
+                When complete, call handoff_to_frontend() with a summary of your work.`,
+
+            'agent-frontend': `You are the Frontend Engineer. Build the UI based on this backend:
+                ${JSON.stringify(context?.backend_artifacts || {}, null, 2)}
+                
+                Create:
+                1. React/Next.js components
+                2. Pages and routing
+                3. State management
+                4. API integration stubs
+                
+                When complete, call handoff_to_integrator() with a summary.`,
+
+            'agent-integrator': `You are the Integrator. Connect frontend to backend:
+                Frontend: ${JSON.stringify(context?.frontend_artifacts || {})}
+                
+                Tasks:
+                1. Wire API calls
+                2. Test data flow
+                3. Fix integration issues
+                4. Verify end-to-end functionality
+                
+                When complete, call handoff_to_qa() with integration status.`,
+
+            'agent-qa': `You are QA. Test and harden the application:
+                Integration Status: ${context?.integration_status || 'Complete'}
+                
+                Tasks:
+                1. Run tests
+                2. Fix bugs
+                3. Add error handling
+                4. Security review
+                5. Performance optimization
+                
+                When complete, call handoff_to_devops() with QA report.`,
+
+            'agent-devops': `You are DevOps. Deploy the application:
+                QA Report: ${context?.qa_report || 'All tests passing'}
+                
+                Tasks:
+                1. Configure deployment (Docker/Coolify)
+                2. Set environment variables
+                3. Deploy to production
+                4. Verify live site
+                
+                When deployment is successful, call mark_complete() with the deployment URL.`,
+
+            'agent-architect': 'You are generating a plan. (This should not be called in orchestration mode)'
+        };
+
+        return prompts[agentId] || 'Execute your specialized task.';
+    }
+
+    /**
+     * Get the appropriate handoff tools for each agent
+     */
+    private getToolsForAgent(agentId: AgentID): any[] {
+        const toolMap: Record<AgentID, string[]> = {
+            'agent-architect': ['handoff_to_backend'],
+            'agent-backend': ['handoff_to_frontend'],
+            'agent-frontend': ['handoff_to_integrator'],
+            'agent-integrator': ['handoff_to_qa'],
+            'agent-qa': ['handoff_to_devops'],
+            'agent-devops': ['mark_complete']
+        };
+
+        const toolNames = toolMap[agentId] || [];
+        return toolNames.map(name => HANDOFF_TOOLS[name as keyof typeof HANDOFF_TOOLS]).filter(Boolean);
     }
 
     /**
