@@ -190,13 +190,17 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
         <ResizableHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
 
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
-          <PreviewPanel status={projectStatus} />
+          <PreviewPanel
+            status={projectStatus.status === 'idle' && project?.subdomain ? { status: 'complete' } : projectStatus}
+            previewUrl={project?.subdomain ? `https://${project.subdomain}.heftcoder.icu` : undefined}
+          />
         </ResizablePanel>
       </ResizablePanelGroup>
 
       <FileExplorerModal
         open={fileExplorerOpen}
         onOpenChange={setFileExplorerOpen}
+        files={project?.files}
       />
     </div>
   );

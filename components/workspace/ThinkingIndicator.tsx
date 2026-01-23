@@ -104,12 +104,13 @@ export function ThinkingIndicator({ visible, action = 'thinking' }: ThinkingIndi
     }
 
     return (
-        <div className="flex items-center gap-2 px-3 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
-            <div className="text-gray-400">
-                {getIcon()}
+        <div className="flex items-center gap-3 px-0 py-2 animate-in fade-in duration-300">
+            <div className="relative flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-amber-500"></span>
             </div>
-            <span className="text-sm text-gray-400 font-medium">
-                {getText()}
+            <span className="text-sm text-muted-foreground font-medium animate-pulse">
+                Thinking...
             </span>
         </div>
     );
