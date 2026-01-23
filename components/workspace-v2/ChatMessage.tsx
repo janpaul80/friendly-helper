@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, Reply, ThumbsUp, ThumbsDown, MoreHorizontal, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Message } from '@/types/workspace-v2';
 import { cn } from '@/lib/utils';
 
@@ -108,13 +110,7 @@ function parseContent(content: string) {
 }
 
 
-import { useState } from 'react';
-import { Copy, Check, ChevronDown, ChevronUp, Reply, ThumbsUp, ThumbsDown, MoreHorizontal, Zap } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { Message } from '@/types/workspace-v2';
-import { cn } from '@/lib/utils';
+
 // ... rest of imports
 
 // ... CodeBlock and parseContent functions remain the same (implied, but I need to include them or target specific lines)
