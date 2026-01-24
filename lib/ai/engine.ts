@@ -177,80 +177,89 @@ export class AIEngine {
         const key = CONFIG.LANGDOCK_API_KEY?.trim();
 
         if (!id || id === "HeftCoder Pro" || !key) {
-            console.error(`[CRITICAL] Langdock Config Missing at Runtime! assistantId: ${id}, hasKey: ${!!key}`);
-            throw new Error(`Langdock Configuration Missing: Ensure 'LANGDOCK_ASSISTANT_ID' and 'LANGDOCK_API_KEY' are correctly set in Coolify env.`);
+            console.error(`[CRITICAL] Langdock Config Missing! assistantId: ${id}, hasKey: ${!!key}`);
+            throw new Error(`Langdock Configuration Missing`);
         }
 
         const maskedKey = `${key.substring(0, 8)}...${key.substring(key.length - 4)}`;
-        console.log(`[Langdock] Calling Agent: ${id} with Key: ${maskedKey}`);
+        console.log(`[Langdock] Calling Assistant: ${id.substring(0, 8)}... with Key: ${maskedKey}`);
 
         try {
-            const langdockMessages: any[] = [];
+            // Build conversation history (clean, no system injection)
+            const messages: any[] = [];
+
+            // Add history (if any)
             history.forEach(m => {
                 const content = m.content?.trim();
                 if (!content || m.role === 'system' || m.role === 'tool') return;
                 const role = m.role === 'ai' || m.role === 'assistant' ? 'assistant' : 'user';
-                langdockMessages.push({ role, content });
+                messages.push({ role, content });
             });
 
-            let combinedPrompt = "";
-            if (systemPrompt) combinedPrompt += `[SYSTEM INSTRUCTIONS]:\n${systemPrompt}\n\n`;
-            combinedPrompt += `Instruction: ${prompt}\n\nExisting context (current files):\n${context}`;
+            // Add current user message (SIMPLE - just the prompt, no noise!)
+            // Only include context if it's actually useful
+            let userMessage = prompt;
+            if (context && context.length > 10 && context !== "{}") {
+                // Only mention files that exist, don't dump everything
+                try {
+                    const files = JSON.parse(context);
+                    const fileCount = Object.keys(files).length;
+                    if (fileCount > 0) {
+                        userMessage += `\n\n(Current project has ${fileCount} files)`;
+                    }
+                } catch {
+                    // If context isn't JSON, ignore it
+                }
+            }
 
-            langdockMessages.push({ role: "user", content: combinedPrompt });
+            messages.push({ role: "user", content: userMessage });
 
-            const payload = {
-                assistant: {
-                    name: `HeftCoder Dynamic (${id})`,
-                    instructions: systemPrompt || "You are a helpful AI coding assistant.",
-                    model: "gpt-4o",
-                },
-                messages: langdockMessages
-            };
-
-            const response = await fetch("https://api.langdock.com/assistant/v1/chat/completions", {
+            // CRITICAL: Use the simple chat endpoint, NOT custom assistants
+            // This respects the agent's native instructions!
+            const response = await fetch(`https://api.langdock.com/assistant/v1/chat/${id}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${key}`
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    messages,
+                    stream: false
+                })
             });
 
             if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(`Langdock API Error (${response.status}): ${errText}`);
+                console.error(`[Langdock] API Error (${response.status}):`, errText);
+                throw new Error(`Langdock API Error (${response.status})`);
             }
 
             const data = await response.json();
 
-            let rawContent = "";
-            const extractText = (content: any): string => {
-                if (typeof content === 'string') return content;
-                if (Array.isArray(content)) return content.map((c: any) => c.text || c.content || "").join("\n");
-                if (typeof content === 'object' && content !== null) return content.text || content.content || JSON.stringify(content);
-                return "";
-            };
-
-            if (data.result && Array.isArray(data.result)) {
-                rawContent = data.result.map((item: any) => extractText(item.content || item.text || item.message?.content)).join("\n").trim();
-            } else if (data.choices && data.choices[0]?.message?.content) {
-                rawContent = extractText(data.choices[0].message.content);
+            // Extract content from response
+            let content = "";
+            if (data.choices?.[0]?.message?.content) {
+                content = data.choices[0].message.content;
+            } else if (data.content) {
+                content = typeof data.content === 'string' ? data.content : JSON.stringify(data.content);
             } else {
-                rawContent = extractText(data.content || data.message || data);
+                console.warn("[Langdock] Unexpected response format:", data);
+                content = JSON.stringify(data);
             }
 
-            if (typeof rawContent !== 'string') rawContent = JSON.stringify(rawContent);
-            let content = rawContent.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
+            // Clean up any <thinking> tags (some models use these)
+            content = content.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim();
+
+            console.log(`[Langdock] Response received (${content.length} chars)`);
 
             return {
                 content,
                 usage: data.usage,
                 provider: "langdock",
-                agent: "heftcoder-pro"
+                agent: id
             };
         } catch (error: any) {
-            console.error("Langdock Connectivity/Runtime Error:", error.message);
+            console.error("[Langdock] Error:", error.message);
             throw new Error(`Langdock Integration Failed: ${error.message}`);
         }
     }
