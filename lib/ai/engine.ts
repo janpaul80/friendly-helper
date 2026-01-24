@@ -214,15 +214,15 @@ export class AIEngine {
 
             messages.push({ role: "user", content: userMessage });
 
-            // CRITICAL: Use the simple chat endpoint, NOT custom assistants
-            // This respects the agent's native instructions!
-            const response = await fetch(`https://api.langdock.com/assistant/v1/chat/${id}`, {
+            // Use correct Langdock API endpoint
+            const response = await fetch("https://api.langdock.com/v1/chat", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${key}`
                 },
                 body: JSON.stringify({
+                    assistant_id: id,
                     messages,
                     stream: false
                 })
