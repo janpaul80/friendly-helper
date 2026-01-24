@@ -113,6 +113,9 @@ export function useOrchestration() {
 
     // Poll for state updates when orchestration is active
     useEffect(() => {
+        // Initial fetch
+        fetchState();
+        
         if (!state || state.phase === 'idle' || state.phase === 'complete') {
             return;
         }

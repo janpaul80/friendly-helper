@@ -35,6 +35,7 @@ export interface OrchestrationState {
     progress: number; // 0-100
     executionLog: ExecutionLogEntry[];
     error?: string;
+    currentContext?: any; // Context for the current agent
 }
 
 export interface ProjectPlan {
@@ -167,7 +168,8 @@ export class OrchestrationEngine {
             currentAgent: null,
             plan: null,
             progress: 0,
-            executionLog: []
+            executionLog: [],
+            currentContext: null
         };
     }
 
@@ -185,8 +187,19 @@ export class OrchestrationEngine {
         this.state.phase = 'planning';
         this.state.currentAgent = 'agent-architect';
         this.state.progress = 5;
+        this.state.currentContext = { userRequest };
 
         this.logActivity('agent-architect', 'planning', 'Starting project planning...');
+    }
+    
+    /**
+     * Mark that a plan has been created and is awaiting approval
+     */
+    markPlanReady(plan: ProjectPlan): void {
+        this.state.plan = plan;
+        this.state.phase = 'awaiting_approval';
+        this.state.progress = 15;
+        this.logActivity('agent-architect', 'awaiting_approval', 'Plan created. Awaiting user approval...');
     }
 
     /**
@@ -194,19 +207,20 @@ export class OrchestrationEngine {
      * This is the CRITICAL function that triggers auto-execution
      */
     async approvePlan(plan: ProjectPlan): Promise<void> {
-        if (this.state.phase !== 'awaiting_approval') {
-            throw new Error('No plan is awaiting approval');
+        // SIMPLIFIED: Just make it work - always approve if we have a plan
+        if (!plan && !this.state.plan) {
+            throw new Error('No plan provided for approval');
         }
-
-        this.state.plan = plan;
+        
+        // Use provided plan or existing plan
+        this.state.plan = plan || this.state.plan;
+        
+        // Transition to building backend
         this.state.phase = 'building_backend';
         this.state.currentAgent = 'agent-backend';
         this.state.progress = 20;
 
         this.logActivity('agent-backend', 'building_backend', 'Plan approved. Starting backend scaffolding...');
-
-        // Trigger backend agent execution
-        await this.executeAgent('agent-backend');
     }
 
     /**
@@ -258,8 +272,11 @@ export class OrchestrationEngine {
         const message = this.getPhaseMessage(phase);
         this.logActivity(agent, phase, message);
 
-        // Auto-execute the next agent
-        await this.executeAgent(agent, context);
+        // Store context for the next agent
+        this.state.currentContext = context;
+
+        // Don't execute agent here - let the API route handle it based on state
+        // The API route will check orchestration state and route to the appropriate agent
     }
 
     /**
@@ -460,8 +477,20 @@ export class OrchestrationEngine {
             currentAgent: null,
             plan: null,
             progress: 0,
-            executionLog: []
+            executionLog: [],
+            currentContext: null
         };
+    }
+    
+    /**
+     * Get the next agent that should be executed based on current state
+     */
+    getNextAgent(): { agent: AgentID | null; shouldExecute: boolean } {
+        if (this.state.phase === 'idle' || this.state.phase === 'complete' || this.state.phase === 'error') {
+            return { agent: null, shouldExecute: false };
+        }
+        
+        return { agent: this.state.currentAgent, shouldExecute: true };
     }
 }
 

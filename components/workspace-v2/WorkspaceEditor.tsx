@@ -97,21 +97,83 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
         );
 
         if (lastPlanMessage) {
-          console.log('[Approval] Plan approved by user - preventing loop');
+          console.log('[Approval] Plan approved by user - triggering orchestration');
+          
+          try {
+            // Extract plan from the message (try to parse JSON if present)
+            let planData = null;
+            const jsonMatch = lastPlanMessage.content.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+            if (jsonMatch) {
+              try {
+                planData = JSON.parse(jsonMatch[1]);
+              } catch (e) {
+                console.warn('Failed to parse plan JSON, using raw content');
+              }
+            }
+            
+            // If no JSON found, create a basic plan structure from the markdown
+            if (!planData) {
+              planData = {
+                raw: lastPlanMessage.content,
+                stack: {},
+                repoStructure: {},
+                steps: []
+              };
+            }
 
-          // Show immediate feedback WITHOUT calling broken orchestration
-          const approvalMessage: Message = {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: `✅ **Plan Approved!**\n\nI'm now processing your request...\n\n📊 **Development Status:**\n- ⚙️ Backend Setup: Starting...\n- 🎨 Frontend Development: Queued\n- 🔌 Integration: Queued\n- 🛡️ QA & Testing: Queued\n- 🚀 Deployment: Queued\n\n_The orchestration system is being configured. For now, you can manually request each phase._`,
-            timestamp: new Date(),
-          };
-          setMessages((prev) => [...prev, approvalMessage]);
-
-          // CRITICAL: Don't send "approved" to the AI - it would just repeat the plan
-          setIsLoading(false);
-          setProjectStatus({ status: 'idle' });
-          return;
+            // Call orchestration API to approve plan
+            const approveResponse = await approvePlan(planData);
+            
+            if (approveResponse) {
+              const approvalMessage: Message = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `✅ **Plan Approved!**\n\n🚀 **Orchestration Started**\n\n📊 **Development Status:**\n- ⚙️ Backend Setup: Starting...\n- 🎨 Frontend Development: Queued\n- 🔌 Integration: Queued\n- 🛡️ QA & Testing: Queued\n- 🚀 Deployment: Queued\n\n_The agents are now working sequentially. You'll see updates as each phase completes._`,
+                timestamp: new Date(),
+              };
+              setMessages((prev) => [...prev, approvalMessage]);
+              
+              // Trigger the first agent (backend) by calling the generate API with orchestration context
+              // The orchestration engine will handle the sequential execution
+              setIsLoading(true);
+              
+              // Call the agent generate API to trigger backend agent
+              const agentResponse = await fetch('/api/agent/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  projectId,
+                  prompt: 'Start building the backend according to the approved plan.',
+                  model: 'agent-backend',
+                  fileContext: project?.files || {},
+                  messages: [],
+                  orchestrationContext: { phase: 'building_backend', plan: planData }
+                }),
+              });
+              
+              if (agentResponse.ok) {
+                const agentData = await agentResponse.json();
+                const agentMessage: Message = {
+                  id: crypto.randomUUID(),
+                  role: 'assistant',
+                  content: agentData.response?.content || agentData.agentResponse?.conversationText || 'Backend agent is working...',
+                  timestamp: new Date(),
+                };
+                setMessages((prev) => [...prev, agentMessage]);
+              }
+              
+              setIsLoading(false);
+              setProjectStatus({ status: 'working' });
+              return;
+            }
+          } catch (error: any) {
+            console.error('[Approval] Failed to trigger orchestration:', error);
+            toast({
+              title: "Approval Error",
+              description: error.message || "Failed to start orchestration",
+              variant: "destructive"
+            });
+          }
         }
       }
 
@@ -146,6 +208,15 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
         };
 
         setMessages((prev) => [...prev, aiMessage]);
+        
+        // Update orchestration state if provided
+        if (data.orchestrationState) {
+          console.log('[WorkspaceEditor] Received orchestration state:', data.orchestrationState.phase);
+          // The useOrchestration hook will poll for updates, but we can also trigger a fetch
+          if (data.orchestrationState.phase === 'awaiting_approval') {
+            console.log('[WorkspaceEditor] Plan is awaiting approval - approval button should appear');
+          }
+        }
 
         // Update project status
         if (data.shouldModifyFiles) {
@@ -216,7 +287,70 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
             {/* Orchestration Status Banner */}
             {orchState && orchState.phase !== 'idle' && (
               <div className="p-3 border-b">
-                <OrchestrationStatus state={orchState} />
+                <OrchestrationStatus 
+                  state={orchState} 
+                  onApprove={async () => {
+                    // Find the last plan message
+                    const lastPlanMessage = messages.slice().reverse().find(m =>
+                      m.role === 'assistant' && (m.content.includes('# Execution Plan') || m.content.includes('Execution Plan'))
+                    );
+                    
+                    if (lastPlanMessage) {
+                      let planData = null;
+                      const jsonMatch = lastPlanMessage.content.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+                      if (jsonMatch) {
+                        try {
+                          planData = JSON.parse(jsonMatch[1]);
+                        } catch (e) {
+                          console.warn('Failed to parse plan JSON');
+                        }
+                      }
+                      
+                      if (!planData) {
+                        planData = {
+                          raw: lastPlanMessage.content,
+                          stack: {},
+                          repoStructure: {},
+                          steps: []
+                        };
+                      }
+                      
+                      const approved = await approvePlan(planData);
+                      if (approved) {
+                        // Trigger backend agent
+                        setIsLoading(true);
+                        try {
+                          const agentResponse = await fetch('/api/agent/generate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              projectId,
+                              prompt: 'Start building the backend according to the approved plan.',
+                              model: 'agent-backend',
+                              fileContext: project?.files || {},
+                              messages: [],
+                            }),
+                          });
+                          
+                          if (agentResponse.ok) {
+                            const agentData = await agentResponse.json();
+                            const agentMessage: Message = {
+                              id: crypto.randomUUID(),
+                              role: 'assistant',
+                              content: agentData.response?.content || agentData.agentResponse?.conversationText || 'Backend agent is working...',
+                              timestamp: new Date(),
+                            };
+                            setMessages((prev) => [...prev, agentMessage]);
+                          }
+                        } catch (error: any) {
+                          console.error('Failed to trigger backend agent:', error);
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }
+                    }
+                  }}
+                />
               </div>
             )}
 

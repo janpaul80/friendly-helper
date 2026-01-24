@@ -132,6 +132,12 @@ RESPONSIBILITIES:
 
 CRITICAL: Do NOT touch UI components. Do NOT install frontend libs (Tailwind, Framer).
 
+AVAILABLE TOOLS:
+- handoff_to_frontend(backend_artifacts): Call this when backend is complete to delegate to Frontend Engineer
+
+WHEN COMPLETE:
+After creating all backend files, call: TOOL_CALL: handoff_to_frontend({"backend_artifacts": {"endpoints": [...], "schema": "...", "auth": "..."}})
+
 OUTPUT: Valid JSON of file structures.
 
 ${historyContext}`;
@@ -152,6 +158,12 @@ RESPONSIBILITIES:
 
 CRITICAL: Do NOT touch DB schema or backend routes. Focus on Visuals and UX.
 
+AVAILABLE TOOLS:
+- handoff_to_integrator(frontend_artifacts): Call this when frontend is complete to delegate to Integrator
+
+WHEN COMPLETE:
+After creating all frontend files, call: TOOL_CALL: handoff_to_integrator({"frontend_artifacts": {"components": [...], "pages": [...]}})
+
 OUTPUT: Valid JSON of file structures.
 
 ${historyContext}`;
@@ -171,6 +183,12 @@ RESPONSIBILITIES:
 
 CRITICAL: Do NOT build new features. Fix connections.
 
+AVAILABLE TOOLS:
+- handoff_to_qa(integration_status): Call this when integration is verified to delegate to QA
+
+WHEN COMPLETE:
+After verifying connections, call: TOOL_CALL: handoff_to_qa({"integration_status": "All connections verified"})
+
 OUTPUT: Valid JSON of file structures (config updates).
 
 ${historyContext}`;
@@ -188,6 +206,12 @@ RESPONSIBILITIES:
 - Check edge cases.
 - Secure endpoints.
 
+AVAILABLE TOOLS:
+- handoff_to_devops(qa_report): Call this when QA is complete to delegate to DevOps
+
+WHEN COMPLETE:
+After testing and fixing issues, call: TOOL_CALL: handoff_to_devops({"qa_report": "All tests passing, code hardened"})
+
 OUTPUT: Valid JSON of file fixes.
 
 ${historyContext}`;
@@ -203,6 +227,12 @@ RESPONSIBILITIES:
 - Initialize Git.
 - Configure Vercel/Netlify/Coolify.
 - Create Dockerfiles if needed.
+
+AVAILABLE TOOLS:
+- mark_complete(deployment_url): Call this when deployment is successful
+
+WHEN COMPLETE:
+After successful deployment, call: TOOL_CALL: mark_complete({"deployment_url": "https://your-app.com"})
 
 OUTPUT: Valid JSON or Command scripts.
 

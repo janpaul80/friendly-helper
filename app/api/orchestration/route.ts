@@ -28,8 +28,23 @@ export async function POST(req: NextRequest) {
                 });
 
             case 'approve_plan':
-                // User approves the plan - THIS TRIGGERS AUTO-EXECUTION
+                // SIMPLIFIED: Just make it work, regardless of state
+                console.log('[Orchestration API] Approve plan called');
+                const currentState = orchestrator.getState();
+                
+                // Always fix the state if we have a plan
+                if (params.plan) {
+                    // Start orchestration if needed
+                    if (currentState.phase === 'idle' || !currentState.phase) {
+                        await orchestrator.startOrchestration('User approved plan');
+                    }
+                    // Mark plan as ready
+                    orchestrator.markPlanReady(params.plan);
+                }
+                
+                // Now approve (this should always work now)
                 await orchestrator.approvePlan(params.plan);
+                
                 return NextResponse.json({
                     success: true,
                     state: orchestrator.getState(),

@@ -6,13 +6,15 @@
 
 import React from 'react';
 import { OrchestrationState } from '@/lib/orchestration/engine';
-import { Loader2, CheckCircle2, XCircle, Zap } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Zap, Play } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface OrchestrationStatusProps {
     state: OrchestrationState | null;
+    onApprove?: () => void;
 }
 
-export function OrchestrationStatus({ state }: OrchestrationStatusProps) {
+export function OrchestrationStatus({ state, onApprove }: OrchestrationStatusProps) {
     if (!state || state.phase === 'idle') {
         return null;
     }
@@ -106,6 +108,22 @@ export function OrchestrationStatus({ state }: OrchestrationStatusProps) {
                             <span className="flex-1">{entry.message}</span>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Approval Button */}
+            {state.phase === 'awaiting_approval' && onApprove && (
+                <div className="mt-4 pt-3 border-t border-yellow-500/20">
+                    <Button
+                        onClick={onApprove}
+                        className="w-full bg-yellow-500 hover:bg-yellow-600 text-yellow-950 font-semibold"
+                    >
+                        <Play className="w-4 h-4 mr-2" />
+                        Approve Plan & Start Building
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                        Review the plan above, then click to start execution
+                    </p>
                 </div>
             )}
 
