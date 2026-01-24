@@ -48,23 +48,25 @@ export class IntentClassifier {
       return UserIntent.QUESTION;
     }
 
-    // CODE_REQUEST patterns
+    // PLAN_REQUEST patterns - CHECK BEFORE CODE_REQUEST!
+    // All "build X" requests should create a plan first
+    const planPatterns = [
+      'i want to build', 'i need to create', 'let\'s build', 'plan for',
+      'i want a', 'i need a', 'build a', 'create a', 'make a', 'scaffold',
+      'build me', 'create me', 'make me' // These should plan first!
+    ];
+    if (planPatterns.some(pattern => lowerMsg.includes(pattern))) {
+      return UserIntent.PLAN_REQUEST;
+    }
+
+    // CODE_REQUEST patterns - Only for explicit code commands
     const codePatterns = [
       'build this', 'create this', 'make this', 'code this', 'implement',
-      'generate', 'write the code', 'code it', 'build me', 'create me',
+      'generate code', 'write the code', 'code it',
       'fix', 'update', 'change', 'refactor', 'optimize', 'add'
     ];
     if (codePatterns.some(pattern => lowerMsg.includes(pattern))) {
       return UserIntent.CODE_REQUEST;
-    }
-
-    // PLAN_REQUEST patterns
-    const planPatterns = [
-      'i want to build', 'i need to create', 'let\'s build', 'plan for',
-      'i want a', 'i need a', 'build a', 'create a', 'make a', 'scaffold'
-    ];
-    if (planPatterns.some(pattern => lowerMsg.includes(pattern))) {
-      return UserIntent.PLAN_REQUEST;
     }
 
     // EDIT_PLAN patterns
