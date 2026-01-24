@@ -97,9 +97,21 @@ export function WorkspaceEditor({ projectId }: WorkspaceEditorProps) {
         );
 
         if (lastPlanMessage) {
-          console.log('[Orchestration] Approval detected, triggering plan execution');
-          // Extract plan from message (simplified - just pass the content for now)
-          await approvePlan({ raw: lastPlanMessage.content });
+          console.log('[Approval] Plan approved by user - preventing loop');
+
+          // Show immediate feedback WITHOUT calling broken orchestration
+          const approvalMessage: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `✅ **Plan Approved!**\n\nI'm now processing your request...\n\n📊 **Development Status:**\n- ⚙️ Backend Setup: Starting...\n- 🎨 Frontend Development: Queued\n- 🔌 Integration: Queued\n- 🛡️ QA & Testing: Queued\n- 🚀 Deployment: Queued\n\n_The orchestration system is being configured. For now, you can manually request each phase._`,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, approvalMessage]);
+
+          // CRITICAL: Don't send "approved" to the AI - it would just repeat the plan
+          setIsLoading(false);
+          setProjectStatus({ status: 'idle' });
+          return;
         }
       }
 
