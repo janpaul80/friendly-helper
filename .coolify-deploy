@@ -1,0 +1,4 @@
+# Coolify Deployment Trigger
+# This file triggers a deployment when changed
+DEPLOY_TIMESTAMP=2026-01-24T19:32:00Z
+WORKSPACE_V3_READY=true
