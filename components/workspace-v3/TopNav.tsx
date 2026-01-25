@@ -1,7 +1,7 @@
 import { FolderOpen, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import hcIcon from '@/assets/hc-icon.png';
-import type { UserTier } from '@/types/workspace';
+import type { UserTier } from '@/types-new/workspace';
 import { GitHubPopover } from './GitHubPopover';
 import { PublishButton } from './PublishButton';
 

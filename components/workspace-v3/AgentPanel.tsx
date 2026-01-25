@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { AgentInfo, AgentStatus, ProjectPlan, OrchestratorPhase } from '@/types/orchestrator';
+import type { AgentInfo, AgentStatus, ProjectPlan, OrchestratorPhase } from '@/types-new/orchestrator';
 import { 
   Bot, 
   CheckCircle2, 

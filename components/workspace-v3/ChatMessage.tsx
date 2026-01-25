@@ -1,7 +1,7 @@
 import { useState, memo } from 'react';
 import { Copy, Check, ChevronDown, ChevronUp, User, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { Message } from '@/types/workspace';
+import type { Message } from '@/types-new/workspace';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 

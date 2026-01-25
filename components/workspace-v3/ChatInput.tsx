@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Paperclip, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoiceButton } from './VoiceButton';
-import type { Attachment } from '@/types/workspace';
+import type { Attachment } from '@/types-new/workspace';
 import hcIcon from '@/assets/hc-icon.png';
 
 interface ChatInputProps {

@@ -3,8 +3,8 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { AgentProgressBar } from './AgentProgressBar';
 import { StartPanel } from './StartPanel';
-import type { Message, Attachment } from '@/types/workspace';
-import type { AgentInfo, OrchestratorPhase } from '@/types/orchestrator';
+import type { Message, Attachment } from '@/types-new/workspace';
+import type { AgentInfo, OrchestratorPhase } from '@/types-new/orchestrator';
 import type { Template } from '@/hooks/useTemplates';
 import type { ProjectHistoryItem } from '@/hooks/useProjectHistory';
 

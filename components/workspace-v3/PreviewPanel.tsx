@@ -3,7 +3,7 @@ import { Smartphone, Monitor, Tablet, ExternalLink, Code, Eye, Download, Maximiz
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import hcIcon from '@/assets/hc-icon.png';
-import type { ProjectStatus, GeneratedProject, ProjectType } from '@/types/workspace';
+import type { ProjectStatus, GeneratedProject, ProjectType } from '@/types-new/workspace';
 import { cn } from '@/lib/utils';
 
 interface PreviewPanelProps {

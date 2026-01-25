@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { AIModel } from '@/types/workspace';
+import type { AIModel } from '@/types-new/workspace';
 
 const MODELS: AIModel[] = [
   { id: 'claude-4.5-sonnet', name: 'Claude 4.5 Sonnet', provider: 'claude' },
