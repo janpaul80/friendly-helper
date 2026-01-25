@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useTemplates, type Template } from '@/hooks/useTemplates';
+import { useTemplates, type Template } from '@/src/hooks/useTemplates';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [

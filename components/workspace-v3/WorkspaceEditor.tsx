@@ -5,8 +5,8 @@ import { PreviewPanel } from './PreviewPanel';
 import { FileExplorerModal } from './FileExplorerModal';
 import { useOrchestrator } from '@/hooks/useOrchestrator';
 import type { Message, Attachment, ProjectStatus, UserTier, GeneratedProject } from '@/types-new/workspace';
-import type { Template } from '@/hooks/useTemplates';
-import type { ProjectHistoryItem } from '@/hooks/useProjectHistory';
+import type { Template } from '@/src/hooks/useTemplates';
+import type { ProjectHistoryItem } from '@/src/hooks/useProjectHistory';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 export function WorkspaceEditor() {

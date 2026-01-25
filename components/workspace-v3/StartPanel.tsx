@@ -3,8 +3,8 @@ import { Sparkles, Clock, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateGallery } from './TemplateGallery';
 import { ProjectHistoryPanel } from './ProjectHistoryPanel';
-import { useFeaturedTemplates, type Template } from '@/hooks/useTemplates';
-import type { ProjectHistoryItem } from '@/hooks/useProjectHistory';
+import { useFeaturedTemplates, type Template } from '@/src/hooks/useTemplates';
+import type { ProjectHistoryItem } from '@/src/hooks/useProjectHistory';
 import { cn } from '@/lib/utils';
 
 interface StartPanelProps {

@@ -1,6 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/src/integrations/supabase/client';
-import type { GeneratedProject } from '@/types-new/workspace';
+
+export interface GeneratedFile {
+  path: string;
+  content: string;
+  language: string;
+}
+
+export interface GeneratedProject {
+  type: string;
+  files: GeneratedFile[];
+  previewHtml?: string;
+}
 
 export interface ProjectHistoryItem {
   id: string;
@@ -10,7 +21,7 @@ export interface ProjectHistoryItem {
   project_type: string;
   thumbnail_url: string | null;
   preview_html: string | null;
-  files: Array<{ path: string; content: string; language: string }>;
+  files: GeneratedFile[];
   original_prompt: string;
   template_id: string | null;
   created_at: string;
@@ -34,7 +45,7 @@ export function useProjectHistory() {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      return data as ProjectHistoryItem[];
+      return data as unknown as ProjectHistoryItem[];
     },
   });
 }
@@ -78,7 +89,7 @@ export function useSaveProject() {
         .single();
 
       if (error) throw error;
-      return data as ProjectHistoryItem;
+      return data as unknown as ProjectHistoryItem;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-history'] });
