@@ -2,8 +2,28 @@ import { useState, useCallback } from 'react';
 import type { AgentInfo, OrchestratorEvent, ProjectPlan, OrchestratorPhase } from '@/types-new/orchestrator';
 import type { GeneratedProject } from '@/types-new/workspace';
 
-// Use Lovable Cloud backend for orchestrator
-const ORCHESTRATOR_URL = `${process.env.NEXT_PUBLIC_LOVABLE_SUPABASE_URL}/functions/v1/orchestrator`;
+// Use Lovable Cloud backend for orchestrator - support both Vite and Next.js environments
+const getSupabaseUrl = () => {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) {
+    return import.meta.env.VITE_SUPABASE_URL;
+  }
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_LOVABLE_SUPABASE_URL) {
+    return process.env.NEXT_PUBLIC_LOVABLE_SUPABASE_URL;
+  }
+  return '';
+};
+
+const getSupabaseKey = () => {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY) {
+    return import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  }
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_LOVABLE_SUPABASE_ANON_KEY) {
+    return process.env.NEXT_PUBLIC_LOVABLE_SUPABASE_ANON_KEY;
+  }
+  return '';
+};
+
+const ORCHESTRATOR_URL = `${getSupabaseUrl()}/functions/v1/orchestrator`;
 
 export interface OrchestratorState {
   agents: Record<string, AgentInfo>;
@@ -30,7 +50,7 @@ export function useOrchestrator() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_LOVABLE_SUPABASE_ANON_KEY}`,
+        "Authorization": `Bearer ${getSupabaseKey()}`,
       },
       body: JSON.stringify(body),
     });
