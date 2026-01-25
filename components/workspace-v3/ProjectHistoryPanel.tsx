@@ -25,7 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useProjectHistory, useDeleteProject, type ProjectHistoryItem } from '@/hooks/useProjectHistory';
+import { useProjectHistory, useDeleteProject, type ProjectHistoryItem } from '@/src/hooks/useProjectHistory';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';

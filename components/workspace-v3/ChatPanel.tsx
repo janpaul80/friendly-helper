@@ -5,8 +5,8 @@ import { AgentProgressBar } from './AgentProgressBar';
 import { StartPanel } from './StartPanel';
 import type { Message, Attachment } from '@/types-new/workspace';
 import type { AgentInfo, OrchestratorPhase } from '@/types-new/orchestrator';
-import type { Template } from '@/hooks/useTemplates';
-import type { ProjectHistoryItem } from '@/hooks/useProjectHistory';
+import type { Template } from '@/src/hooks/useTemplates';
+import type { ProjectHistoryItem } from '@/src/hooks/useProjectHistory';
 
 interface ChatPanelProps {
   messages: Message[];
