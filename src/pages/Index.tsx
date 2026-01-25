@@ -339,9 +339,13 @@ export default function LandingPage() {
           <p className="text-[10px] text-gray-500 mb-10 uppercase tracking-[0.3em] font-black opacity-50">
             Trusted by innovators at
           </p>
-          <div className="relative group">
-            <div className="flex gap-16 items-center justify-center flex-wrap">
-              {['Coinbase', 'Stripe', 'Vercel', 'Microsoft', 'ARK Invest', 'Zillow'].map((logo, i) => (
+          <div className="relative overflow-hidden">
+            {/* Gradient masks */}
+            <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#0a0a0a] to-transparent z-10" />
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#0a0a0a] to-transparent z-10" />
+            {/* Scrolling logos */}
+            <div className="flex animate-scroll-left gap-16 items-center w-max">
+              {['Coinbase', 'Stripe', 'Vercel', 'Microsoft', 'ARK Invest', 'Zillow', 'Hg', 'Oscar', 'Coinbase', 'Stripe', 'Vercel', 'Microsoft', 'ARK Invest', 'Zillow', 'Hg', 'Oscar'].map((logo, i) => (
                 <span key={`${logo}-${i}`} className="text-2xl font-black text-white/20 whitespace-nowrap hover:text-orange-500/50 transition-colors duration-500">{logo}</span>
               ))}
             </div>
