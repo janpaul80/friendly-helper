@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Smartphone, Monitor, Tablet, ExternalLink, Code, Eye, Download, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import hcIcon from '@/assets/hc-icon.png';
+const hcIcon = '/assets/hc-icon.png';
 import type { ProjectStatus, GeneratedProject, ProjectType } from '@/types-new/workspace';
 import { cn } from '@/lib/utils';
 

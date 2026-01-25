@@ -3,7 +3,7 @@ import { Paperclip, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoiceButton } from './VoiceButton';
 import type { Attachment } from '@/types-new/workspace';
-import hcIcon from '@/assets/hc-icon.png';
+const hcIcon = '/assets/hc-icon.png';
 
 interface ChatInputProps {
   onSend: (message: string, attachments: Attachment[]) => void;

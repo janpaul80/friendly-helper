@@ -96,12 +96,13 @@ export function useOrchestrator() {
                 type: "landing" as const,
                 files: [],
               };
+              const filePath = event.file.filename || event.file.path || "unknown";
               return {
                 ...existing,
                 files: [
                   ...existing.files,
                   {
-                    path: event.file.filename || event.file.path,
+                    path: filePath,
                     content: event.file.content,
                     language: event.file.language,
                   },
