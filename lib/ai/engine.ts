@@ -214,16 +214,15 @@ export class AIEngine {
 
             messages.push({ role: "user", content: userMessage });
 
-            // Use correct Langdock Agent API endpoint (from official docs)
-            // https://docs.langdock.com/api-endpoints/agent/agent
-            const response = await fetch("https://api.langdock.com/assistant/v1/chat/completions", {
+            // Use correct Langdock API endpoint (OpenAI-compatible format)
+            const response = await fetch("https://api.langdock.com/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${key}`
                 },
                 body: JSON.stringify({
-                    assistantId: id,  // Use assistantId parameter (not model)
+                    assistant_id: id,  // Use assistant_id (snake_case)
                     messages,
                     stream: false
                 })
