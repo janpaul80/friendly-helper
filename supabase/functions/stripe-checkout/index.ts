@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import Stripe from "npm:stripe@14.21.0";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,7 +47,7 @@ Deno.serve(async (req: Request) => {
     const origin = req.headers.get("origin") || "https://heftcoder.lovable.app";
     console.log("Creating checkout session with origin:", origin);
 
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    const sessionParams: any = {
       payment_method_types: ["card"],
       line_items: [
         {
@@ -64,12 +64,10 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    // Add customer email if provided
     if (userEmail) {
       sessionParams.customer_email = userEmail;
     }
 
-    // Add trial for Basic plan
     if (plan === "Basic") {
       sessionParams.subscription_data = { trial_period_days: 7 };
     }
