@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
-import { supabase } from "@/src/integrations/supabase/client";
 import {
   Paperclip,
   Github,
@@ -164,20 +163,24 @@ export default function LandingPage() {
   const handleUpgrade = async (plan: string) => {
     setLoadingPlan(plan);
     try {
-      // Call the Supabase edge function for Stripe checkout
-      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-        body: {
-          plan: plan.charAt(0).toUpperCase() + plan.slice(1), // Capitalize: "basic" -> "Basic"
+      const supabaseUrl = "https://ythuhewbaulqirjrkgly.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI";
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          plan: plan.charAt(0).toUpperCase() + plan.slice(1),
           userId: null,
           userEmail: null,
-        },
+        }),
       });
 
-      if (error) {
-        console.error("Checkout error:", error);
-        return;
-      }
-
+      const data = await response.json();
       if (data?.url) {
         window.location.href = data.url;
       } else if (data?.error) {
