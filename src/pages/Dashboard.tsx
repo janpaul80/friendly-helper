@@ -15,7 +15,7 @@ import {
   Share2,
   LogOut
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../integrations/supabase/client';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 interface UserData {
