@@ -246,7 +246,7 @@ export default function LandingPage() {
   // Redirect to auth when user interacts with chat input
   const handlePromptFocus = () => {
     if (isAuthenticated === false) {
-      navigate('/auth');
+      navigate('/auth?provider=google');
     }
   };
 
