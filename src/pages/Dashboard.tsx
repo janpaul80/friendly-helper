@@ -49,9 +49,6 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'recents' | 'saved' | 'studio'>('recents');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     // Check auth state
@@ -112,34 +109,20 @@ export default function Dashboard() {
     navigate('/');
   };
 
-  const handleCreateProject = async () => {
-    if (!newProjectName.trim() || !user) return;
-    setCreating(true);
+  const handleCreateProject = () => {
+    if (!user) return;
     
-    try {
-      const { data, error } = await supabase
-        .from('project_history' as any)
-        .insert({
-          user_id: user.id,
-          name: newProjectName,
-          original_prompt: '',
-          project_type: 'web',
-          files: {}
-        })
-        .select()
-        .single();
+    // Redirect to external HeftCoder workspace
+    const userId = user.id.replace(/-/g, '').slice(0, 12); // Create short user identifier
+    window.location.href = `https://heftcoder.icu/user${userId}`;
+  };
 
-      if (error) throw error;
-      
-      // Navigate to workspace with new project
-      const projectData = data as unknown as Project;
-      navigate(`/workspace/${projectData.id}`);
-    } catch (err) {
-      console.error('Error creating project:', err);
-    } finally {
-      setCreating(false);
-      setShowCreateModal(false);
-    }
+  const handleOpenExternalWorkspace = (projectId: string) => {
+    if (!user) return;
+    
+    // Redirect to external HeftCoder workspace with project context
+    const userId = user.id.replace(/-/g, '').slice(0, 12);
+    window.location.href = `https://heftcoder.icu/user${userId}?project=${projectId}`;
   };
 
   const getCreditDisplay = () => {
@@ -174,38 +157,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-orange-500/30">
-      {/* Create Project Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">New Project</h2>
-            <input
-              type="text"
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="Project name..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 mb-4 focus:outline-none focus:border-orange-500"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateProject}
-                disabled={creating || !newProjectName.trim()}
-                className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {creating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus size={16} />}
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Removed create modal - now redirects directly to external workspace */}
 
       {/* Header */}
       <header className="border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 py-4 flex items-center justify-between">
@@ -224,7 +176,7 @@ export default function Dashboard() {
 
         <div className="flex items-center space-x-3 md:space-x-4">
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={handleCreateProject}
             className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-orange-900/10"
           >
             <Plus size={16} />
@@ -298,7 +250,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Create New Project Card */}
               <div
-                onClick={() => setShowCreateModal(true)}
+                onClick={handleCreateProject}
                 className="group border border-dashed border-white/10 bg-white/2 hover:bg-white/5 rounded-2xl p-6 cursor-pointer hover:border-orange-500/50 transition-all flex flex-col items-center justify-center min-h-[280px]"
               >
                 <div className="h-14 w-14 bg-[#1a1a1a] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-orange-600 group-hover:text-white transition-all group-hover:scale-110 group-hover:rotate-12 duration-300">
@@ -341,12 +293,12 @@ export default function Dashboard() {
                           <Clock size={12} />
                           {getTimeAgo(project.updated_at)}
                         </div>
-                        <Link
-                          to={`/workspace/${project.id}`}
+                        <button
+                          onClick={() => handleOpenExternalWorkspace(project.id)}
                           className="bg-orange-600/10 hover:bg-orange-600 text-orange-500 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-orange-500/20 active:scale-95 flex items-center gap-1.5"
                         >
                           Open <Share2 size={10} />
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   </div>
