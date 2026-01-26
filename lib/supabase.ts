@@ -27,8 +27,8 @@ const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL', '
 const supabaseAnonKey = getEnvVar('VITE_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY');
 
 // Fallback to hardcoded values if environment variables are not available (Lovable Cloud)
-const finalUrl = supabaseUrl || 'https://ttyguxhbxgohlrtkryas.supabase.co';
-const finalKey = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0eWd1eGhieGdvaGxydGtyeWFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzMTI3ODgsImV4cCI6MjA4NDg4ODc4OH0.aHSf39WqvVvxM5aFkTf8zERNuXenr0_TRd3Wc2rsiKM';
+const finalUrl = supabaseUrl || 'https://fylgubkuezvhwchesyzg.supabase.co';
+const finalKey = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5bGd1Ymt1ZXp2aHdjaGVzeXpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwMTYzNjEsImV4cCI6MjA4MjU5MjM2MX0.cRevu_98tLGg_lr415hJk1O6sqdnIDtfVDcsahD4e2g';
 
 export const supabase = createClient(finalUrl, finalKey);
 
