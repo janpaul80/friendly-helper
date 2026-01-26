@@ -150,9 +150,37 @@ export default function Dashboard() {
     }
   };
 
-  const handleUpgrade = () => {
-    // TODO: Implement Stripe checkout
-    console.log('Opening upgrade modal...');
+  const handleUpgrade = async () => {
+    try {
+      const supabaseUrl = "https://ythuhewbaulqirjrkgly.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI";
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": session?.access_token ? `Bearer ${session.access_token}` : `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          plan: "Pro",
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error("Stripe checkout failed");
+        return;
+      }
+      
+      const data = await response.json();
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Upgrade error:", error);
+    }
   };
 
   if (loading) {
