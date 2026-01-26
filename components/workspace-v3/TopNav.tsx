@@ -35,7 +35,7 @@ export function TopNav({ onFileExplorerOpen, userTier }: TopNavProps) {
       <div className="flex items-center gap-2">
         <GitHubPopover 
           isConnected={true}
-          repoName="janpaul80/heftcoder-project"
+          repoName="janpaul80/heftcoder-sandbox"
         />
         
         <Button
