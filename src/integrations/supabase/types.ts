@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      archives: {
+        Row: {
+          archive_type: Database["public"]["Enums"]["archive_type"]
+          content: string
+          created_at: string
+          description: string | null
+          id: string
+          is_favorite: boolean | null
+          language: string | null
+          name: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archive_type?: Database["public"]["Enums"]["archive_type"]
+          content: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          language?: string | null
+          name: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archive_type?: Database["public"]["Enums"]["archive_type"]
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          language?: string | null
+          name?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           amount: number
@@ -99,6 +141,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          credits_awarded: number | null
+          id: string
+          referral_code: string
+          referred_user_id: string | null
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          credits_awarded?: number | null
+          id?: string
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          credits_awarded?: number | null
+          id?: string
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: []
       }
       templates: {
         Row: {
@@ -194,6 +269,10 @@ export type Database = {
           success: boolean
         }[]
       }
+      award_referral_credits: {
+        Args: { p_referral_code: string; p_referred_user_id: string }
+        Returns: boolean
+      }
       deduct_credits: {
         Args: {
           p_amount: number
@@ -207,8 +286,10 @@ export type Database = {
           success: boolean
         }[]
       }
+      generate_referral_code: { Args: { p_user_id: string }; Returns: string }
     }
     Enums: {
+      archive_type: "snippet" | "template" | "component"
       credit_transaction_type:
         | "subscription"
         | "topup"
@@ -342,6 +423,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      archive_type: ["snippet", "template", "component"],
       credit_transaction_type: [
         "subscription",
         "topup",

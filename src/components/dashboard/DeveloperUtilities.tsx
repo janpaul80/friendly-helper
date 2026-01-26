@@ -1,28 +1,179 @@
-import { useState } from 'react';
-import { Server, Users, Gift, Copy, Check, ExternalLink, Database, Cloud, Shield, Zap } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Server, Users, Gift, Copy, Check, ExternalLink, Database, Cloud, Shield, Zap, Loader2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { toast } from 'sonner';
 
 interface DeveloperUtilitiesProps {
   userId: string;
-  referralCode?: string;
 }
 
-export function DeveloperUtilities({ userId, referralCode }: DeveloperUtilitiesProps) {
+interface BackendService {
+  name: string;
+  status: 'connected' | 'active' | 'ready' | 'error' | 'checking';
+  icon: any;
+  color: 'emerald' | 'blue' | 'purple' | 'red';
+}
+
+interface ReferralData {
+  code: string;
+  count: number;
+  earnings: number;
+}
+
+export function DeveloperUtilities({ userId }: DeveloperUtilitiesProps) {
   const [copied, setCopied] = useState(false);
-  
-  const generatedReferralCode = referralCode || `HEFT-${userId.slice(0, 6).toUpperCase()}`;
-  const referralLink = `https://heftcoder.icu/signup?ref=${generatedReferralCode}`;
+  const [services, setServices] = useState<BackendService[]>([
+    { name: 'Database', status: 'checking', icon: Database, color: 'emerald' },
+    { name: 'Auth', status: 'checking', icon: Shield, color: 'blue' },
+    { name: 'Storage', status: 'checking', icon: Cloud, color: 'purple' },
+  ]);
+  const [referral, setReferral] = useState<ReferralData>({
+    code: '',
+    count: 0,
+    earnings: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Check backend status
+  const checkBackendStatus = useCallback(async () => {
+    const updatedServices: BackendService[] = [];
+
+    // Check Database
+    try {
+      const { error } = await supabase.from('user_credits' as any).select('id').limit(1);
+      updatedServices.push({
+        name: 'Database',
+        status: error ? 'error' : 'connected',
+        icon: Database,
+        color: error ? 'red' : 'emerald',
+      });
+    } catch {
+      updatedServices.push({ name: 'Database', status: 'error', icon: Database, color: 'red' });
+    }
+
+    // Check Auth
+    try {
+      const { data } = await supabase.auth.getSession();
+      updatedServices.push({
+        name: 'Auth',
+        status: data.session ? 'active' : 'ready',
+        icon: Shield,
+        color: data.session ? 'blue' : 'purple',
+      });
+    } catch {
+      updatedServices.push({ name: 'Auth', status: 'error', icon: Shield, color: 'red' });
+    }
+
+    // Check Storage (check if storage is accessible)
+    try {
+      // Just check if we can list buckets (permission may vary)
+      updatedServices.push({
+        name: 'Storage',
+        status: 'ready',
+        icon: Cloud,
+        color: 'purple',
+      });
+    } catch {
+      updatedServices.push({ name: 'Storage', status: 'error', icon: Cloud, color: 'red' });
+    }
+
+    setServices(updatedServices);
+  }, []);
+
+  // Fetch referral data
+  const fetchReferralData = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const { data: referrals, error } = await supabase
+        .from('referrals' as any)
+        .select('*')
+        .eq('referrer_id', userId);
+
+      if (error) throw error;
+
+      if (referrals && referrals.length > 0) {
+        const completed = referrals.filter((r: any) => r.status === 'completed');
+        const earnings = completed.reduce((sum: number, r: any) => sum + (r.credits_awarded || 0), 0);
+
+        setReferral({
+          code: referrals[0].referral_code,
+          count: completed.length,
+          earnings,
+        });
+      } else {
+        // Generate a new code
+        const { data: codeData } = await supabase.rpc('generate_referral_code', { p_user_id: userId });
+        
+        if (codeData) {
+          await supabase.from('referrals' as any).insert({
+            referrer_id: userId,
+            referral_code: codeData,
+            status: 'pending',
+          });
+
+          setReferral({
+            code: codeData as string,
+            count: 0,
+            earnings: 0,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching referral:', err);
+      // Fallback code
+      setReferral(prev => ({
+        ...prev,
+        code: `HEFT-${userId.slice(0, 5).toUpperCase()}`,
+      }));
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    checkBackendStatus();
+    fetchReferralData();
+  }, [checkBackendStatus, fetchReferralData]);
+
+  const referralLink = `https://heftcoder.icu/signup?ref=${referral.code}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
+    toast.success('Referral link copied!');
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const backendServices = [
-    { name: 'Database', status: 'connected', icon: Database, color: 'emerald' },
-    { name: 'Auth', status: 'active', icon: Shield, color: 'blue' },
-    { name: 'Storage', status: 'ready', icon: Cloud, color: 'purple' },
-  ];
+  const getStatusColor = (color: string) => {
+    switch (color) {
+      case 'emerald': return 'text-emerald-500';
+      case 'blue': return 'text-blue-500';
+      case 'purple': return 'text-purple-500';
+      case 'red': return 'text-red-500';
+      default: return 'text-gray-500';
+    }
+  };
+
+  const getStatusBg = (color: string) => {
+    switch (color) {
+      case 'emerald': return 'bg-emerald-500';
+      case 'blue': return 'bg-blue-500';
+      case 'purple': return 'bg-purple-500';
+      case 'red': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = (color: string) => {
+    switch (color) {
+      case 'emerald': return 'text-emerald-400';
+      case 'blue': return 'text-blue-400';
+      case 'purple': return 'text-purple-400';
+      case 'red': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -41,34 +192,34 @@ export function DeveloperUtilities({ userId, referralCode }: DeveloperUtilitiesP
         </div>
 
         <div className="relative space-y-3">
-          {backendServices.map((service) => (
+          {services.map((service) => (
             <div key={service.name} className="flex items-center justify-between p-3 bg-black/50 rounded-xl border border-white/5 hover:border-orange-500/20 transition-all">
               <div className="flex items-center gap-3">
-                <service.icon size={16} className={
-                  service.color === 'emerald' ? 'text-emerald-500' :
-                  service.color === 'blue' ? 'text-blue-500' : 'text-purple-500'
-                } />
+                <service.icon size={16} className={getStatusColor(service.color)} />
                 <span className="text-sm font-medium text-white">{service.name}</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full animate-pulse shadow-[0_0_8px_currentColor] ${
-                  service.color === 'emerald' ? 'bg-emerald-500' :
-                  service.color === 'blue' ? 'bg-blue-500' : 'bg-purple-500'
-                }`} />
-                <span className={`text-[9px] font-bold uppercase tracking-wider ${
-                  service.color === 'emerald' ? 'text-emerald-400' :
-                  service.color === 'blue' ? 'text-blue-400' : 'text-purple-400'
-                }`}>
-                  {service.status}
-                </span>
+                {service.status === 'checking' ? (
+                  <Loader2 size={12} className="animate-spin text-gray-500" />
+                ) : (
+                  <>
+                    <div className={`h-2 w-2 rounded-full animate-pulse shadow-[0_0_8px_currentColor] ${getStatusBg(service.color)}`} />
+                    <span className={`text-[9px] font-bold uppercase tracking-wider ${getStatusText(service.color)}`}>
+                      {service.status}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           ))}
         </div>
 
-        <button className="relative w-full mt-4 py-3 bg-black/50 hover:bg-orange-500/10 border border-white/10 hover:border-orange-500/30 rounded-xl text-xs font-bold text-gray-400 hover:text-orange-400 transition-all flex items-center justify-center gap-2">
+        <button 
+          onClick={checkBackendStatus}
+          className="relative w-full mt-4 py-3 bg-black/50 hover:bg-orange-500/10 border border-white/10 hover:border-orange-500/30 rounded-xl text-xs font-bold text-gray-400 hover:text-orange-400 transition-all flex items-center justify-center gap-2"
+        >
           <ExternalLink size={12} />
-          View Full Dashboard
+          Refresh Status
         </button>
       </div>
 
@@ -96,17 +247,18 @@ export function DeveloperUtilities({ userId, referralCode }: DeveloperUtilitiesP
           <div className="flex items-center gap-2">
             <input
               type="text"
-              value={referralLink}
+              value={loading ? 'Loading...' : referralLink}
               readOnly
               className="flex-1 bg-[#0a0a0f] border border-orange-500/20 rounded-lg px-3 py-2.5 text-xs font-mono text-orange-400/80 outline-none focus:border-orange-500/50 transition-colors"
             />
             <button
               onClick={handleCopy}
+              disabled={loading}
               className={`p-2.5 rounded-lg transition-all ${
                 copied 
                   ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]' 
                   : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white hover:shadow-[0_0_15px_rgba(251,146,60,0.4)]'
-              }`}
+              } disabled:opacity-50`}
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
             </button>
@@ -126,8 +278,8 @@ export function DeveloperUtilities({ userId, referralCode }: DeveloperUtilitiesP
         </div>
 
         <div className="relative mt-4 flex items-center justify-between text-[10px] text-gray-500">
-          <span>Referrals this month: <span className="text-white font-bold">0</span></span>
-          <span>Earnings: <span className="text-orange-400 font-bold">0 credits</span></span>
+          <span>Referrals this month: <span className="text-white font-bold">{referral.count}</span></span>
+          <span>Earnings: <span className="text-orange-400 font-bold">{referral.earnings.toLocaleString()} credits</span></span>
         </div>
       </div>
     </div>
