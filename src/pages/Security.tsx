@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Shield, Lock, Server, Eye, Key, FileCheck, AlertTriangle, CheckCircle, Clock, Users, Globe, Fingerprint, Database, Code, Mail, Award } from "lucide-react";
-import { Footer } from "@/components/marketing/Footer";
+import { Footer } from "../components/marketing/Footer";
 
 export default function Security() {
   const securityFeatures = [

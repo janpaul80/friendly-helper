@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, FileText, Scale, AlertTriangle, Ban, CreditCard, Shield, Globe, Gavel, HelpCircle, CheckCircle, XCircle, Mail } from "lucide-react";
-import { Footer } from "@/components/marketing/Footer";
+import { Footer } from "../components/marketing/Footer";
 
 export default function Terms() {
   const sections = [

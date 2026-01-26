@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Code, Key, Lock, Globe, Database, Webhook, Cpu, ArrowRight, Copy, CheckCircle, AlertCircle, Info } from "lucide-react";
-import { Footer } from "@/components/marketing/Footer";
+import { Footer } from "../components/marketing/Footer";
 import { useState } from "react";
 
 export default function ApiReference() {
