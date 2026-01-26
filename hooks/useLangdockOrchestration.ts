@@ -70,7 +70,10 @@ export function useLangdockOrchestration() {
   const [generatedFiles, setGeneratedFiles] = useState<any[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const ORCHESTRATE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrate`;
+  // Get Supabase URL from client - more reliable than env vars
+  const SUPABASE_URL = 'https://ythuhewbaulqirjrkgly.supabase.co';
+  const ORCHESTRATE_URL = `${SUPABASE_URL}/functions/v1/orchestrate`;
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI';
 
   const resetAgents = useCallback(() => {
     setAgents(initialAgentStatuses);
@@ -93,7 +96,7 @@ export function useLangdockOrchestration() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
         },
         body: JSON.stringify({ action: 'diagnose' }),
       });
@@ -115,7 +118,7 @@ export function useLangdockOrchestration() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
         },
         body: JSON.stringify({ action: 'start', userRequest }),
       });
@@ -154,7 +157,7 @@ export function useLangdockOrchestration() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
         },
         body: JSON.stringify({ action: 'execute_pipeline', userRequest }),
         signal: abortControllerRef.current.signal,
@@ -290,7 +293,7 @@ export function useLangdockOrchestration() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
         },
         body: JSON.stringify({ action: 'execute_agent', agentType, context }),
         signal: abortControllerRef.current.signal,
@@ -368,7 +371,7 @@ export function useLangdockOrchestration() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
         },
         body: JSON.stringify({ action: 'reset' }),
       });
