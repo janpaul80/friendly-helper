@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
+import { WorkspaceUnavailableModal } from '../components/dashboard/WorkspaceUnavailableModal';
 
 interface UserData {
   id: string;
@@ -49,6 +50,8 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'recents' | 'saved' | 'studio'>('recents');
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [pendingWorkspaceUrl, setPendingWorkspaceUrl] = useState('');
 
   useEffect(() => {
     // Check auth state
@@ -109,20 +112,60 @@ export default function Dashboard() {
     navigate('/');
   };
 
+  const WORKSPACE_BASE_URL = 'https://workspace.heftcoder.icu';
+
+  const checkWorkspaceAvailability = useCallback(async (url: string): Promise<boolean> => {
+    try {
+      // Try to fetch with a short timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(url, { 
+        method: 'HEAD', 
+        mode: 'no-cors',
+        signal: controller.signal 
+      });
+      
+      clearTimeout(timeoutId);
+      // In no-cors mode, we can't read the response, but if we get here without error, it's likely available
+      return true;
+    } catch (error) {
+      console.log('Workspace not yet available:', error);
+      return false;
+    }
+  }, []);
+
+  const handleNavigateToWorkspace = useCallback(async (url: string) => {
+    const isAvailable = await checkWorkspaceAvailability(url);
+    
+    if (isAvailable) {
+      window.location.href = url;
+    } else {
+      setPendingWorkspaceUrl(url);
+      setShowUnavailableModal(true);
+    }
+  }, [checkWorkspaceAvailability]);
+
   const handleCreateProject = () => {
     if (!user) return;
     
-    // Redirect to external HeftCoder workspace
-    const userId = user.id.replace(/-/g, '').slice(0, 12); // Create short user identifier
-    window.location.href = `https://workspace.heftcoder.icu/user${userId}`;
+    const userId = user.id.replace(/-/g, '').slice(0, 12);
+    const targetUrl = `${WORKSPACE_BASE_URL}/user${userId}`;
+    handleNavigateToWorkspace(targetUrl);
   };
 
   const handleOpenExternalWorkspace = (projectId: string) => {
     if (!user) return;
     
-    // Redirect to external HeftCoder workspace with project context
     const userId = user.id.replace(/-/g, '').slice(0, 12);
-    window.location.href = `https://workspace.heftcoder.icu/user${userId}?project=${projectId}`;
+    const targetUrl = `${WORKSPACE_BASE_URL}/user${userId}?project=${projectId}`;
+    handleNavigateToWorkspace(targetUrl);
+  };
+
+  const handleRetryWorkspace = () => {
+    if (pendingWorkspaceUrl) {
+      handleNavigateToWorkspace(pendingWorkspaceUrl);
+    }
   };
 
   const getCreditDisplay = () => {
@@ -157,7 +200,14 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-orange-500/30">
-      {/* Removed create modal - now redirects directly to external workspace */}
+      {/* Workspace Unavailable Modal */}
+      {showUnavailableModal && (
+        <WorkspaceUnavailableModal
+          onClose={() => setShowUnavailableModal(false)}
+          onRetry={handleRetryWorkspace}
+          targetUrl={pendingWorkspaceUrl}
+        />
+      )}
 
       {/* Header */}
       <header className="border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 py-4 flex items-center justify-between">
