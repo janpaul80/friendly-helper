@@ -10,6 +10,12 @@ const Workspace = lazy(() => import("./pages/Workspace"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Auth = lazy(() => import("./pages/Auth"));
 const About = lazy(() => import("./pages/About"));
+const Documentation = lazy(() => import("./pages/Documentation"));
+const ApiReference = lazy(() => import("./pages/ApiReference"));
+const Community = lazy(() => import("./pages/Community"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Security = lazy(() => import("./pages/Security"));
 
 const queryClient = new QueryClient();
 
@@ -29,6 +35,12 @@ function App() {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
+            <Route path="/docs" element={<Documentation />} />
+            <Route path="/api-reference" element={<ApiReference />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/security" element={<Security />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Auth />} />
             <Route path="/signup" element={<Auth />} />
