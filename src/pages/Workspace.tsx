@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Zap, FolderOpen, Monitor, Tablet, Smartphone, Download, Code, Eye, Paperclip, Mic, Github } from "lucide-react";
+import { ArrowRight, Send, Zap, FolderOpen, Monitor, Tablet, Smartphone, Download, Code, Eye, Paperclip, Mic, Github, Sparkles, Clock } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import ReactMarkdown from 'react-markdown';
 
@@ -26,8 +26,21 @@ interface GeneratedProject {
   previewHtml?: string;
 }
 
+interface QuickStartItem {
+  id: string;
+  title: string;
+  prompt: string;
+}
+
+const quickStartItems: QuickStartItem[] = [
+  { id: '1', title: 'Create a modern portfolio website with dark theme', prompt: 'Create a modern portfolio website with dark theme' },
+  { id: '2', title: 'Build a SaaS pricing page with 3 tiers', prompt: 'Build a SaaS pricing page with 3 tiers' },
+  { id: '3', title: 'Design an e-commerce product page with reviews', prompt: 'Design an e-commerce product page with reviews' },
+  { id: '4', title: 'Make a restaurant landing page with menu section', prompt: 'Make a restaurant landing page with menu section' },
+];
+
 type DeviceType = 'desktop' | 'tablet' | 'mobile';
-type ViewMode = 'preview' | 'code';
+type TabType = 'templates' | 'recent';
 
 export default function Workspace() {
   const { id } = useParams();
@@ -36,41 +49,40 @@ export default function Workspace() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isBuilding, setIsBuilding] = useState(false);
   const [device, setDevice] = useState<DeviceType>('desktop');
-  const [viewMode, setViewMode] = useState<ViewMode>('preview');
   const [project, setProject] = useState<GeneratedProject | null>(null);
   const [selectedFile, setSelectedFile] = useState(0);
+  const [activeTab, setActiveTab] = useState<TabType>('templates');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      const newHeight = Math.min(Math.max(textarea.scrollHeight, 56), 200);
+      const newHeight = Math.min(Math.max(textarea.scrollHeight, 48), 200);
       textarea.style.height = `${newHeight}px`;
     }
   }, [message]);
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+  const handleSend = (prompt?: string) => {
+    const content = prompt || message;
+    if (!content.trim()) return;
     
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: message,
+      content,
       timestamp: new Date(),
     };
 
     const assistantMessage: Message = {
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: '🤔 **Analyzing your request...**\n\nI\'m designing the architecture and creating a build plan. This will just take a moment.',
+      content: '🤔 **Analyzing your request...**\n\nI\'m designing the architecture and creating a build plan.',
       timestamp: new Date(),
     };
 
@@ -78,10 +90,8 @@ export default function Workspace() {
     setMessage("");
     setIsBuilding(true);
 
-    // Simulate build completion
     setTimeout(() => {
       setIsBuilding(false);
-      // Demo: Generate a sample project
       setProject({
         name: 'Generated Project',
         type: 'landing',
@@ -104,14 +114,6 @@ export default function Workspace() {
   </div>
 </body>
 </html>`
-          },
-          {
-            path: 'styles.css',
-            language: 'css',
-            content: `/* Custom styles */
-body {
-  font-family: system-ui, sans-serif;
-}`
           }
         ],
         previewHtml: `<!DOCTYPE html>
@@ -134,7 +136,7 @@ body {
       const completeMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: '✅ **Build Complete!**\n\nYour project has been generated successfully. Check the preview panel to see the result.',
+        content: '✅ **Build Complete!**\n\nYour project has been generated successfully.',
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, completeMessage]);
@@ -148,30 +150,33 @@ body {
     }
   };
 
+  const showStartPanel = messages.length === 0;
+
   return (
-    <div className="h-screen flex flex-col bg-background text-foreground">
+    <div className="h-screen flex flex-col bg-[#0a0a0a] text-white">
       {/* Top Nav */}
-      <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
+      <header className="h-14 border-b border-white/10 bg-[#0a0a0a] flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate("/")}
-            className="p-2 hover:bg-secondary rounded-lg transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
           <div className="flex items-center gap-2">
-            <img src={hcIcon} alt="HeftCoder" className="h-8 w-8 rounded-lg" />
+            <div className="h-8 w-8 bg-orange-600 rounded-lg flex items-center justify-center">
+              <Zap size={18} fill="currentColor" />
+            </div>
             <span className="text-lg font-semibold">HeftCoder</span>
           </div>
+          <button className="flex items-center gap-2 px-3 py-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+            <FolderOpen size={18} />
+            <span className="text-sm">File Explorer</span>
+          </button>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
-            <FolderOpen size={20} />
-          </button>
-          <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
+          <button className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white">
             <Github size={20} />
           </button>
-          <button className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors">
+          <button className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white">
+            <Download size={20} />
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors">
+            <div className="w-4 h-4 border-2 border-white rounded-full" />
             Publish
           </button>
         </div>
@@ -181,69 +186,121 @@ body {
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Chat Panel */}
         <ResizablePanel defaultSize={40} minSize={25} maxSize={55}>
-          <div className="h-full flex flex-col bg-card">
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <h2 className="text-2xl font-bold mb-2">What would you like to build?</h2>
-                  <p className="text-muted-foreground max-w-md">
-                    Describe your project and I'll help you create it. I can build web apps,
-                    APIs, landing pages, dashboards, and more.
-                  </p>
-                </div>
-              ) : (
-                messages.map((msg) => (
-                  <div 
-                    key={msg.id} 
-                    className={`p-4 rounded-xl ${
-                      msg.role === 'user' 
-                        ? 'bg-primary/20 ml-8 border border-primary/30' 
-                        : 'bg-secondary mr-8'
-                    }`}
-                  >
-                    <div className="prose prose-sm prose-invert max-w-none">
-                      <ReactMarkdown>
-                        {msg.content}
-                      </ReactMarkdown>
+          <div className="h-full flex flex-col bg-[#111111] border-r border-white/10">
+            {/* Messages or Start Panel */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {showStartPanel ? (
+                <div className="space-y-6">
+                  {/* Header */}
+                  <div>
+                    <h1 className="text-2xl font-bold text-white mb-2">What would you like to build?</h1>
+                    <p className="text-gray-400 text-sm">
+                      Start from a template, continue a project, or describe what you want to create.
+                    </p>
+                  </div>
+
+                  {/* Quick Start Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-orange-500">
+                      <Sparkles size={16} />
+                      <span className="text-sm font-medium">Quick start</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {quickStartItems.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => handleSend(item.prompt)}
+                          className="group flex items-start justify-between p-4 bg-transparent border border-white/10 hover:border-orange-500/50 hover:bg-white/5 rounded-xl text-left transition-all"
+                        >
+                          <span className="text-sm text-gray-300 group-hover:text-white pr-2 leading-relaxed">
+                            {item.title}
+                          </span>
+                          <ArrowRight size={16} className="text-gray-500 group-hover:text-orange-500 mt-0.5 shrink-0 transition-colors" />
+                        </button>
+                      ))}
                     </div>
                   </div>
-                ))
+
+                  {/* Templates / Recent Projects Tabs */}
+                  <div className="flex items-center gap-2 pt-4">
+                    <button
+                      onClick={() => setActiveTab('templates')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        activeTab === 'templates'
+                          ? 'bg-white/10 text-white'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Sparkles size={14} />
+                      Templates
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('recent')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        activeTab === 'recent'
+                          ? 'bg-white/10 text-white'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Clock size={14} />
+                      Recent Projects
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((msg) => (
+                    <div 
+                      key={msg.id} 
+                      className={`p-4 rounded-xl ${
+                        msg.role === 'user' 
+                          ? 'bg-orange-600/20 ml-8 border border-orange-500/30' 
+                          : 'bg-white/5 mr-8'
+                      }`}
+                    >
+                      <div className="prose prose-sm prose-invert max-w-none">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
             
             {/* Input */}
-            <div className="p-4 border-t border-border">
-              <div className="flex flex-col gap-3 p-3 bg-input rounded-xl border border-border focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
+            <div className="p-4 border-t border-white/10">
+              <div className="flex flex-col gap-3 p-3 bg-[#1a1a1a] rounded-xl border border-white/10 focus-within:border-orange-500/50 transition-all">
                 <textarea
                   ref={textareaRef}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Message HeftCoder..."
-                  className="w-full min-h-[56px] max-h-[200px] resize-none bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 text-base leading-relaxed"
+                  placeholder="Message HeftCoder"
+                  className="w-full min-h-[48px] max-h-[200px] resize-none bg-transparent border-0 text-white placeholder:text-gray-500 focus:outline-none text-sm leading-relaxed"
                   rows={1}
                   disabled={isBuilding}
                 />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+                    <button className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white">
                       <Paperclip size={18} />
                     </button>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg text-sm text-muted-foreground border border-primary/30 shadow-[0_0_15px_rgba(255,140,0,0.3),0_0_30px_rgba(255,140,0,0.15)]">
-                      <img src={hcIcon} alt="HeftCoder" className="h-6 w-6 rounded" />
-                      <span className="text-foreground font-medium">agents</span>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-[#252525] rounded-lg text-sm border border-orange-500/30 shadow-[0_0_15px_rgba(255,140,0,0.2)]">
+                      <div className="h-5 w-5 bg-orange-600 rounded flex items-center justify-center">
+                        <Zap size={12} fill="currentColor" />
+                      </div>
+                      <span className="text-white font-medium">agents</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+                    <button className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white">
                       <Mic size={18} />
                     </button>
                     <button 
-                      onClick={handleSend}
+                      onClick={() => handleSend()}
                       disabled={!message.trim() || isBuilding}
-                      className="p-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Send size={18} />
                     </button>
@@ -254,93 +311,68 @@ body {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle className="w-1.5 bg-border hover:bg-primary/50 transition-colors data-[resize-handle-active]:bg-primary" />
+        <ResizableHandle className="w-px bg-white/10 hover:bg-orange-500/50 transition-colors" />
 
         {/* Preview Panel */}
         <ResizablePanel defaultSize={60} minSize={45} maxSize={75}>
-          <div className="h-full flex flex-col bg-background">
-            {/* Preview Toolbar */}
-            <div className="h-12 border-b border-border px-4 flex items-center justify-between bg-card/50">
-              <div className="flex items-center gap-2">
-                {/* View Mode Toggle */}
-                <div className="flex items-center bg-secondary rounded-lg p-1">
-                  <button 
-                    onClick={() => setViewMode('preview')}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                      viewMode === 'preview' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <Eye size={14} />
-                    Preview
-                  </button>
-                  <button 
-                    onClick={() => setViewMode('code')}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                      viewMode === 'code' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <Code size={14} />
-                    Code
-                  </button>
-                </div>
-
-                {/* Device Selector (only in preview mode) */}
-                {viewMode === 'preview' && (
-                  <div className="flex items-center gap-1 bg-secondary rounded-lg p-1 ml-2">
-                    <button 
-                      onClick={() => setDevice('desktop')}
-                      className={`p-2 rounded transition-colors ${device === 'desktop' ? 'bg-background' : 'hover:bg-background/50'}`}
-                    >
-                      <Monitor size={16} />
-                    </button>
-                    <button 
-                      onClick={() => setDevice('tablet')}
-                      className={`p-2 rounded transition-colors ${device === 'tablet' ? 'bg-background' : 'hover:bg-background/50'}`}
-                    >
-                      <Tablet size={16} />
-                    </button>
-                    <button 
-                      onClick={() => setDevice('mobile')}
-                      className={`p-2 rounded transition-colors ${device === 'mobile' ? 'bg-background' : 'hover:bg-background/50'}`}
-                    >
-                      <Smartphone size={16} />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {project && (
-                <button className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground">
-                  <Download size={18} />
-                </button>
-              )}
-            </div>
-
+          <div className="h-full flex flex-col bg-[#0d0d0d]">
             {/* Preview Content */}
             <div className="flex-1 flex items-center justify-center">
               {isBuilding ? (
                 <div className="flex flex-col items-center justify-center">
                   <div className="relative mb-8">
-                    <div className="absolute inset-0 bg-primary/30 blur-3xl rounded-full scale-150 animate-pulse" />
-                    <img
-                      src={hcIcon}
-                      alt="HeftCoder"
-                      className="relative w-24 h-24 rounded-2xl animate-pulse"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl font-medium">Building your project</span>
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="absolute inset-0 bg-orange-500/30 blur-3xl rounded-full scale-150 animate-pulse" />
+                    <div className="relative w-20 h-20 bg-orange-600 rounded-2xl flex items-center justify-center">
+                      <Zap size={40} fill="currentColor" />
                     </div>
                   </div>
-                  <p className="text-muted-foreground mt-2 text-sm">Preview will appear when ready...</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-medium text-white">Building your project</span>
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
                 </div>
               ) : project ? (
-                viewMode === 'preview' ? (
-                  <div className="h-full w-full flex items-center justify-center bg-[#1a1a1a] p-4">
+                <div className="h-full w-full flex flex-col">
+                  {/* Preview Toolbar */}
+                  <div className="h-12 border-b border-white/10 px-4 flex items-center justify-between bg-[#111]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-[#1a1a1a] rounded-lg p-1">
+                        <button className="flex items-center gap-1 px-3 py-1.5 bg-white/10 rounded text-sm font-medium text-white">
+                          <Eye size={14} />
+                          Preview
+                        </button>
+                        <button className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-400 hover:text-white">
+                          <Code size={14} />
+                          Code
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-1 bg-[#1a1a1a] rounded-lg p-1 ml-2">
+                        <button 
+                          onClick={() => setDevice('desktop')}
+                          className={`p-2 rounded transition-colors ${device === 'desktop' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                          <Monitor size={16} />
+                        </button>
+                        <button 
+                          onClick={() => setDevice('tablet')}
+                          className={`p-2 rounded transition-colors ${device === 'tablet' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                          <Tablet size={16} />
+                        </button>
+                        <button 
+                          onClick={() => setDevice('mobile')}
+                          className={`p-2 rounded transition-colors ${device === 'mobile' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                          <Smartphone size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center bg-[#1a1a1a] p-4">
                     <div 
                       className={`bg-white rounded-lg shadow-2xl overflow-hidden transition-all duration-300 ${
                         device !== 'desktop' ? 'border-8 border-gray-800 rounded-3xl' : ''
@@ -360,46 +392,13 @@ body {
                       />
                     </div>
                   </div>
-                ) : (
-                  <div className="h-full w-full flex">
-                    {/* File list */}
-                    <div className="w-48 bg-secondary/50 border-r border-border overflow-y-auto">
-                      <div className="p-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                        Files
-                      </div>
-                      {project.files.map((file, index) => (
-                        <button
-                          key={file.path}
-                          onClick={() => setSelectedFile(index)}
-                          className={`w-full text-left px-3 py-2 text-sm truncate transition-colors ${
-                            selectedFile === index 
-                              ? 'bg-primary/20 text-primary' 
-                              : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                          }`}
-                        >
-                          {file.path}
-                        </button>
-                      ))}
-                    </div>
-                    
-                    {/* Code content */}
-                    <div className="flex-1 overflow-auto bg-black/40 p-4">
-                      <pre className="text-sm font-mono text-foreground/90 whitespace-pre-wrap">
-                        <code>{project.files[selectedFile]?.content}</code>
-                      </pre>
-                    </div>
-                  </div>
-                )
+                </div>
               ) : (
-                <div className="text-center">
-                  <div className="mb-6 opacity-60">
-                    <img
-                      src={hcIcon}
-                      alt="HeftCoder"
-                      className="w-20 h-20 rounded-2xl mx-auto"
-                    />
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mb-6">
+                    <Zap size={32} fill="currentColor" />
                   </div>
-                  <p className="text-lg text-muted-foreground max-w-md">
+                  <p className="text-gray-400 text-lg max-w-sm">
                     Your project preview will appear here once generation starts
                   </p>
                 </div>
