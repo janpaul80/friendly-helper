@@ -13,6 +13,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "HEFTCoder - Where ideas become reality",
   description: "The most powerful autonomous AI agents for building production-ready applications in minutes.",
+  icons: {
+    icon: "/assets/hc-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -21,22 +24,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-      appearance={{
-        baseTheme: dark,
-        variables: {
-          colorPrimary: "#ff6b35",
-        }
-      }}
-    >
-      <SyncUser />
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${inter.variable} antialiased dark font-sans`}
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} antialiased dark font-sans`}>
+        <ClerkProvider
+          appearance={{
+            baseTheme: dark,
+            variables: {
+              colorPrimary: "#ff6b35",
+            }
+          }}
         >
+          <SyncUser />
           {children}
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
