@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '../lib/supabase';
 
 export interface Template {
   id: string;
@@ -18,7 +18,7 @@ export function useTemplates(category?: string) {
     queryKey: ['templates', category],
     queryFn: async () => {
       let query = supabase
-        .from('templates')
+        .from('templates' as any)
         .select('*')
         .order('is_featured', { ascending: false })
         .order('created_at', { ascending: false });
@@ -30,7 +30,7 @@ export function useTemplates(category?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Template[];
+      return (data || []) as unknown as Template[];
     },
   });
 }
@@ -40,14 +40,14 @@ export function useFeaturedTemplates() {
     queryKey: ['templates', 'featured'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('templates')
+        .from('templates' as any)
         .select('*')
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
         .limit(4);
 
       if (error) throw error;
-      return data as Template[];
+      return (data || []) as unknown as Template[];
     },
   });
 }
