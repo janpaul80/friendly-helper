@@ -31,6 +31,7 @@ function App() {
             <Route path="/login" element={<Auth />} />
             <Route path="/signup" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/workspace/new" element={<Workspace />} />
             <Route path="/workspace/:id" element={<Workspace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
