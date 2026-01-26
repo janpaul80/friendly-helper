@@ -30,11 +30,16 @@ interface UserData {
 interface Project {
   id: string;
   name: string;
-  description?: string;
-  thumbnail_url?: string;
+  description: string | null;
+  thumbnail_url: string | null;
   created_at: string;
   updated_at: string;
   project_type: string;
+  template_id: string | null;
+  preview_html: string | null;
+  original_prompt: string;
+  user_id: string;
+  files: any;
 }
 
 export default function Dashboard() {
