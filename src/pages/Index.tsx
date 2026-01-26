@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
+import { supabase } from "@/src/integrations/supabase/client";
 import {
   Paperclip,
   Github,
@@ -164,25 +165,22 @@ export default function LandingPage() {
     setLoadingPlan(plan);
     try {
       // Call the Supabase edge function for Stripe checkout
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            plan: plan.charAt(0).toUpperCase() + plan.slice(1), // Capitalize: "basic" -> "Basic"
-            userId: null, // Will be set if user is logged in
-            userEmail: null,
-          }),
-        }
-      );
-      const data = await response.json();
-      if (data.url) {
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: {
+          plan: plan.charAt(0).toUpperCase() + plan.slice(1), // Capitalize: "basic" -> "Basic"
+          userId: null,
+          userEmail: null,
+        },
+      });
+
+      if (error) {
+        console.error("Checkout error:", error);
+        return;
+      }
+
+      if (data?.url) {
         window.location.href = data.url;
-      } else if (data.error) {
+      } else if (data?.error) {
         console.error("Checkout error:", data.error);
       }
     } catch (error) {
