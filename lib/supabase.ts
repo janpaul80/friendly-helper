@@ -26,7 +26,11 @@ const getEnvVar = (viteKey: string, nextKey: string, fallbackKey?: string): stri
 const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_URL');
 const supabaseAnonKey = getEnvVar('VITE_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY');
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Fallback to hardcoded values if environment variables are not available (Lovable Cloud)
+const finalUrl = supabaseUrl || 'https://ttyguxhbxgohlrtkryas.supabase.co';
+const finalKey = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0eWd1eGhieGdvaGxydGtyeWFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzMTI3ODgsImV4cCI6MjA4NDg4ODc4OH0.aHSf39WqvVvxM5aFkTf8zERNuXenr0_TRd3Wc2rsiKM';
+
+export const supabase = createClient(finalUrl, finalKey);
 
 export const createServiceClient = () => {
   // Service client is only for server-side use
