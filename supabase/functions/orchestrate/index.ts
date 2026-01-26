@@ -1,8 +1,8 @@
 /**
  * HeftCoder Orchestration Edge Function
  * 
- * Routes execution to real Langdock agents while streaming results back via SSE.
- * This is the core backend for the multi-agent orchestration pipeline.
+ * Uses Langdock Assistant API (/assistant/v1/chat/completions) with per-agent assistantIds.
+ * Streams results back via SSE for real-time UI updates.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -12,239 +12,174 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Agent type mapping
 type AgentType = 'architect' | 'backend' | 'frontend' | 'integrator' | 'qa' | 'devops';
 
 interface OrchestrationRequest {
-  action: 'start' | 'approve_plan' | 'execute_agent' | 'get_state' | 'reset';
+  action: 'start' | 'approve_plan' | 'execute_agent' | 'execute_pipeline' | 'get_state' | 'reset' | 'diagnose';
   userRequest?: string;
   plan?: any;
   agentType?: AgentType;
   context?: any;
 }
 
-// In-memory state (in production, use Supabase for persistence)
+// In-memory state
 let orchestrationState = {
-  phase: 'idle',
+  phase: 'idle' as string,
   currentAgent: null as AgentType | null,
   plan: null as any,
   progress: 0,
   executionLog: [] as any[],
   error: null as string | null,
+  generatedFiles: [] as any[],
 };
 
-// Handoff tools for agent-to-agent communication
-const HANDOFF_TOOLS = [
-  {
-    type: 'function',
-    function: {
-      name: 'handoff_to_backend',
-      description: 'Call when plan is approved to delegate backend work',
-      parameters: {
-        type: 'object',
-        properties: {
-          plan_json: { type: 'object', description: 'The structured plan' }
-        },
-        required: ['plan_json']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'handoff_to_frontend',
-      description: 'Call when backend is complete to delegate UI work',
-      parameters: {
-        type: 'object',
-        properties: {
-          backend_artifacts: { type: 'object', description: 'Backend artifacts' }
-        },
-        required: ['backend_artifacts']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'handoff_to_integrator',
-      description: 'Call when frontend is complete to verify connections',
-      parameters: {
-        type: 'object',
-        properties: {
-          frontend_artifacts: { type: 'object', description: 'Frontend artifacts' }
-        },
-        required: ['frontend_artifacts']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'handoff_to_qa',
-      description: 'Call when integration is complete to test/harden',
-      parameters: {
-        type: 'object',
-        properties: {
-          integration_status: { type: 'string', description: 'Integration summary' }
-        },
-        required: ['integration_status']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'handoff_to_devops',
-      description: 'Call when QA is complete to deploy',
-      parameters: {
-        type: 'object',
-        properties: {
-          qa_report: { type: 'string', description: 'QA findings' }
-        },
-        required: ['qa_report']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'mark_complete',
-      description: 'Call when deployment is successful',
-      parameters: {
-        type: 'object',
-        properties: {
-          deployment_url: { type: 'string', description: 'Live URL' }
-        },
-        required: ['deployment_url']
-      }
-    }
-  }
-];
+// Agent assistant ID environment variable names
+const ASSISTANT_ENV_VARS: Record<AgentType, string> = {
+  'architect': 'LANGDOCK_ASSISTANT_ARCHITECT',
+  'backend': 'LANGDOCK_ASSISTANT_BACKEND',
+  'frontend': 'LANGDOCK_ASSISTANT_FRONTEND',
+  'integrator': 'LANGDOCK_ASSISTANT_INTEGRATOR',
+  'qa': 'LANGDOCK_ASSISTANT_QA',
+  'devops': 'LANGDOCK_ASSISTANT_DEVOPS',
+};
 
-// Get agent-specific tools
-function getToolsForAgent(agentType: AgentType) {
-  const toolMap: Record<AgentType, string[]> = {
-    'architect': ['handoff_to_backend'],
-    'backend': ['handoff_to_frontend'],
-    'frontend': ['handoff_to_integrator'],
-    'integrator': ['handoff_to_qa'],
-    'qa': ['handoff_to_devops'],
-    'devops': ['mark_complete']
-  };
-  
-  const toolNames = toolMap[agentType] || [];
-  return HANDOFF_TOOLS.filter(t => toolNames.includes(t.function.name));
+// Agent display names
+const AGENT_NAMES: Record<AgentType, string> = {
+  'architect': 'The Architect',
+  'backend': 'Backend Engineer',
+  'frontend': 'Frontend Engineer',
+  'integrator': 'The Integrator',
+  'qa': 'QA & Hardening',
+  'devops': 'DevOps',
+};
+
+// Execution pipeline order
+const AGENT_PIPELINE: AgentType[] = ['architect', 'backend', 'frontend', 'integrator', 'qa', 'devops'];
+
+// Get assistant ID for an agent
+function getAssistantId(agentType: AgentType): string | null {
+  const envVar = ASSISTANT_ENV_VARS[agentType];
+  // @ts-ignore - Deno global
+  return Deno.env.get(envVar) || null;
 }
 
-// Get agent ID from environment
-function getAgentId(agentType: AgentType): string {
-  const envMap: Record<AgentType, string> = {
-    'architect': 'AGENT_ARCHITECT_ID',
-    'backend': 'AGENT_BACKEND_ID',
-    'frontend': 'AGENT_FRONTEND_ID',
-    'integrator': 'AGENT_INTEGRATOR_ID',
-    'qa': 'AGENT_QA_ID',
-    'devops': 'AGENT_DEVOPS_ID'
+// Get Langdock API key
+function getApiKey(): string {
+  // @ts-ignore - Deno global
+  const key = Deno.env.get('LANGDOCK_API_KEY');
+  if (!key) throw new Error('LANGDOCK_API_KEY not configured');
+  return key;
+}
+
+// Diagnose which env vars are present
+function diagnoseEnvVars(): Record<string, boolean> {
+  const result: Record<string, boolean> = {
+    'LANGDOCK_API_KEY': false,
   };
   
   // @ts-ignore - Deno global
-  const id = Deno.env.get(envMap[agentType]);
-  if (!id) {
-    throw new Error(`${envMap[agentType]} not configured`);
+  result['LANGDOCK_API_KEY'] = !!Deno.env.get('LANGDOCK_API_KEY');
+  
+  for (const [agent, envVar] of Object.entries(ASSISTANT_ENV_VARS)) {
+    // @ts-ignore - Deno global
+    result[envVar] = !!Deno.env.get(envVar);
   }
-  return id;
+  
+  return result;
 }
 
-// Generate prompt for each agent
+// Generate agent prompt based on context
 function getAgentPrompt(agentType: AgentType, context: any): string {
   const prompts: Record<AgentType, string> = {
-    'architect': `You are The Architect. Analyze this request and create an execution plan:
+    'architect': `Analyze this request and create an execution plan:
 ${context?.userRequest || 'No request provided'}
 
-Create a plan with:
-1. Tech stack selection (frontend, backend, database, auth)
-2. Repository structure
-3. Execution steps for each agent
+Output a structured plan with:
+1. Project name and description
+2. Tech stack: frontend (React/Next.js), backend, database, auth
+3. Repository structure with file paths
+4. Execution steps for each agent phase
 
-When the plan is approved, call handoff_to_backend() with the plan JSON.`,
+Format the plan as JSON that can be parsed.`,
     
-    'backend': `You are the Backend Engineer. Build the backend based on this plan:
-${JSON.stringify(context?.plan_json || {}, null, 2)}
+    'backend': `Build the backend based on this plan:
+${JSON.stringify(context?.plan || {}, null, 2)}
 
-Create:
-1. API routes and endpoints
-2. Database schema and models  
-3. Authentication/authorization
-4. Server configuration
+Generate:
+1. API routes (Express/Fastify)
+2. Database schema (SQL/Prisma)
+3. Authentication middleware
+4. Server configuration files
 
-When complete, call handoff_to_frontend() with backend artifacts.`,
+Output each file with its path and content.`,
     
-    'frontend': `You are the Frontend Engineer. Build the UI based on this backend:
-${JSON.stringify(context?.backend_artifacts || {}, null, 2)}
+    'frontend': `Build the frontend UI. Backend context:
+${JSON.stringify(context?.backendArtifacts || {}, null, 2)}
 
-Create:
-1. React/Next.js components
+Generate:
+1. React components with Tailwind CSS
 2. Pages and routing
-3. State management
-4. API integration
+3. State management hooks
+4. API client utilities
 
-When complete, call handoff_to_integrator() with frontend artifacts.`,
+Output each file with its path and content.`,
     
-    'integrator': `You are The Integrator. Connect frontend to backend:
-${JSON.stringify(context?.frontend_artifacts || {}, null, 2)}
+    'integrator': `Connect frontend to backend:
+${JSON.stringify(context?.frontendArtifacts || {}, null, 2)}
 
 Tasks:
-1. Wire API calls
-2. Test data flow
-3. Fix integration issues
-4. Verify end-to-end functionality
+1. Wire API calls to backend endpoints
+2. Handle loading states and errors
+3. Verify CORS configuration
+4. Ensure env vars are aligned
 
-When complete, call handoff_to_qa() with integration status.`,
+Output integration files and fixes.`,
     
-    'qa': `You are QA & Hardening. Test and harden the application:
-Integration Status: ${context?.integration_status || 'Complete'}
+    'qa': `Test and harden the application:
+Integration status: ${context?.integrationStatus || 'Complete'}
 
 Tasks:
-1. Run tests
-2. Fix bugs
-3. Add error handling
-4. Security review
+1. Add error boundaries
+2. Input validation
+3. Security headers
+4. Performance checks
 
-When complete, call handoff_to_devops() with QA report.`,
+Output hardening patches as files.`,
     
-    'devops': `You are DevOps. Deploy the application:
-QA Report: ${context?.qa_report || 'All tests passing'}
+    'devops': `Deploy the application:
+${context?.qaReport || 'All checks passed'}
 
 Tasks:
-1. Configure deployment
-2. Set environment variables
-3. Deploy to production
-4. Verify live site
+1. Dockerfile
+2. docker-compose.yml
+3. CI/CD config (.github/workflows)
+4. Environment template
 
-When successful, call mark_complete() with the deployment URL.`
+Output deployment files.`
   };
   
   return prompts[agentType];
 }
 
-// Call Langdock agent with streaming
-async function callLangdockAgent(
+// Call Langdock Assistant API with streaming
+async function callLangdockAssistant(
   agentType: AgentType,
   context: any,
-  onChunk: (chunk: string) => void
-): Promise<{ content: string; toolCalls: any[] }> {
-  // @ts-ignore - Deno global
-  const apiKey = Deno.env.get('LANGDOCK_API_KEY');
-  if (!apiKey) {
-    throw new Error('LANGDOCK_API_KEY not configured');
+  onChunk: (chunk: string) => void,
+  onStatus: (status: string) => void
+): Promise<{ content: string; files: any[] }> {
+  const apiKey = getApiKey();
+  const assistantId = getAssistantId(agentType);
+  
+  if (!assistantId) {
+    throw new Error(`${ASSISTANT_ENV_VARS[agentType]} not configured`);
   }
   
-  const agentId = getAgentId(agentType);
-  const url = `https://api.langdock.com/agent/v1/${agentId}/chat/completions`;
-  const tools = getToolsForAgent(agentType);
+  const url = 'https://api.langdock.com/assistant/v1/chat/completions';
   const prompt = getAgentPrompt(agentType, context);
   
-  console.log(`[Orchestrate] Calling ${agentType} agent (${agentId})`);
+  console.log(`[Orchestrate] Calling ${AGENT_NAMES[agentType]} (${assistantId.substring(0, 8)}...)`);
+  onStatus(`${AGENT_NAMES[agentType]} is thinking...`);
   
   const response = await fetch(url, {
     method: 'POST',
@@ -253,9 +188,9 @@ async function callLangdockAgent(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      assistantId,
       messages: [{ role: 'user', content: prompt }],
       stream: true,
-      tools: tools.length > 0 ? tools : undefined,
     }),
   });
   
@@ -265,16 +200,16 @@ async function callLangdockAgent(
   }
   
   if (!response.body) {
-    throw new Error('No response body');
+    throw new Error('No response body from Langdock');
   }
+  
+  onStatus(`${AGENT_NAMES[agentType]} is generating code...`);
   
   // Process SSE stream
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
   let fullContent = '';
-  let toolCalls: any[] = [];
-  let currentToolCall: any = null;
   
   while (true) {
     const { done, value } = await reader.read();
@@ -291,101 +226,76 @@ async function callLangdockAgent(
       
       try {
         const chunk = JSON.parse(jsonStr);
-        const delta = chunk.choices?.[0]?.delta;
+        const delta = chunk.choices?.[0]?.delta?.content;
         
-        if (delta?.content) {
-          fullContent += delta.content;
-          onChunk(delta.content);
-        }
-        
-        if (delta?.tool_calls) {
-          for (const tc of delta.tool_calls) {
-            if (tc.id) {
-              // New tool call
-              if (currentToolCall) {
-                toolCalls.push(currentToolCall);
-              }
-              currentToolCall = {
-                id: tc.id,
-                type: tc.type,
-                function: {
-                  name: tc.function?.name || '',
-                  arguments: tc.function?.arguments || ''
-                }
-              };
-            } else if (currentToolCall && tc.function?.arguments) {
-              // Continue building arguments
-              currentToolCall.function.arguments += tc.function.arguments;
-            }
-          }
+        if (delta) {
+          fullContent += delta;
+          onChunk(delta);
         }
       } catch {
-        // Skip invalid JSON
+        // Skip invalid JSON chunks
       }
     }
   }
   
-  // Push last tool call
-  if (currentToolCall) {
-    toolCalls.push(currentToolCall);
-  }
+  // Extract files from content (look for code blocks with file paths)
+  const files = extractFilesFromContent(fullContent);
   
-  return { content: fullContent, toolCalls };
+  return { content: fullContent, files };
 }
 
-// Process tool calls and transition state
-function processToolCall(toolCall: any): { nextAgent: AgentType | null; context: any } {
-  const name = toolCall.function.name;
-  let args: any = {};
+// Extract files from markdown code blocks
+function extractFilesFromContent(content: string): any[] {
+  const files: any[] = [];
   
-  try {
-    args = JSON.parse(toolCall.function.arguments);
-  } catch {
-    console.error('Failed to parse tool arguments');
+  // Match code blocks with file paths like ```tsx:src/components/Button.tsx
+  const codeBlockRegex = /```(\w+)?(?::([^\n]+))?\n([\s\S]*?)```/g;
+  let match;
+  
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    const language = match[1] || 'text';
+    const filePath = match[2];
+    const code = match[3].trim();
+    
+    if (filePath && code) {
+      files.push({
+        path: filePath,
+        content: code,
+        language,
+      });
+    }
   }
   
-  const transitions: Record<string, { agent: AgentType; phase: string }> = {
-    'handoff_to_backend': { agent: 'backend', phase: 'building_backend' },
-    'handoff_to_frontend': { agent: 'frontend', phase: 'building_frontend' },
-    'handoff_to_integrator': { agent: 'integrator', phase: 'integrating' },
-    'handoff_to_qa': { agent: 'qa', phase: 'qa_testing' },
-    'handoff_to_devops': { agent: 'devops', phase: 'deploying' },
-  };
-  
-  if (name === 'mark_complete') {
-    orchestrationState.phase = 'complete';
-    orchestrationState.progress = 100;
-    return { nextAgent: null, context: args };
-  }
-  
-  const transition = transitions[name];
-  if (transition) {
-    orchestrationState.phase = transition.phase;
-    orchestrationState.currentAgent = transition.agent;
-    return { nextAgent: transition.agent, context: args };
-  }
-  
-  return { nextAgent: null, context: null };
+  return files;
 }
 
-// Update progress based on phase
-function updateProgress(phase: string) {
-  const progressMap: Record<string, number> = {
-    'idle': 0,
-    'planning': 10,
-    'awaiting_approval': 15,
-    'building_backend': 30,
-    'building_frontend': 50,
-    'integrating': 70,
-    'qa_testing': 85,
-    'deploying': 95,
-    'complete': 100,
+// Update progress based on agent
+function getProgressForAgent(agentType: AgentType): number {
+  const progressMap: Record<AgentType, number> = {
+    'architect': 15,
+    'backend': 35,
+    'frontend': 55,
+    'integrator': 75,
+    'qa': 90,
+    'devops': 100,
   };
-  orchestrationState.progress = progressMap[phase] || 0;
+  return progressMap[agentType];
+}
+
+// Get phase name for agent
+function getPhaseForAgent(agentType: AgentType): string {
+  const phaseMap: Record<AgentType, string> = {
+    'architect': 'planning',
+    'backend': 'building_backend',
+    'frontend': 'building_frontend',
+    'integrator': 'integrating',
+    'qa': 'qa_testing',
+    'devops': 'deploying',
+  };
+  return phaseMap[agentType];
 }
 
 serve(async (req: Request) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -397,19 +307,31 @@ serve(async (req: Request) => {
     console.log(`[Orchestrate] Action: ${action}`);
     
     switch (action) {
+      case 'diagnose': {
+        const envStatus = diagnoseEnvVars();
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            envVars: envStatus,
+            message: 'Environment variable diagnostic'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       case 'start': {
-        // Reset and start planning
         orchestrationState = {
           phase: 'planning',
           currentAgent: 'architect',
           plan: null,
-          progress: 10,
+          progress: 5,
           executionLog: [{
             timestamp: new Date().toISOString(),
             agent: 'architect',
-            message: 'Starting project planning...'
+            message: 'Starting project analysis...'
           }],
           error: null,
+          generatedFiles: [],
         };
         
         return new Response(
@@ -426,7 +348,7 @@ serve(async (req: Request) => {
         orchestrationState.executionLog.push({
           timestamp: new Date().toISOString(),
           agent: 'backend',
-          message: 'Plan approved. Starting backend scaffolding...'
+          message: 'Plan approved. Starting backend generation...'
         });
         
         return new Response(
@@ -437,10 +359,9 @@ serve(async (req: Request) => {
       
       case 'execute_agent': {
         if (!agentType) {
-          throw new Error('agentType required for execute_agent');
+          throw new Error('agentType required');
         }
         
-        // Create SSE response for streaming
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
           async start(controller) {
@@ -449,78 +370,146 @@ serve(async (req: Request) => {
             };
             
             try {
-              // Send initial status
+              orchestrationState.currentAgent = agentType;
+              orchestrationState.phase = getPhaseForAgent(agentType);
+              
               send({
-                type: 'agent_status',
+                type: 'agent_start',
                 agent: agentType,
-                status: 'working',
-                message: `${agentType} agent is working...`
+                name: AGENT_NAMES[agentType],
+                phase: orchestrationState.phase,
               });
               
-              // Call Langdock agent
-              const { content, toolCalls } = await callLangdockAgent(
+              const { content, files } = await callLangdockAssistant(
                 agentType,
                 context,
                 (chunk) => {
-                  send({
-                    type: 'agent_stream',
-                    agent: agentType,
-                    chunk
-                  });
+                  send({ type: 'stream', agent: agentType, chunk });
+                },
+                (status) => {
+                  send({ type: 'status', agent: agentType, message: status });
                 }
               );
               
-              // Log the output
+              // Store files
+              orchestrationState.generatedFiles.push(...files);
+              orchestrationState.progress = getProgressForAgent(agentType);
+              
+              // Log completion
               orchestrationState.executionLog.push({
                 timestamp: new Date().toISOString(),
                 agent: agentType,
-                message: content.substring(0, 200) + '...'
+                message: `Completed. Generated ${files.length} files.`,
+                filesGenerated: files.map(f => f.path),
               });
               
-              // Process tool calls for handoffs
-              if (toolCalls.length > 0) {
-                for (const tc of toolCalls) {
-                  const { nextAgent, context: nextContext } = processToolCall(tc);
-                  
-                  send({
-                    type: 'tool_call',
-                    agent: agentType,
-                    tool: tc.function.name,
-                    nextAgent
-                  });
-                  
-                  updateProgress(orchestrationState.phase);
-                  
-                  // If there's a next agent, recursively execute
-                  if (nextAgent) {
-                    send({
-                      type: 'agent_status',
-                      agent: nextAgent,
-                      status: 'starting',
-                      message: `Handing off to ${nextAgent}...`
-                    });
-                  }
-                }
-              }
-              
-              // Send completion
               send({
                 type: 'agent_complete',
                 agent: agentType,
                 content,
-                state: orchestrationState
+                files,
+                progress: orchestrationState.progress,
               });
               
             } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-              console.error(`[Orchestrate] Error:`, error);
+              const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+              orchestrationState.error = errorMsg;
               orchestrationState.phase = 'error';
-              orchestrationState.error = errorMessage;
               
+              send({ type: 'error', agent: agentType, message: errorMsg });
+            }
+            
+            send({ type: '[DONE]' });
+            controller.close();
+          }
+        });
+        
+        return new Response(stream, {
+          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' }
+        });
+      }
+      
+      case 'execute_pipeline': {
+        // Execute all agents in sequence with streaming
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          async start(controller) {
+            const send = (data: any) => {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+            };
+            
+            let pipelineContext: any = { userRequest };
+            
+            for (const agent of AGENT_PIPELINE) {
+              try {
+                orchestrationState.currentAgent = agent;
+                orchestrationState.phase = getPhaseForAgent(agent);
+                
+                send({
+                  type: 'agent_start',
+                  agent,
+                  name: AGENT_NAMES[agent],
+                  phase: orchestrationState.phase,
+                  progress: orchestrationState.progress,
+                });
+                
+                const { content, files } = await callLangdockAssistant(
+                  agent,
+                  pipelineContext,
+                  (chunk) => {
+                    send({ type: 'stream', agent, chunk });
+                  },
+                  (status) => {
+                    send({ type: 'status', agent, message: status });
+                  }
+                );
+                
+                // Update context for next agent
+                if (agent === 'architect') {
+                  pipelineContext.plan = content;
+                  orchestrationState.plan = content;
+                } else if (agent === 'backend') {
+                  pipelineContext.backendArtifacts = { content, files };
+                } else if (agent === 'frontend') {
+                  pipelineContext.frontendArtifacts = { content, files };
+                } else if (agent === 'integrator') {
+                  pipelineContext.integrationStatus = content;
+                } else if (agent === 'qa') {
+                  pipelineContext.qaReport = content;
+                }
+                
+                orchestrationState.generatedFiles.push(...files);
+                orchestrationState.progress = getProgressForAgent(agent);
+                
+                orchestrationState.executionLog.push({
+                  timestamp: new Date().toISOString(),
+                  agent,
+                  message: `Completed. Generated ${files.length} files.`,
+                });
+                
+                send({
+                  type: 'agent_complete',
+                  agent,
+                  files,
+                  progress: orchestrationState.progress,
+                });
+                
+              } catch (error) {
+                const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                orchestrationState.error = errorMsg;
+                orchestrationState.phase = 'error';
+                
+                send({ type: 'error', agent, message: errorMsg });
+                break;
+              }
+            }
+            
+            if (!orchestrationState.error) {
+              orchestrationState.phase = 'complete';
               send({
-                type: 'error',
-                agent: agentType,
-                message: errorMessage
+                type: 'pipeline_complete',
+                files: orchestrationState.generatedFiles,
+                progress: 100,
               });
             }
             
@@ -530,11 +519,7 @@ serve(async (req: Request) => {
         });
         
         return new Response(stream, {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-          }
+          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' }
         });
       }
       
@@ -553,6 +538,7 @@ serve(async (req: Request) => {
           progress: 0,
           executionLog: [],
           error: null,
+          generatedFiles: [],
         };
         
         return new Response(
@@ -566,14 +552,11 @@ serve(async (req: Request) => {
     }
     
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Orchestrate] Error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ success: false, error: errorMsg }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
