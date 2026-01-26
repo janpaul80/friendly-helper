@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { RefreshCw, Grid, Terminal } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
+import { openExternalUrl, preopenExternalWindow } from '../lib/openExternal';
 
 // Components
 import { WorkspaceUnavailableModal } from '../components/dashboard/WorkspaceUnavailableModal';
@@ -151,6 +152,7 @@ export default function Dashboard() {
   };
 
   const handleUpgrade = async () => {
+    const checkoutWindow = preopenExternalWindow();
     try {
       const supabaseUrl = "https://ythuhewbaulqirjrkgly.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI";
@@ -176,7 +178,7 @@ export default function Dashboard() {
       
       const data = await response.json();
       if (data?.url) {
-        window.location.href = data.url;
+        openExternalUrl(data.url, checkoutWindow);
       }
     } catch (error) {
       console.error("Upgrade error:", error);

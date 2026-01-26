@@ -5,6 +5,7 @@ import { motion, useInView } from "framer-motion";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
 import { toast } from "sonner";
+import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
 import {
   Paperclip,
   Github,
@@ -226,6 +227,8 @@ export default function LandingPage() {
 
   const handleUpgrade = async (plan: string) => {
     setLoadingPlan(plan);
+    // In the editor, open Stripe in a new tab (Stripe Checkout doesn't like iframes)
+    const checkoutWindow = preopenExternalWindow();
     try {
       const supabaseUrl = "https://ythuhewbaulqirjrkgly.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI";
@@ -260,7 +263,7 @@ export default function LandingPage() {
       
       if (data?.url) {
         console.log("Redirecting to:", data.url);
-        window.location.href = data.url;
+        openExternalUrl(data.url, checkoutWindow);
       } else if (data?.error) {
         console.error("Checkout error:", data.error);
         toast.error(data.error || "An error occurred. Please try again.");
