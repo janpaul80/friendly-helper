@@ -1,6 +1,7 @@
 // HeftCoder Landing Page - Main Entry
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion, useInView } from "framer-motion";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
 import { toast } from "sonner";
@@ -24,6 +25,67 @@ import {
   MessageSquare,
   MessageCircle
 } from "lucide-react";
+
+// Animation variants for scroll-triggered sections
+const fadeInUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" as const }
+  }
+};
+
+const fadeInScale = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { duration: 0.5, ease: "easeOut" as const }
+  }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.4, ease: "easeOut" as const }
+  }
+};
+
+// Reusable scroll-triggered section wrapper
+const AnimatedSection = ({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      variants={{
+        hidden: { opacity: 0, y: 40 },
+        visible: { 
+          opacity: 1, 
+          y: 0,
+          transition: { duration: 0.6, ease: "easeOut" as const, delay }
+        }
+      }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 // Model list matching the design
 const models = [
@@ -261,19 +323,36 @@ export default function LandingPage() {
       <Header />
 
       <main className="relative z-10 pt-40 px-6 pb-20">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-600/10 border border-orange-500/20 text-orange-500 text-xs font-medium mb-8 animate-pulse">
+        <motion.div 
+          className="max-w-4xl mx-auto text-center"
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+        >
+          <motion.div 
+            variants={staggerItem}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-600/10 border border-orange-500/20 text-orange-500 text-xs font-medium mb-8 animate-pulse"
+          >
             <Zap className="w-3 h-3" />
             <span>v2.1 Orchestrator Mode Live</span>
-          </div>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight bg-gradient-to-br from-white via-white to-gray-500 bg-clip-text text-transparent leading-[1.1]">
+          </motion.div>
+          <motion.h1 
+            variants={staggerItem}
+            className="text-5xl md:text-7xl font-bold mb-6 tracking-tight bg-gradient-to-br from-white via-white to-gray-500 bg-clip-text text-transparent leading-[1.1]"
+          >
             Where ideas become <br /> reality
-          </h1>
-          <p className="text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto">
+          </motion.h1>
+          <motion.p 
+            variants={staggerItem}
+            className="text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto"
+          >
             The most powerful autonomous AI agents for building production-ready applications in minutes.
-          </p>
+          </motion.p>
 
-          <div className="bg-[#121212] border border-white/10 rounded-2xl p-4 shadow-2xl backdrop-blur-sm relative group focus-within:border-orange-500/50 transition-all">
+          <motion.div 
+            variants={fadeInScale}
+            className="bg-[#121212] border border-white/10 rounded-2xl p-4 shadow-2xl backdrop-blur-sm relative group focus-within:border-orange-500/50 transition-all"
+          >
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -358,31 +437,37 @@ export default function LandingPage() {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <motion.div 
+            variants={staggerContainer}
+            className="mt-8 flex flex-wrap justify-center gap-3"
+          >
             {[
               { icon: Music, label: 'Clone Spotify' },
               { icon: Cpu, label: 'Idea Logger' },
               { icon: Cookie, label: 'Baking Bliss' },
               { icon: Sparkles, label: 'Surprise Me' },
             ].map((chip) => (
-              <button
+              <motion.button
                 key={chip.label}
+                variants={staggerItem}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setPrompt(chip.label === 'Surprise Me' ? 'Build me something unique and creative' : `Build me a ${chip.label.toLowerCase()} app`)}
                 className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/5 hover:border-white/20 hover:bg-white/10 rounded-xl text-sm text-gray-400 hover:text-white transition-all shadow-lg"
               >
                 <chip.icon size={16} />
                 {chip.label}
-              </button>
+              </motion.button>
             ))}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </main>
 
       {/* Trusted By Carousel */}
       <section className="py-20 border-t border-white/5 bg-[#0a0a0a] overflow-hidden select-none">
-        <div className="max-w-6xl mx-auto text-center px-6">
+        <AnimatedSection className="max-w-6xl mx-auto text-center px-6">
           <p className="text-[10px] text-gray-500 mb-10 uppercase tracking-[0.3em] font-black opacity-50">
             Trusted by innovators at
           </p>
@@ -397,58 +482,83 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </div>
+        </AnimatedSection>
       </section>
 
       {/* Orchestrator Banner - Orange Background Section */}
       <section id="features" className="py-24 px-6 bg-gradient-to-b from-orange-600 to-orange-700 relative overflow-hidden z-10">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
-          <div className="bg-[#0a0a0a] rounded-2xl p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-6 opacity-50">
-                <div className="w-3 h-3 rounded-full bg-red-500/50" /><div className="w-3 h-3 rounded-full bg-yellow-500/50" /><div className="w-3 h-3 rounded-full bg-green-500/50" />
-              </div>
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">U</div>
-                <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm text-gray-300 border border-white/5">
-                  Build me a custom dashboard with real-time analytics and dark mode.
+          <AnimatedSection delay={0}>
+            <div className="bg-[#0a0a0a] rounded-2xl p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-6 opacity-50">
+                  <div className="w-3 h-3 rounded-full bg-red-500/50" /><div className="w-3 h-3 rounded-full bg-yellow-500/50" /><div className="w-3 h-3 rounded-full bg-green-500/50" />
                 </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white text-xs font-bold">AI</div>
-                <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm text-gray-300 border border-white/5">
-                  Architecting React infrastructure... Setting up Tailwind colors... Injecting Lucide icons...
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white text-xs font-bold">AI</div>
-                <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm text-green-400 border border-white/5">
-                  ✓ Done! Deployment live at dashboard-v1.heftcoder.icu
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  viewport={{ once: true }}
+                  className="flex gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">U</div>
+                  <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm text-gray-300 border border-white/5">
+                    Build me a custom dashboard with real-time analytics and dark mode.
+                  </div>
+                </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  viewport={{ once: true }}
+                  className="flex gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white text-xs font-bold">AI</div>
+                  <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm text-gray-300 border border-white/5">
+                    Architecting React infrastructure... Setting up Tailwind colors... Injecting Lucide icons...
+                  </div>
+                </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  viewport={{ once: true }}
+                  className="flex gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white text-xs font-bold">AI</div>
+                  <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm text-green-400 border border-white/5">
+                    ✓ Done! Deployment live at dashboard-v1.heftcoder.icu
+                  </div>
+                </motion.div>
               </div>
             </div>
-          </div>
-          <div className="text-white">
+          </AnimatedSection>
+          <AnimatedSection delay={0.2} className="text-white">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
               Orchestrator Agents<br /><span className="text-orange-200">by HeftCoder</span>
             </h2>
             <p className="text-xl text-orange-100/80 mb-8 leading-relaxed">
               The most powerful autonomous AI agents for building production-ready applications in minutes. Turn <strong className="text-white">Extended Thinking</strong> on for complex enterprise architectures.
             </p>
-            <Link 
-              to="/dashboard" 
-              className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-4 rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-[0_10px_40px_rgba(0,0,0,0.3)]"
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
             >
-              Start Building Now <ArrowRight size={20} />
-            </Link>
-          </div>
+              <Link 
+                to="/dashboard" 
+                className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-4 rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-[0_10px_40px_rgba(0,0,0,0.3)]"
+              >
+                Start Building Now <ArrowRight size={20} />
+              </Link>
+            </motion.div>
+          </AnimatedSection>
         </div>
       </section>
 
       {/* Pricing */}
       <section id="pricing" className="py-24 px-6 bg-[#0a0a0a]">
-        <div className="max-w-6xl mx-auto text-center">
+        <AnimatedSection className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-br from-white to-gray-400 bg-clip-text text-transparent">
             Choose Your Plan
           </h2>
@@ -458,7 +568,14 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {/* Basic */}
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-8 text-left hover:border-white/20 transition-all group">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -5 }}
+              className="bg-[#111] border border-white/10 rounded-2xl p-8 text-left hover:border-white/20 transition-all group"
+            >
               <h3 className="text-xl font-bold text-white mb-2">Basic</h3>
               <p className="text-orange-500 text-sm mb-4">7 Day Free Trial</p>
               <div className="mb-6">
@@ -472,17 +589,26 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Auto-Save Projects</li>
                 <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Public Workspaces</li>
               </ul>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => handleUpgrade('basic')}
                 disabled={loadingPlan === 'basic'}
                 className="w-full py-3 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors disabled:opacity-50"
               >
                 {loadingPlan === 'basic' ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Choose Basic'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
             {/* Pro */}
-            <div className="bg-[#111] border-2 border-orange-500 rounded-2xl p-8 text-left relative scale-105 shadow-[0_0_60px_rgba(234,88,12,0.2)]">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -5 }}
+              className="bg-[#111] border-2 border-orange-500 rounded-2xl p-8 text-left relative scale-105 shadow-[0_0_60px_rgba(234,88,12,0.2)]"
+            >
               <div className="absolute -top-4 left-0 right-0 flex justify-center">
                 <span className="bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider">
                   Most Popular
@@ -500,17 +626,26 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> High-Power Models</li>
                 <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Flux.2 PRO Image Gen</li>
               </ul>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => handleUpgrade('pro')}
                 disabled={loadingPlan === 'pro'}
                 className="w-full py-3 rounded-xl bg-orange-600 text-white font-bold hover:bg-orange-700 transition-colors disabled:opacity-50 shadow-[0_0_20px_rgba(234,88,12,0.4)]"
               >
                 {loadingPlan === 'pro' ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Choose Pro'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
             {/* Studio */}
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-8 text-left hover:border-white/20 transition-all group">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -5 }}
+              className="bg-[#111] border border-white/10 rounded-2xl p-8 text-left hover:border-white/20 transition-all group"
+            >
               <h3 className="text-xl font-bold text-white mb-2">Studio</h3>
               <div className="mb-6 mt-4">
                 <span className="text-4xl font-bold text-white">$59</span>
@@ -523,16 +658,18 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Team Workspaces</li>
                 <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Priority Compute</li>
               </ul>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => handleUpgrade('studio')}
                 disabled={loadingPlan === 'studio'}
                 className="w-full py-3 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors disabled:opacity-50"
               >
                 {loadingPlan === 'studio' ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Choose Studio'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           </div>
-        </div>
+        </AnimatedSection>
       </section>
 
       <Footer />
