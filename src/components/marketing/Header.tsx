@@ -1,8 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Zap } from "lucide-react";
 
 export function Header() {
-  const navigate = useNavigate();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-md px-6 py-4 flex justify-between items-center">
@@ -21,18 +20,18 @@ export function Header() {
       </div>
       <div className="flex items-center space-x-4">
         <div className="flex items-center gap-4 text-sm font-medium">
-          <button 
-             onClick={() => navigate('/login')}
+          <a 
+            href="/login"
             className="text-gray-400 hover:text-white transition-colors"
           >
             Log in
-          </button>
-          <button 
-             onClick={() => navigate('/login')}
+          </a>
+          <a 
+            href="/signup"
             className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg font-bold transition-all hover:scale-105 shadow-[0_0_15px_rgba(234,88,12,0.2)]"
           >
             Sign up
-          </button>
+          </a>
         </div>
       </div>
     </header>
