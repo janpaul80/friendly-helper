@@ -1,6 +1,8 @@
 // HeftCoder Landing Page - Main Entry
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { supabase } from "../integrations/supabase/client";
 import { motion, useInView } from "framer-motion";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
@@ -207,10 +209,26 @@ export default function LandingPage() {
   const [showConnectorsModal, setShowConnectorsModal] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [isGithubConnected, setIsGithubConnected] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const modelDropdownRef = useRef<HTMLDivElement>(null);
   const attachDropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check auth state on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -224,6 +242,13 @@ export default function LandingPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Redirect to auth when user interacts with chat input
+  const handlePromptFocus = () => {
+    if (isAuthenticated === false) {
+      navigate('/auth');
+    }
+  };
 
   const handleUpgrade = async (plan: string) => {
     setLoadingPlan(plan);
@@ -359,6 +384,7 @@ export default function LandingPage() {
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
+              onFocus={handlePromptFocus}
               placeholder="Build me a SaaS platform for..."
               className="w-full h-24 bg-transparent text-lg text-white placeholder-gray-600 resize-none focus:outline-none p-2 mb-12"
             />
