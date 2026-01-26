@@ -4,12 +4,18 @@ interface UserHUDProps {
   user: any;
   credits: number;
   subscriptionTier: string;
+  subscriptionStatus?: string;
   onUpgrade: () => void;
 }
 
-export function UserHUD({ user, credits, subscriptionTier, onUpgrade }: UserHUDProps) {
+export function UserHUD({ user, credits, subscriptionTier, subscriptionStatus = 'none', onUpgrade }: UserHUDProps) {
   const getTierBadge = () => {
-    switch (subscriptionTier) {
+    // Priority: show trial badge if in trial, otherwise show tier
+    if (subscriptionStatus === 'trial') {
+      return { label: 'TRIAL', color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]' };
+    }
+    
+    switch (subscriptionTier?.toLowerCase()) {
       case 'pro':
         return { label: 'PRO', color: 'text-orange-400 bg-orange-500/20 border-orange-500/50 shadow-[0_0_15px_rgba(251,146,60,0.3)]' };
       case 'studio':
@@ -17,11 +23,12 @@ export function UserHUD({ user, credits, subscriptionTier, onUpgrade }: UserHUDP
       case 'basic':
         return { label: 'BASIC', color: 'text-blue-400 bg-blue-500/20 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]' };
       default:
-        return { label: 'TRIAL', color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]' };
+        return { label: 'FREE', color: 'text-gray-400 bg-gray-500/20 border-gray-500/50' };
     }
   };
 
   const tier = getTierBadge();
+  const showUpgrade = subscriptionStatus === 'none' || subscriptionStatus === 'cancelled';
 
   return (
     <div className="relative overflow-hidden flex flex-col gap-4 p-4 sm:p-6 bg-gradient-to-r from-[#0a0a0f] via-[#0f0f18] to-[#0a0a0f] border border-orange-500/20 rounded-2xl">
@@ -76,7 +83,7 @@ export function UserHUD({ user, credits, subscriptionTier, onUpgrade }: UserHUDP
           </div>
 
           {/* Upgrade Button */}
-          {subscriptionTier === 'free' && (
+          {showUpgrade && (
             <button
               onClick={onUpgrade}
               className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-3 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-xl text-xs sm:text-sm font-bold transition-all active:scale-95 shadow-[0_0_25px_rgba(251,146,60,0.4)]"
