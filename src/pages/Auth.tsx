@@ -3,6 +3,15 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
+import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
+
+const isInIframe = () => {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+};
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -13,6 +22,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [autoStarted, setAutoStarted] = useState(false);
 
   // Auto-start Google OAuth if ?provider=google is in URL
@@ -20,7 +30,13 @@ export default function Auth() {
     const provider = searchParams.get("provider");
     if (provider === "google" && !autoStarted) {
       setAutoStarted(true);
-      handleGoogleLogin();
+      // In the Lovable preview the app runs inside an iframe; Google blocks auth screens in iframes.
+      // Auto-start would be a non-user gesture (popup blocked), so instead show a hint and wait for a click.
+      if (isInIframe()) {
+        setInfo("Click ‘Continue with Google’ to open sign-in in a new tab (required in preview).");
+        return;
+      }
+      handleGoogleLogin({ initiatedByUser: false });
     }
   }, [searchParams, autoStarted]);
 
@@ -43,17 +59,34 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async ({ initiatedByUser }: { initiatedByUser: boolean }) => {
     setGoogleLoading(true);
     setError(null);
+    setInfo(null);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const preopened = initiatedByUser ? preopenExternalWindow() : null;
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
+          skipBrowserRedirect: true,
         },
       });
       if (error) throw error;
+
+      if (!data?.url) {
+        throw new Error("Google sign-in did not return a redirect URL.");
+      }
+
+      if (initiatedByUser) {
+        // Open in a top-level tab to avoid Google iframe/X-Frame restrictions in preview.
+        openExternalUrl(data.url, preopened);
+        return;
+      }
+
+      // Non-user initiated (e.g. direct navigation outside iframe) fallback.
+      window.location.href = data.url;
     } catch (err: any) {
       setError(err.message || "Google sign-in failed");
       setGoogleLoading(false);
@@ -121,7 +154,7 @@ export default function Auth() {
           {/* OAuth Buttons */}
           <div className="space-y-3 mb-6">
             <button
-              onClick={handleGoogleLogin}
+              onClick={() => handleGoogleLogin({ initiatedByUser: true })}
               disabled={googleLoading}
               className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 rounded-lg py-3 text-white hover:bg-white/10 transition-colors disabled:opacity-50"
             >
@@ -138,6 +171,12 @@ export default function Auth() {
               Continue with Google
             </button>
           </div>
+
+          {info && (
+            <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-gray-300 text-sm mb-6">
+              {info}
+            </div>
+          )}
 
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 h-px bg-white/10" />
