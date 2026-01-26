@@ -43,7 +43,7 @@ export function InviteModal({ onClose, inviteCode }: InviteModalProps) {
                             <span className="font-bold text-sm">Referral Bonus</span>
                         </div>
                         <p className="text-white text-sm font-medium leading-relaxed">
-                            Earn <span className="text-orange-500 font-bold">200 HeftCredits</span> for every friend who joins HEFTCoder and upgrades to a paid plan.
+                            Earn <span className="text-orange-500 font-bold">500 HeftCredits</span> for every friend who subscribes and publishes their first website.
                         </p>
                     </div>
 

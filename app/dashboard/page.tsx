@@ -333,7 +333,7 @@ export default function Dashboard() {
                                         </div>
                                         <div>
                                             <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Referrals</div>
-                                            <div className="text-sm font-bold text-gray-300">Earn 200 credits / paid signup</div>
+                                            <div className="text-sm font-bold text-gray-300">Earn 500 credits / first publish</div>
                                         </div>
                                     </div>
                                     <Plus className="text-gray-600 group-hover:text-white transition-colors" />

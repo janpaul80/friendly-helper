@@ -66,9 +66,9 @@ export async function POST(req: any) {
                     if (referrer) {
                         await supabase
                             .from('users')
-                            .update({ credits: (referrer.credits || 0) + 200 })
+                            .update({ credits: (referrer.credits || 0) + 500 })
                             .eq('id', referrer.id);
-                        console.log(`Referrer ${referrer.id} rewarded with 200 credits`);
+                        console.log(`Referrer ${referrer.id} rewarded with 500 credits`);
                     }
                 }
             }
