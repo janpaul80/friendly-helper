@@ -1,5 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Zap, LogOut, Terminal, Menu } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, Zap, LogOut, Menu, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 
 interface DashboardHeaderProps {
@@ -7,9 +7,10 @@ interface DashboardHeaderProps {
   onTabChange: (tab: string) => void;
   onCreateProject: () => void;
   onLogout: () => void;
+  onOpenWorkspace?: () => void;
 }
 
-export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLogout }: DashboardHeaderProps) {
+export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLogout, onOpenWorkspace }: DashboardHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const tabs = [
@@ -52,9 +53,20 @@ export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLog
 
         {/* Actions */}
         <div className="flex items-center gap-3">
+          {/* Workspace Button */}
+          {onOpenWorkspace && (
+            <button
+              onClick={onOpenWorkspace}
+              className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-[#111118] hover:bg-[#1a1a24] border border-white/10 hover:border-orange-500/30 rounded-xl text-sm font-bold transition-all text-gray-300 hover:text-white"
+            >
+              <ExternalLink size={14} />
+              Workspace
+            </button>
+          )}
+
           <button
             onClick={onCreateProject}
-            className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-orange-900/30 text-white"
+            className="bg-gradient-to-br from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-orange-900/30 text-white"
           >
             <Plus size={16} />
             <span className="hidden sm:inline">New Project</span>
@@ -80,7 +92,7 @@ export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLog
 
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-white/5 p-4">
+        <div className="md:hidden border-t border-white/5 p-4 space-y-3">
           <div className="flex flex-wrap gap-2">
             {tabs.map((tab) => (
               <button
@@ -99,6 +111,20 @@ export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLog
               </button>
             ))}
           </div>
+          
+          {/* Mobile Workspace Button */}
+          {onOpenWorkspace && (
+            <button
+              onClick={() => {
+                onOpenWorkspace();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#111118] border border-white/10 rounded-xl text-sm font-bold text-gray-300"
+            >
+              <ExternalLink size={14} />
+              Open Workspace
+            </button>
+          )}
         </div>
       )}
     </header>

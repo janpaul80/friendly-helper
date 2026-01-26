@@ -223,6 +223,7 @@ export default function Dashboard() {
         onTabChange={setActiveTab}
         onCreateProject={handleCreateProject}
         onLogout={handleLogout}
+        onOpenWorkspace={handleCreateProject}
       />
 
       <main className="relative z-10 py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
