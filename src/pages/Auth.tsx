@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Mail, Lock, RefreshCw, AlertCircle } from 'lucide-react';
-import { supabase } from '@/src/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 
 export default function Auth() {
   const navigate = useNavigate();
