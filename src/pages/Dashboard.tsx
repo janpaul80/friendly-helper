@@ -7,6 +7,7 @@ import { openExternalUrl, preopenExternalWindow } from '../lib/openExternal';
 
 // Components
 import { WorkspaceUnavailableModal } from '../components/dashboard/WorkspaceUnavailableModal';
+import { CreateProjectModal } from '../components/dashboard/CreateProjectModal';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { UserHUD } from '../components/dashboard/UserHUD';
 import { ProjectCard } from '../components/dashboard/ProjectCard';
@@ -40,6 +41,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recents');
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [pendingWorkspaceUrl, setPendingWorkspaceUrl] = useState('');
 
   // Mock Stats for Studio (demo data)
@@ -130,11 +133,27 @@ export default function Dashboard() {
     }
   }, [checkWorkspaceAvailability]);
 
-  const handleCreateProject = () => {
+  const handleShowCreateModal = () => {
+    setShowCreateModal(true);
+  };
+
+  const handleCreateProject = async (projectName: string) => {
     if (!user) return;
     
+    setIsCreatingProject(true);
+    
+    // Generate a slug from the project name
+    const slug = projectName
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'project';
+    
     const userId = user.id.replace(/-/g, '').slice(0, 12);
-    const targetUrl = `${WORKSPACE_BASE_URL}/user${userId}`;
+    const targetUrl = `${WORKSPACE_BASE_URL}/user${userId}?new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
+    
+    setShowCreateModal(false);
+    setIsCreatingProject(false);
     handleNavigateToWorkspace(targetUrl);
   };
 
@@ -226,13 +245,22 @@ export default function Dashboard() {
         />
       )}
 
+      {/* Create Project Modal */}
+      {showCreateModal && (
+        <CreateProjectModal
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreateProject}
+          isLoading={isCreatingProject}
+        />
+      )}
+
       {/* Header */}
       <DashboardHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onCreateProject={handleCreateProject}
+        onCreateProject={handleShowCreateModal}
         onLogout={handleLogout}
-        onOpenWorkspace={handleCreateProject}
+        onOpenWorkspace={handleShowCreateModal}
       />
 
       <main className="relative z-10 py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
@@ -305,7 +333,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <NewProjectCard onClick={handleCreateProject} />
+                  <NewProjectCard onClick={handleShowCreateModal} />
 
                   {projects === undefined ? (
                     [1, 2, 3].map(i => (
