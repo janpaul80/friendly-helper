@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowRight, Send, Zap, FolderOpen, Monitor, Tablet, Smartphone, Download, Code, Eye, Paperclip, Mic, Github, Sparkles, Clock } from "lucide-react";
+import { ArrowRight, Send, Zap, FolderOpen, Monitor, Tablet, Smartphone, Download, Code, Eye, Paperclip, Mic, Github, Sparkles, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import ReactMarkdown from 'react-markdown';
 
@@ -32,6 +32,14 @@ interface QuickStartItem {
   prompt: string;
 }
 
+interface AgentInfo {
+  id: string;
+  name: string;
+  role: string;
+  status: 'idle' | 'thinking' | 'working' | 'complete' | 'error';
+  statusLabel?: string;
+}
+
 const quickStartItems: QuickStartItem[] = [
   { id: '1', title: 'Create a modern portfolio website with dark theme', prompt: 'Create a modern portfolio website with dark theme' },
   { id: '2', title: 'Build a SaaS pricing page with 3 tiers', prompt: 'Build a SaaS pricing page with 3 tiers' },
@@ -39,8 +47,74 @@ const quickStartItems: QuickStartItem[] = [
   { id: '4', title: 'Make a restaurant landing page with menu section', prompt: 'Make a restaurant landing page with menu section' },
 ];
 
+const initialAgents: AgentInfo[] = [
+  { id: 'planner', name: 'Planner', role: 'Designing architecture', status: 'idle' },
+  { id: 'backend', name: 'Backend', role: 'Creating APIs', status: 'idle' },
+  { id: 'frontend', name: 'Frontend', role: 'Building UI', status: 'idle' },
+  { id: 'integrator', name: 'Integrator', role: 'Connecting systems', status: 'idle' },
+  { id: 'qa', name: 'QA', role: 'Testing code', status: 'idle' },
+  { id: 'deployer', name: 'Deployer', role: 'Shipping project', status: 'idle' },
+];
+
 type DeviceType = 'desktop' | 'tablet' | 'mobile';
 type TabType = 'templates' | 'recent';
+
+function AgentProgressBar({ agents }: { agents: AgentInfo[] }) {
+  const getStatusIcon = (status: AgentInfo['status']) => {
+    switch (status) {
+      case 'thinking':
+      case 'working':
+        return <Loader2 size={14} className="animate-spin text-orange-500" />;
+      case 'complete':
+        return <CheckCircle size={14} className="text-green-500" />;
+      case 'error':
+        return <div className="w-3.5 h-3.5 rounded-full bg-red-500" />;
+      default:
+        return <div className="w-3.5 h-3.5 rounded-full bg-gray-600" />;
+    }
+  };
+
+  const getStatusColor = (status: AgentInfo['status']) => {
+    switch (status) {
+      case 'thinking':
+      case 'working':
+        return 'border-orange-500/50 bg-orange-500/10';
+      case 'complete':
+        return 'border-green-500/50 bg-green-500/10';
+      case 'error':
+        return 'border-red-500/50 bg-red-500/10';
+      default:
+        return 'border-white/10 bg-white/5';
+    }
+  };
+
+  return (
+    <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 mb-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="h-6 w-6 bg-orange-600 rounded flex items-center justify-center">
+          <Zap size={14} fill="currentColor" />
+        </div>
+        <span className="text-sm font-medium text-white">Agent Orchestra</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {agents.map((agent) => (
+          <div
+            key={agent.id}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${getStatusColor(agent.status)}`}
+          >
+            {getStatusIcon(agent.status)}
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-white truncate">{agent.name}</div>
+              <div className="text-[10px] text-gray-400 truncate">
+                {agent.statusLabel || agent.role}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Workspace() {
   const { id } = useParams();
@@ -52,6 +126,7 @@ export default function Workspace() {
   const [project, setProject] = useState<GeneratedProject | null>(null);
   const [selectedFile, setSelectedFile] = useState(0);
   const [activeTab, setActiveTab] = useState<TabType>('templates');
+  const [agents, setAgents] = useState<AgentInfo[]>(initialAgents);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -68,9 +143,40 @@ export default function Workspace() {
     }
   }, [message]);
 
+  const simulateAgentProgress = () => {
+    // Simulate agent progression
+    const agentSequence = [
+      { id: 'planner', status: 'thinking' as const, label: 'Analyzing requirements...' },
+      { id: 'planner', status: 'complete' as const, label: 'Plan ready' },
+      { id: 'backend', status: 'working' as const, label: 'Generating APIs...' },
+      { id: 'frontend', status: 'working' as const, label: 'Building components...' },
+      { id: 'backend', status: 'complete' as const, label: 'APIs ready' },
+      { id: 'frontend', status: 'complete' as const, label: 'UI complete' },
+      { id: 'integrator', status: 'working' as const, label: 'Connecting services...' },
+      { id: 'integrator', status: 'complete' as const, label: 'Integration done' },
+      { id: 'qa', status: 'working' as const, label: 'Running tests...' },
+      { id: 'qa', status: 'complete' as const, label: 'All tests passed' },
+      { id: 'deployer', status: 'working' as const, label: 'Deploying...' },
+      { id: 'deployer', status: 'complete' as const, label: 'Deployed!' },
+    ];
+
+    agentSequence.forEach((update, index) => {
+      setTimeout(() => {
+        setAgents(prev => prev.map(agent => 
+          agent.id === update.id 
+            ? { ...agent, status: update.status, statusLabel: update.label }
+            : agent
+        ));
+      }, (index + 1) * 400);
+    });
+  };
+
   const handleSend = (prompt?: string) => {
     const content = prompt || message;
     if (!content.trim()) return;
+    
+    // Reset agents
+    setAgents(initialAgents);
     
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -89,6 +195,9 @@ export default function Workspace() {
     setMessages(prev => [...prev, userMessage, assistantMessage]);
     setMessage("");
     setIsBuilding(true);
+    
+    // Start agent simulation
+    simulateAgentProgress();
 
     setTimeout(() => {
       setIsBuilding(false);
@@ -140,7 +249,7 @@ export default function Workspace() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, completeMessage]);
-    }, 3000);
+    }, 5000);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -151,6 +260,7 @@ export default function Workspace() {
   };
 
   const showStartPanel = messages.length === 0;
+  const showAgentProgress = isBuilding || agents.some(a => a.status !== 'idle');
 
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a] text-white">
@@ -249,6 +359,9 @@ export default function Workspace() {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Agent Progress Bar */}
+                  {showAgentProgress && <AgentProgressBar agents={agents} />}
+                  
                   {messages.map((msg) => (
                     <div 
                       key={msg.id} 
