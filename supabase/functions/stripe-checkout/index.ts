@@ -1,5 +1,6 @@
 // @ts-nocheck
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,12 +23,51 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Initialize Supabase client to verify auth
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    // Get the authorization header
+    const authHeader = req.headers.get("Authorization");
+    
+    // Create Supabase client with the user's token if provided
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: authHeader ? { Authorization: authHeader } : {},
+      },
+    });
+
+    // Try to get the authenticated user
+    let authenticatedUserId: string | null = null;
+    let authenticatedUserEmail: string | null = null;
+    
+    if (authHeader) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (!authError && user) {
+        authenticatedUserId = user.id;
+        authenticatedUserEmail = user.email || null;
+        console.log("Authenticated user:", authenticatedUserId);
+      }
+    }
+
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
-    const { plan, userId, userEmail } = await req.json();
-    console.log("Checkout request:", { plan, userId, userEmail });
+    const { plan } = await req.json();
+    console.log("Checkout request:", { plan, authenticatedUserId });
+
+    // Validate plan input
+    const validPlans = ["Basic", "Pro", "Studio"];
+    const normalizedPlan = plan?.charAt(0).toUpperCase() + plan?.slice(1).toLowerCase();
+    
+    if (!normalizedPlan || !validPlans.includes(normalizedPlan)) {
+      console.error("Invalid plan:", plan);
+      return new Response(JSON.stringify({ error: "Invalid plan specified" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const prices: Record<string, string | undefined> = {
       Basic: Deno.env.get("STRIPE_PRICE_BASIC_ID"),
@@ -35,11 +75,11 @@ Deno.serve(async (req: Request) => {
       Studio: Deno.env.get("STRIPE_PRICE_STUDIO_ID"),
     };
 
-    const priceId = prices[plan];
+    const priceId = prices[normalizedPlan];
     if (!priceId) {
-      console.error("Invalid plan or missing price ID:", plan);
-      return new Response(JSON.stringify({ error: `Invalid plan: ${plan}` }), {
-        status: 400,
+      console.error("Missing price ID for plan:", normalizedPlan);
+      return new Response(JSON.stringify({ error: `Price not configured for plan: ${normalizedPlan}` }), {
+        status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -59,16 +99,18 @@ Deno.serve(async (req: Request) => {
       success_url: `${origin}/dashboard?success=true`,
       cancel_url: `${origin}/?canceled=true`,
       metadata: {
-        userId: userId || "",
-        plan: plan,
+        // Use server-derived userId, not client-provided
+        userId: authenticatedUserId || "",
+        plan: normalizedPlan,
       },
     };
 
-    if (userEmail) {
-      sessionParams.customer_email = userEmail;
+    // Use authenticated email if available
+    if (authenticatedUserEmail) {
+      sessionParams.customer_email = authenticatedUserEmail;
     }
 
-    if (plan === "Basic") {
+    if (normalizedPlan === "Basic") {
       sessionParams.subscription_data = { trial_period_days: 7 };
     }
 
