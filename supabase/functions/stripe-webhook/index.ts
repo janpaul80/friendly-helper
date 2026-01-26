@@ -17,6 +17,58 @@ const CREDITS_PER_TIER: Record<string, number> = {
   Studio: 10000,
 };
 
+// Helper function to add credits with transaction logging
+async function addCreditsWithLogging(
+  userId: string,
+  amount: number,
+  transactionType: string,
+  description: string,
+  metadata: Record<string, any> = {}
+) {
+  // Get current balance
+  const { data: currentData } = await supabase
+    .from("user_credits")
+    .select("credits")
+    .eq("user_id", userId)
+    .single();
+
+  const currentCredits = currentData?.credits || 0;
+  const newBalance = currentCredits + amount;
+
+  // Update user credits
+  const { error: updateError } = await supabase
+    .from("user_credits")
+    .update({
+      credits: newBalance,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+
+  if (updateError) {
+    console.error("Error updating credits:", updateError);
+    return false;
+  }
+
+  // Log the transaction (using service role bypasses RLS)
+  const { error: logError } = await supabase
+    .from("credit_transactions")
+    .insert({
+      user_id: userId,
+      amount: amount,
+      balance_after: newBalance,
+      transaction_type: transactionType,
+      description: description,
+      metadata: metadata,
+    });
+
+  if (logError) {
+    console.error("Error logging transaction:", logError);
+  }
+
+  console.log(`Added ${amount} credits to user ${userId}. New balance: ${newBalance}`);
+  return true;
+}
+
 Deno.serve(async (req: Request) => {
   const signature = req.headers.get("stripe-signature");
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET_KEY");
@@ -36,16 +88,37 @@ Deno.serve(async (req: Request) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
-        const plan = session.metadata?.plan || "Basic";
-        const customerId = session.customer as string;
-        const subscriptionId = session.subscription as string;
+        const checkoutType = session.metadata?.type || "subscription";
 
         if (!userId) {
           console.error("No userId in session metadata");
           break;
         }
 
-        console.log("Processing checkout for user:", userId, "plan:", plan);
+        // Handle credit top-up
+        if (checkoutType === "topup") {
+          const credits = parseInt(session.metadata?.credits || "0", 10);
+          const packId = session.metadata?.packId;
+
+          if (credits > 0) {
+            await addCreditsWithLogging(
+              userId,
+              credits,
+              "topup",
+              `Credit top-up: ${credits.toLocaleString()} credits`,
+              { packId, sessionId: session.id }
+            );
+            console.log("Top-up completed for user:", userId, "credits:", credits);
+          }
+          break;
+        }
+
+        // Handle subscription checkout
+        const plan = session.metadata?.plan || "Basic";
+        const customerId = session.customer as string;
+        const subscriptionId = session.subscription as string;
+
+        console.log("Processing subscription checkout for user:", userId, "plan:", plan);
 
         // Get subscription details to check trial
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -73,6 +146,18 @@ Deno.serve(async (req: Request) => {
         if (error) {
           console.error("Error updating user credits:", error);
         } else {
+          // Log the subscription credit grant
+          await supabase
+            .from("credit_transactions")
+            .insert({
+              user_id: userId,
+              amount: credits,
+              balance_after: credits,
+              transaction_type: "subscription",
+              description: `${plan} plan subscription started`,
+              metadata: { plan, subscriptionId, isTrialing },
+            });
+
           console.log("Updated credits for user:", userId, "credits:", credits);
         }
         break;
@@ -85,7 +170,7 @@ Deno.serve(async (req: Request) => {
         // Find user by stripe_customer_id
         const { data: userCredit } = await supabase
           .from("user_credits")
-          .select("user_id, subscription_tier")
+          .select("user_id, subscription_tier, credits")
           .eq("stripe_customer_id", customerId)
           .single();
 
@@ -166,23 +251,43 @@ Deno.serve(async (req: Request) => {
 
         if (!subscriptionId) break;
 
+        // Skip if this is the first invoice (handled by checkout.session.completed)
+        if (invoice.billing_reason === "subscription_create") {
+          console.log("Skipping initial invoice - handled by checkout");
+          break;
+        }
+
         // Find user and refresh credits for new billing period
         const { data: userCredit } = await supabase
           .from("user_credits")
-          .select("user_id, subscription_tier")
+          .select("user_id, subscription_tier, credits")
           .eq("stripe_customer_id", customerId)
           .single();
 
         if (userCredit && userCredit.subscription_tier) {
-          const credits = CREDITS_PER_TIER[userCredit.subscription_tier] || 2500;
+          const newCredits = CREDITS_PER_TIER[userCredit.subscription_tier] || 2500;
+          const newBalance = userCredit.credits + newCredits;
+
           await supabase
             .from("user_credits")
             .update({
-              credits: credits,
+              credits: newBalance,
               subscription_status: "active",
               updated_at: new Date().toISOString(),
             })
             .eq("user_id", userCredit.user_id);
+
+          // Log the renewal
+          await supabase
+            .from("credit_transactions")
+            .insert({
+              user_id: userCredit.user_id,
+              amount: newCredits,
+              balance_after: newBalance,
+              transaction_type: "subscription",
+              description: `${userCredit.subscription_tier} plan renewal`,
+              metadata: { invoiceId: invoice.id },
+            });
 
           console.log("Refreshed credits for user:", userCredit.user_id);
         }

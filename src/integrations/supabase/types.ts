@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      credit_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          transaction_type: Database["public"]["Enums"]["credit_transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          transaction_type: Database["public"]["Enums"]["credit_transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          transaction_type?: Database["public"]["Enums"]["credit_transaction_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       project_history: {
         Row: {
           created_at: string
@@ -147,10 +180,41 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_credits: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_metadata?: Json
+          p_transaction_type: Database["public"]["Enums"]["credit_transaction_type"]
+          p_user_id: string
+        }
+        Returns: {
+          error_message: string
+          new_balance: number
+          success: boolean
+        }[]
+      }
+      deduct_credits: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_metadata?: Json
+          p_user_id: string
+        }
+        Returns: {
+          error_message: string
+          new_balance: number
+          success: boolean
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      credit_transaction_type:
+        | "subscription"
+        | "topup"
+        | "usage"
+        | "refund"
+        | "bonus"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -277,6 +341,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      credit_transaction_type: [
+        "subscription",
+        "topup",
+        "usage",
+        "refund",
+        "bonus",
+      ],
+    },
   },
 } as const
