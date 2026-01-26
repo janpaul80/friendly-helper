@@ -4,6 +4,8 @@ import App from "./App";
 import "./index.css";
 
 // App entry point - Lovable Cloud provides Supabase credentials via env vars
+// Force dark mode on the document
+document.documentElement.classList.add("dark");
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
