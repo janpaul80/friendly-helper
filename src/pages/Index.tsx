@@ -399,8 +399,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Orchestrator Banner */}
-      <section id="features" className="py-24 px-6 bg-gradient-to-b from-orange-600 to-orange-700 relative overflow-hidden">
+      {/* Orchestrator Banner - Orange Background Section */}
+      <section id="features" className="py-24 px-6 bg-gradient-to-b from-orange-600 to-orange-700 relative overflow-hidden z-10">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
           <div className="bg-[#0a0a0a] rounded-2xl p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
