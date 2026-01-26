@@ -128,7 +128,7 @@ export default function Dashboard() {
     navigate('/');
   };
 
-  const WORKSPACE_BASE_URL = 'https://heftcoder-workspace.lovable.app';
+  const WORKSPACE_BASE_URL = 'https://workspace.heftcoder.icu';
 
   const checkWorkspaceAvailability = useCallback(async (url: string): Promise<boolean> => {
     try {
@@ -177,7 +177,8 @@ export default function Dashboard() {
       .replace(/^-|-$/g, '') || 'project';
     
     const userId = user.id.replace(/-/g, '').slice(0, 12);
-    const externalUrl = `${WORKSPACE_BASE_URL}/user${userId}?new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
+    // External workspace expects /user/:id (not /user{id})
+    const externalUrl = `${WORKSPACE_BASE_URL}/user/${userId}?new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
     
     // Check if external workspace is available
     const isExternalAvailable = await checkWorkspaceAvailability(externalUrl);
@@ -197,7 +198,7 @@ export default function Dashboard() {
     if (!user) return;
     
     const userId = user.id.replace(/-/g, '').slice(0, 12);
-    const targetUrl = `${WORKSPACE_BASE_URL}/user${userId}?project=${projectId}`;
+    const targetUrl = `${WORKSPACE_BASE_URL}/user/${userId}?project=${projectId}`;
     handleNavigateToWorkspace(targetUrl);
   };
 
