@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { Toaster } from "./components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ScrollToTop } from "./components/ScrollToTop";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Toaster />
       <BrowserRouter>
+        <ScrollToTop />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
