@@ -15,7 +15,7 @@ import {
   Share2,
   LogOut
 } from 'lucide-react';
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '../lib/supabase';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { WorkspaceUnavailableModal } from '../components/dashboard/WorkspaceUnavailableModal';
 
