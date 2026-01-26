@@ -162,10 +162,34 @@ export default function LandingPage() {
 
   const handleUpgrade = async (plan: string) => {
     setLoadingPlan(plan);
-    setTimeout(() => {
+    try {
+      // Call the Supabase edge function for Stripe checkout
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            plan: plan.charAt(0).toUpperCase() + plan.slice(1), // Capitalize: "basic" -> "Basic"
+            userId: null, // Will be set if user is logged in
+            userEmail: null,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.error) {
+        console.error("Checkout error:", data.error);
+      }
+    } catch (error) {
+      console.error("Upgrade error:", error);
+    } finally {
       setLoadingPlan(null);
-      navigate('/workspace/new');
-    }, 1500);
+    }
   };
 
   const getSelectedModelName = () => {
