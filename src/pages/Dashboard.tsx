@@ -150,11 +150,20 @@ export default function Dashboard() {
       .replace(/^-|-$/g, '') || 'project';
     
     const userId = user.id.replace(/-/g, '').slice(0, 12);
-    const targetUrl = `${WORKSPACE_BASE_URL}/user${userId}?new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
+    const externalUrl = `${WORKSPACE_BASE_URL}/user${userId}?new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
+    
+    // Check if external workspace is available
+    const isExternalAvailable = await checkWorkspaceAvailability(externalUrl);
     
     setShowCreateModal(false);
     setIsCreatingProject(false);
-    handleNavigateToWorkspace(targetUrl);
+    
+    if (isExternalAvailable) {
+      window.location.href = externalUrl;
+    } else {
+      // Fallback to internal workspace
+      navigate(`/workspace/new?name=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`);
+    }
   };
 
   const handleOpenProject = (projectId: string) => {
