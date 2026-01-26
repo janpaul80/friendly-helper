@@ -11,7 +11,7 @@ export function Header() {
           </div>
           <span className="text-white font-bold text-xl tracking-tight">HeftCoder</span>
         </Link>
-        <nav className="hidden md:flex space-x-6 text-sm font-medium text-gray-400">
+        <nav className="flex space-x-4 sm:space-x-6 text-xs sm:text-sm font-medium text-gray-400">
           <a href="#features" className="hover:text-white transition-colors">Products</a>
           <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
           <Link to="/referrals" className="hover:text-white transition-colors">Referrals</Link>
