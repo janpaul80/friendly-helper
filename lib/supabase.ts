@@ -37,7 +37,7 @@ export const createServiceClient = () => {
   try {
     if (typeof process !== 'undefined' && process.env?.SUPABASE_SERVICE_ROLE_KEY) {
       const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      return createClient(supabaseUrl, serviceKey, {
+      return createClient(finalUrl, serviceKey, {
         auth: {
           autoRefreshToken: false,
           persistSession: false
