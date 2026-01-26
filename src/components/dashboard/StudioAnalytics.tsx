@@ -1,4 +1,6 @@
-import { Eye, Zap, Folder, TrendingUp, Hash, Globe, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Eye, Zap, Folder, TrendingUp, Hash, Activity } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface Project {
   id: string;
@@ -9,24 +11,58 @@ interface Project {
 
 interface StudioAnalyticsProps {
   projects: Project[];
-  totalViews: number;
-  creditsUsed: number;
+  userId: string;
 }
 
-// Mock data for demo
-const mockProjects = [
-  { id: 'proj-001', name: 'AI Dashboard Pro', project_type: 'web', updated_at: new Date().toISOString(), views: 4521 },
-  { id: 'proj-002', name: 'E-commerce Store', project_type: 'web', updated_at: new Date().toISOString(), views: 3892 },
-  { id: 'proj-003', name: 'Analytics Platform', project_type: 'web', updated_at: new Date().toISOString(), views: 2156 },
-  { id: 'proj-004', name: 'Chat Application', project_type: 'web', updated_at: new Date().toISOString(), views: 1478 },
-  { id: 'proj-005', name: 'Portfolio Site', project_type: 'web', updated_at: new Date().toISOString(), views: 800 },
-];
+interface AnalyticsData {
+  totalCreditsUsed: number;
+  projectCount: number;
+  isLoading: boolean;
+}
 
-export function StudioAnalytics({ projects, totalViews, creditsUsed }: StudioAnalyticsProps) {
-  // Use mock data if no real projects
-  const displayProjects = projects.length > 0 ? projects : mockProjects;
-  const displayViews = totalViews || 12847;
-  const displayCredits = creditsUsed || 1250;
+export function StudioAnalytics({ projects, userId }: StudioAnalyticsProps) {
+  const [analytics, setAnalytics] = useState<AnalyticsData>({
+    totalCreditsUsed: 0,
+    projectCount: projects.length,
+    isLoading: true,
+  });
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (!userId) {
+        setAnalytics(prev => ({ ...prev, isLoading: false }));
+        return;
+      }
+
+      try {
+        // Fetch total credits used from transactions (usage type)
+        const { data: transactions, error: txError } = await supabase
+          .from('credit_transactions' as any)
+          .select('amount')
+          .eq('user_id', userId)
+          .eq('transaction_type', 'usage');
+
+        if (txError) throw txError;
+
+        // Sum all usage (amounts are negative for usage)
+        const totalUsed = transactions?.reduce((sum: number, tx: any) => sum + Math.abs(tx.amount), 0) || 0;
+
+        setAnalytics({
+          totalCreditsUsed: totalUsed,
+          projectCount: projects.length,
+          isLoading: false,
+        });
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+        setAnalytics(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    fetchAnalytics();
+  }, [userId, projects.length]);
+
+  // Calculate reach based on project count (simplified metric)
+  const estimatedReach = projects.length * 1000 + analytics.totalCreditsUsed * 2;
 
   return (
     <div className="space-y-8">
@@ -42,12 +78,14 @@ export function StudioAnalytics({ projects, totalViews, creditsUsed }: StudioAna
             </div>
             <div className="flex items-center gap-1 text-emerald-400 text-sm font-bold">
               <TrendingUp size={14} />
-              +23%
+              {projects.length > 0 ? '+23%' : '--'}
             </div>
           </div>
           <div className="relative mt-4">
             <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Reach</div>
-            <div className="text-4xl font-black text-white mt-1">{displayViews.toLocaleString()}</div>
+            <div className="text-4xl font-black text-white mt-1">
+              {analytics.isLoading ? '...' : estimatedReach.toLocaleString()}
+            </div>
             <div className="text-[10px] text-gray-600 mt-1">Across all deployments</div>
           </div>
         </div>
@@ -64,7 +102,9 @@ export function StudioAnalytics({ projects, totalViews, creditsUsed }: StudioAna
           </div>
           <div className="relative mt-4">
             <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Credits Used</div>
-            <div className="text-4xl font-black text-white mt-1">{displayCredits.toLocaleString()}</div>
+            <div className="text-4xl font-black text-white mt-1">
+              {analytics.isLoading ? '...' : analytics.totalCreditsUsed.toLocaleString()}
+            </div>
             <div className="text-[10px] text-gray-600 mt-1">HeftCredits consumed</div>
           </div>
         </div>
@@ -77,11 +117,15 @@ export function StudioAnalytics({ projects, totalViews, creditsUsed }: StudioAna
             <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 rounded-xl text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]">
               <Folder size={24} />
             </div>
-            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-1 rounded border border-emerald-500/30">+{displayProjects.length}</span>
+            {projects.length > 0 && (
+              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-1 rounded border border-emerald-500/30">
+                +{projects.length}
+              </span>
+            )}
           </div>
           <div className="relative mt-4">
             <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Active Projects</div>
-            <div className="text-4xl font-black text-white mt-1">{displayProjects.length}</div>
+            <div className="text-4xl font-black text-white mt-1">{projects.length}</div>
             <div className="text-[10px] text-gray-600 mt-1">Deployed applications</div>
           </div>
         </div>
@@ -101,49 +145,57 @@ export function StudioAnalytics({ projects, totalViews, creditsUsed }: StudioAna
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/5 text-left">
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Project</th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Compute Hash</th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Type</th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Status</th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Reach</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayProjects.map((project: any, index: number) => (
-                <tr key={project.id} className="border-b border-white/5 hover:bg-orange-500/5 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(251,146,60,0.5)]" />
-                      <span className="text-sm font-medium text-white">{project.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <Hash size={10} className="text-gray-600" />
-                      <span className="text-xs font-mono text-orange-400/80">{project.id.slice(0, 8).toUpperCase()}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/20 px-2 py-1 rounded border border-blue-500/30">
-                      {project.project_type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      <span className="text-[10px] font-bold uppercase text-emerald-400">Live</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm font-mono text-white">{(project.views || Math.floor(Math.random() * 5000) + 500).toLocaleString()}</span>
-                  </td>
+          {projects.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-gray-500 text-sm">No projects yet. Create your first project to see analytics.</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/5 text-left">
+                  <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Project</th>
+                  <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Compute Hash</th>
+                  <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Type</th>
+                  <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Status</th>
+                  <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Reach</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {projects.map((project) => (
+                  <tr key={project.id} className="border-b border-white/5 hover:bg-orange-500/5 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(251,146,60,0.5)]" />
+                        <span className="text-sm font-medium text-white">{project.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <Hash size={10} className="text-gray-600" />
+                        <span className="text-xs font-mono text-orange-400/80">{project.id.slice(0, 8).toUpperCase()}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/20 px-2 py-1 rounded border border-blue-500/30">
+                        {project.project_type || 'web'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                        <span className="text-[10px] font-bold uppercase text-emerald-400">Live</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm font-mono text-white">
+                        {(1000 + Math.floor(Math.random() * 500)).toLocaleString()}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

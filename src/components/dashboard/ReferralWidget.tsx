@@ -1,19 +1,99 @@
-import { useState } from 'react';
-import { Gift, Copy, Check, Users, Zap } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Gift, Copy, Check, Users, Zap, Loader2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { toast } from 'sonner';
 
 interface ReferralWidgetProps {
   userId: string;
 }
 
+interface ReferralStats {
+  referralCode: string;
+  totalReferrals: number;
+  completedReferrals: number;
+  totalEarnings: number;
+}
+
 export function ReferralWidget({ userId }: ReferralWidgetProps) {
   const [copied, setCopied] = useState(false);
-  
-  const referralCode = `HEFT-${userId.slice(0, 6).toUpperCase()}`;
-  const referralLink = `https://heftcoder.icu/signup?ref=${referralCode}`;
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<ReferralStats>({
+    referralCode: '',
+    totalReferrals: 0,
+    completedReferrals: 0,
+    totalEarnings: 0,
+  });
+
+  const fetchOrCreateReferralCode = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      // Check for existing referral code
+      const { data: existingReferrals, error: fetchError } = await supabase
+        .from('referrals' as any)
+        .select('*')
+        .eq('referrer_id', userId);
+
+      if (fetchError) throw fetchError;
+
+      if (existingReferrals && existingReferrals.length > 0) {
+        // Calculate stats from existing referrals
+        const completed = existingReferrals.filter((r: any) => r.status === 'completed');
+        const earnings = completed.reduce((sum: number, r: any) => sum + (r.credits_awarded || 0), 0);
+        
+        setStats({
+          referralCode: existingReferrals[0].referral_code,
+          totalReferrals: existingReferrals.length,
+          completedReferrals: completed.length,
+          totalEarnings: earnings,
+        });
+      } else {
+        // Generate new referral code using the database function
+        const { data: codeData, error: codeError } = await supabase
+          .rpc('generate_referral_code', { p_user_id: userId });
+
+        if (codeError) throw codeError;
+
+        const newCode = codeData as string;
+
+        // Insert the new referral record
+        const { error: insertError } = await supabase
+          .from('referrals' as any)
+          .insert({
+            referrer_id: userId,
+            referral_code: newCode,
+            status: 'pending',
+          });
+
+        if (insertError) throw insertError;
+
+        setStats({
+          referralCode: newCode,
+          totalReferrals: 0,
+          completedReferrals: 0,
+          totalEarnings: 0,
+        });
+      }
+    } catch (err) {
+      console.error('Error with referral code:', err);
+      // Fallback to a generated code
+      const fallbackCode = `HEFT-${userId.slice(0, 5).toUpperCase()}`;
+      setStats(prev => ({ ...prev, referralCode: fallbackCode }));
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    fetchOrCreateReferralCode();
+  }, [fetchOrCreateReferralCode]);
+
+  const referralLink = `https://heftcoder.icu/signup?ref=${stats.referralCode}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
+    toast.success('Referral link copied!');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -48,7 +128,11 @@ export function ReferralWidget({ userId }: ReferralWidgetProps) {
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-2xl font-black text-white">
                 <Users size={18} className="text-gray-500" />
-                <span>0</span>
+                {loading ? (
+                  <Loader2 size={18} className="animate-spin text-gray-500" />
+                ) : (
+                  <span>{stats.completedReferrals}</span>
+                )}
               </div>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Referrals</p>
             </div>
@@ -56,7 +140,11 @@ export function ReferralWidget({ userId }: ReferralWidgetProps) {
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-2xl font-black text-orange-400">
                 <Zap size={18} fill="currentColor" />
-                <span>0</span>
+                {loading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <span>{stats.totalEarnings.toLocaleString()}</span>
+                )}
               </div>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Earned</p>
             </div>
@@ -69,18 +157,19 @@ export function ReferralWidget({ userId }: ReferralWidgetProps) {
             <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold whitespace-nowrap">Your Link</span>
             <input
               type="text"
-              value={referralLink}
+              value={loading ? 'Loading...' : referralLink}
               readOnly
               className="flex-1 bg-transparent text-sm font-mono text-gray-300 outline-none min-w-0"
             />
           </div>
           <button
             onClick={handleCopy}
+            disabled={loading}
             className={`px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
               copied 
                 ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]' 
                 : 'bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 shadow-[0_0_20px_rgba(251,146,60,0.3)]'
-            }`}
+            } disabled:opacity-50`}
           >
             {copied ? <Check size={16} /> : <Copy size={16} />}
             {copied ? 'Copied!' : 'Copy Link'}
