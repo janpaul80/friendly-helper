@@ -6,6 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Credit pack configurations
+const CREDIT_PACKS: Record<string, { credits: number; priceInCents: number }> = {
+  topup_2500: { credits: 2500, priceInCents: 900 },
+  topup_10000: { credits: 10000, priceInCents: 2900 },
+  topup_50000: { credits: 50000, priceInCents: 9900 },
+};
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -58,10 +65,65 @@ Deno.serve(async (req: Request) => {
       apiVersion: "2023-10-16",
     });
 
-    const { plan } = await req.json();
-    console.log("Checkout request:", { plan, authenticatedUserId });
+    const body = await req.json();
+    const { plan, topup } = body;
+    
+    console.log("Checkout request:", { plan, topup, authenticatedUserId });
 
-    // Validate plan input
+    const origin = req.headers.get("origin") || "https://heftcoder.lovable.app";
+
+    // Handle credit top-up purchases
+    if (topup) {
+      const pack = CREDIT_PACKS[topup];
+      if (!pack) {
+        return new Response(JSON.stringify({ error: "Invalid top-up pack" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!authenticatedUserId) {
+        return new Response(JSON.stringify({ error: "Authentication required for top-up" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `${pack.credits.toLocaleString()} HeftCredits`,
+                description: "One-time credit top-up",
+              },
+              unit_amount: pack.priceInCents,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        success_url: `${origin}/dashboard?topup=success&credits=${pack.credits}`,
+        cancel_url: `${origin}/dashboard?topup=canceled`,
+        customer_email: authenticatedUserEmail || undefined,
+        metadata: {
+          type: "topup",
+          userId: authenticatedUserId,
+          credits: pack.credits.toString(),
+          packId: topup,
+        },
+      });
+
+      console.log("Top-up checkout session created:", session.id);
+
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle subscription plans (existing logic)
     const validPlans = ["Basic", "Pro", "Studio"];
     const normalizedPlan = plan?.charAt(0).toUpperCase() + plan?.slice(1).toLowerCase();
     
@@ -88,7 +150,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const origin = req.headers.get("origin") || "https://heftcoder.lovable.app";
     console.log("Creating checkout session with origin:", origin);
 
     const sessionParams: any = {
@@ -103,7 +164,7 @@ Deno.serve(async (req: Request) => {
       success_url: `${origin}/dashboard?success=true`,
       cancel_url: `${origin}/?canceled=true`,
       metadata: {
-        // Use server-derived userId if authenticated, otherwise empty
+        type: "subscription",
         userId: authenticatedUserId || "",
         plan: normalizedPlan,
       },

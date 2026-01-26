@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { RefreshCw, Grid, Terminal, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { openExternalUrl, preopenExternalWindow } from '../lib/openExternal';
+import { useCreditBalance, LOW_BALANCE_THRESHOLD } from '../hooks/useCreditBalance';
+import { toast } from 'sonner';
 
 // Components
 import { WorkspaceUnavailableModal } from '../components/dashboard/WorkspaceUnavailableModal';
@@ -18,7 +20,7 @@ import { SavedArchives } from '../components/dashboard/SavedArchives';
 import { ReferralWidget } from '../components/dashboard/ReferralWidget';
 import { TrialPrompt } from '../components/dashboard/TrialPrompt';
 import { PaywallModal } from '../components/dashboard/PaywallModal';
-
+import { LowBalanceModal } from '../components/dashboard/LowBalanceModal';
 interface Project {
   id: string;
   name: string;
@@ -36,19 +38,26 @@ interface Project {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
-  const [credits, setCredits] = useState(0);
-  const [subscriptionTier, setSubscriptionTier] = useState('none');
-  const [subscriptionStatus, setSubscriptionStatus] = useState('none');
-  const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recents');
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPaywallModal, setShowPaywallModal] = useState(false);
+  const [showLowBalanceModal, setShowLowBalanceModal] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [pendingWorkspaceUrl, setPendingWorkspaceUrl] = useState('');
+
+  // Use the credit balance hook
+  const {
+    credits,
+    subscriptionTier,
+    subscriptionStatus,
+    isLowBalance,
+    refetch: refetchCredits,
+  } = useCreditBalance(user?.id);
 
   // Mock Stats for Studio (demo data)
   const [totalViews] = useState(12847);
@@ -56,6 +65,29 @@ export default function Dashboard() {
 
   // Archives
   const [savedArchives] = useState<any[]>([]);
+
+  // Check for top-up success/cancel in URL params
+  useEffect(() => {
+    const topupStatus = searchParams.get('topup');
+    const topupCredits = searchParams.get('credits');
+    
+    if (topupStatus === 'success' && topupCredits) {
+      toast.success(`Successfully added ${parseInt(topupCredits).toLocaleString()} credits!`);
+      refetchCredits();
+      // Clean up URL
+      window.history.replaceState({}, '', '/dashboard');
+    } else if (topupStatus === 'canceled') {
+      toast.info('Top-up canceled');
+      window.history.replaceState({}, '', '/dashboard');
+    }
+  }, [searchParams, refetchCredits]);
+
+  // Show low balance modal when credits are low
+  useEffect(() => {
+    if (isLowBalance && subscriptionStatus === 'active') {
+      setShowLowBalanceModal(true);
+    }
+  }, [isLowBalance, subscriptionStatus]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -91,29 +123,6 @@ export default function Dashboard() {
 
         if (projectsError) throw projectsError;
         setProjects((projectsData || []) as unknown as Project[]);
-
-        // Fetch user credits
-        const { data: creditsData, error: creditsError } = await supabase
-          .from('user_credits' as any)
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (creditsError && creditsError.code !== 'PGRST116') {
-          console.error('Error fetching credits:', creditsError);
-        }
-
-        if (creditsData) {
-          setCredits(creditsData.credits || 0);
-          setSubscriptionTier(creditsData.subscription_tier || 'none');
-          setSubscriptionStatus(creditsData.subscription_status || 'none');
-          setTrialEndDate(creditsData.trial_end_date);
-        } else {
-          // Create initial credits row for new user
-          await supabase
-            .from('user_credits' as any)
-            .insert({ user_id: user.id, credits: 0, subscription_status: 'none' });
-        }
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setProjects([]);
@@ -248,6 +257,7 @@ export default function Dashboard() {
       
       if (!response.ok) {
         console.error("Stripe checkout failed");
+        toast.error("Failed to start checkout");
         return;
       }
       
@@ -257,6 +267,49 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("Upgrade error:", error);
+      toast.error("Failed to start checkout");
+    }
+  };
+
+  const handleTopUp = async (packId: string, creditsAmount: number) => {
+    const checkoutWindow = preopenExternalWindow();
+    try {
+      const supabaseUrl = "https://ythuhewbaulqirjrkgly.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI";
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        toast.error("Please sign in to top up credits");
+        return;
+      }
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          topup: packId,
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error("Top-up checkout failed");
+        toast.error("Failed to start top-up");
+        return;
+      }
+      
+      const data = await response.json();
+      if (data?.url) {
+        openExternalUrl(data.url, checkoutWindow);
+        setShowLowBalanceModal(false);
+      }
+    } catch (error) {
+      console.error("Top-up error:", error);
+      toast.error("Failed to start top-up");
     }
   };
 
@@ -320,6 +373,16 @@ export default function Dashboard() {
         onUpgrade={handleUpgrade}
       />
 
+      {/* Low Balance Modal */}
+      <LowBalanceModal
+        isOpen={showLowBalanceModal}
+        onClose={() => setShowLowBalanceModal(false)}
+        currentBalance={credits}
+        subscriptionTier={subscriptionTier}
+        onUpgrade={handleUpgrade}
+        onTopUp={handleTopUp}
+      />
+
       {/* Header */}
       <DashboardHeader
         activeTab={activeTab}
@@ -334,7 +397,7 @@ export default function Dashboard() {
         <UserHUD
           user={user}
           credits={credits}
-          subscriptionTier={subscriptionTier}
+          subscriptionTier={subscriptionTier || 'none'}
           subscriptionStatus={subscriptionStatus}
           onUpgrade={handleUpgrade}
         />
@@ -343,7 +406,7 @@ export default function Dashboard() {
         {subscriptionStatus !== 'active' && (
           <TrialPrompt
             onStartTrial={handleUpgrade}
-            trialEndDate={trialEndDate}
+            trialEndDate={null}
             subscriptionStatus={subscriptionStatus}
           />
         )}
