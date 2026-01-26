@@ -19,18 +19,18 @@ export function Header() {
       </div>
       <div className="flex items-center space-x-4">
         <div className="flex items-center gap-4 text-sm font-medium">
-          <a 
-            href="/login"
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            Log in
-          </a>
-          <a 
-            href="/signup"
-            className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg font-bold transition-all hover:scale-105 shadow-[0_0_15px_rgba(234,88,12,0.2)]"
-          >
-            Sign up
-          </a>
+           <Link
+             to="/dashboard"
+             className="text-gray-400 hover:text-white transition-colors"
+           >
+             Dashboard
+           </Link>
+           <Link
+             to="/workspace/new"
+             className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg font-bold transition-all hover:scale-105 shadow-[0_0_15px_rgba(234,88,12,0.2)]"
+           >
+             Get Started
+           </Link>
         </div>
       </div>
     </header>
