@@ -2,9 +2,8 @@
 /**
  * HeftCoder Orchestration Edge Function
  * 
- * Uses Langdock Assistant API (/assistant/v1/chat/completions) with per-agent assistantIds.
+ * Uses Lovable AI Gateway as the brain for vibe coding.
  * Streams results back via SSE for real-time UI updates.
- * Lovable AI serves as the brain/orchestrator for vibe coding.
  */
 
 const corsHeaders = {
@@ -33,16 +32,6 @@ let orchestrationState = {
   generatedFiles: [] as any[],
 };
 
-// Agent assistant ID environment variable names
-const ASSISTANT_ENV_VARS: Record<AgentType, string> = {
-  'architect': 'LANGDOCK_ASSISTANT_ARCHITECT',
-  'backend': 'LANGDOCK_ASSISTANT_BACKEND',
-  'frontend': 'LANGDOCK_ASSISTANT_FRONTEND',
-  'integrator': 'LANGDOCK_ASSISTANT_INTEGRATOR',
-  'qa': 'LANGDOCK_ASSISTANT_QA',
-  'devops': 'LANGDOCK_ASSISTANT_DEVOPS',
-};
-
 // Agent display names
 const AGENT_NAMES: Record<AgentType, string> = {
   'architect': 'The Architect',
@@ -56,151 +45,175 @@ const AGENT_NAMES: Record<AgentType, string> = {
 // Execution pipeline order
 const AGENT_PIPELINE: AgentType[] = ['architect', 'backend', 'frontend', 'integrator', 'qa', 'devops'];
 
-// Get assistant ID for an agent
-function getAssistantId(agentType: AgentType): string | null {
-  const envVar = ASSISTANT_ENV_VARS[agentType];
-  // @ts-ignore - Deno global
-  return Deno.env.get(envVar) || null;
-}
-
-// Get Langdock API key
+// Get Lovable AI API key
 function getApiKey(): string {
-  // @ts-ignore - Deno global
-  const key = Deno.env.get('LANGDOCK_API_KEY');
-  if (!key) throw new Error('LANGDOCK_API_KEY not configured');
+  const key = Deno.env.get('LOVABLE_API_KEY');
+  if (!key) throw new Error('LOVABLE_API_KEY not configured. Please enable Lovable AI.');
   return key;
 }
 
 // Diagnose which env vars are present
 function diagnoseEnvVars(): Record<string, boolean> {
-  const result: Record<string, boolean> = {
-    'LANGDOCK_API_KEY': false,
+  return {
+    'LOVABLE_API_KEY': !!Deno.env.get('LOVABLE_API_KEY'),
   };
-  
-  // @ts-ignore - Deno global
-  result['LANGDOCK_API_KEY'] = !!Deno.env.get('LANGDOCK_API_KEY');
-  
-  for (const [agent, envVar] of Object.entries(ASSISTANT_ENV_VARS)) {
-    // @ts-ignore - Deno global
-    result[envVar] = !!Deno.env.get(envVar);
-  }
-  
-  return result;
 }
 
-// Generate agent prompt based on context
-function getAgentPrompt(agentType: AgentType, context: any): string {
+// Generate agent system prompt based on role
+function getAgentSystemPrompt(agentType: AgentType): string {
+  const systemPrompts: Record<AgentType, string> = {
+    'architect': `You are The Architect, a senior software architect. Your role is to:
+1. Analyze user requirements and create detailed execution plans
+2. Define tech stack, project structure, and file organization
+3. Break down the project into phases for other agents
+
+Always output a structured JSON plan with:
+- projectName: string
+- description: string
+- techStack: { frontend, backend, database, auth }
+- files: array of { path, description }
+- phases: array of { agent, tasks }
+
+Format your response as valid JSON wrapped in \`\`\`json code blocks.`,
+
+    'backend': `You are a Backend Engineer. Your role is to:
+1. Build API routes, database schemas, and server logic
+2. Implement authentication and authorization
+3. Create backend configuration files
+
+Output each file with its path using this format:
+\`\`\`typescript:src/server/index.ts
+// file content here
+\`\`\`
+
+Focus on clean, production-ready code with proper error handling.`,
+
+    'frontend': `You are a Frontend Engineer. Your role is to:
+1. Build React components with Tailwind CSS
+2. Create pages, layouts, and routing
+3. Implement state management and hooks
+4. Style the UI with modern, responsive design
+
+Output each file with its path using this format:
+\`\`\`tsx:src/components/Button.tsx
+// file content here
+\`\`\`
+
+Focus on clean, accessible, and well-structured components.`,
+
+    'integrator': `You are The Integrator. Your role is to:
+1. Connect frontend components to backend APIs
+2. Wire up data fetching and state management
+3. Ensure proper error handling and loading states
+4. Verify CORS and environment configuration
+
+Output integration code and fixes with file paths.`,
+
+    'qa': `You are QA & Hardening specialist. Your role is to:
+1. Add error boundaries and fallbacks
+2. Implement input validation
+3. Add security headers and best practices
+4. Performance optimization suggestions
+
+Output hardening patches with file paths.`,
+
+    'devops': `You are a DevOps Engineer. Your role is to:
+1. Create Dockerfile and docker-compose.yml
+2. Set up CI/CD workflows
+3. Configure environment templates
+4. Deployment documentation
+
+Output deployment files with paths.`
+  };
+  
+  return systemPrompts[agentType];
+}
+
+// Generate user prompt based on context
+function getAgentUserPrompt(agentType: AgentType, context: any): string {
   const prompts: Record<AgentType, string> = {
-    'architect': `Analyze this request and create an execution plan:
+    'architect': `Create an execution plan for this project:
 ${context?.userRequest || 'No request provided'}
 
-Output a structured plan with:
-1. Project name and description
-2. Tech stack: frontend (React/Next.js), backend, database, auth
-3. Repository structure with file paths
-4. Execution steps for each agent phase
-
-Format the plan as JSON that can be parsed.`,
+Output a JSON plan with projectName, description, techStack, files array, and phases array.`,
     
     'backend': `Build the backend based on this plan:
 ${JSON.stringify(context?.plan || {}, null, 2)}
 
-Generate:
-1. API routes (Express/Fastify)
-2. Database schema (SQL/Prisma)
-3. Authentication middleware
-4. Server configuration files
-
-Output each file with its path and content.`,
+Generate all necessary backend files with proper paths.`,
     
-    'frontend': `Build the frontend UI. Backend context:
-${JSON.stringify(context?.backendArtifacts || {}, null, 2)}
+    'frontend': `Build the frontend UI. Project context:
+User Request: ${context?.userRequest || 'Build a modern web app'}
+Plan: ${JSON.stringify(context?.plan || {}, null, 2)}
 
-Generate:
-1. React components with Tailwind CSS
-2. Pages and routing
-3. State management hooks
-4. API client utilities
-
-Output each file with its path and content.`,
+Generate React components and pages with Tailwind CSS.`,
     
-    'integrator': `Connect frontend to backend:
-${JSON.stringify(context?.frontendArtifacts || {}, null, 2)}
+    'integrator': `Connect the frontend to backend:
+Frontend files: ${context?.frontendArtifacts?.files?.length || 0} files
+Backend files: ${context?.backendArtifacts?.files?.length || 0} files
 
-Tasks:
-1. Wire API calls to backend endpoints
-2. Handle loading states and errors
-3. Verify CORS configuration
-4. Ensure env vars are aligned
-
-Output integration files and fixes.`,
+Wire up API calls and ensure proper data flow.`,
     
-    'qa': `Test and harden the application:
-Integration status: ${context?.integrationStatus || 'Complete'}
+    'qa': `Test and harden this application:
+Total files generated: ${orchestrationState.generatedFiles.length}
 
-Tasks:
-1. Add error boundaries
-2. Input validation
-3. Security headers
-4. Performance checks
-
-Output hardening patches as files.`,
+Add error handling, validation, and security improvements.`,
     
-    'devops': `Deploy the application:
-${context?.qaReport || 'All checks passed'}
+    'devops': `Create deployment configuration:
+Project: ${context?.plan?.projectName || 'web-app'}
 
-Tasks:
-1. Dockerfile
-2. docker-compose.yml
-3. CI/CD config (.github/workflows)
-4. Environment template
-
-Output deployment files.`
+Generate Dockerfile, CI/CD, and deployment files.`
   };
   
   return prompts[agentType];
 }
 
-// Call Langdock Assistant API with streaming
-async function callLangdockAssistant(
+// Call Lovable AI Gateway with streaming
+async function callLovableAI(
   agentType: AgentType,
   context: any,
   onChunk: (chunk: string) => void,
   onStatus: (status: string) => void
 ): Promise<{ content: string; files: any[] }> {
   const apiKey = getApiKey();
-  const assistantId = getAssistantId(agentType);
   
-  if (!assistantId) {
-    throw new Error(`${ASSISTANT_ENV_VARS[agentType]} not configured`);
-  }
+  const systemPrompt = getAgentSystemPrompt(agentType);
+  const userPrompt = getAgentUserPrompt(agentType, context);
   
-  const url = 'https://api.langdock.com/assistant/v1/chat/completions';
-  const prompt = getAgentPrompt(agentType, context);
-  
-  console.log(`[Orchestrate] Calling ${AGENT_NAMES[agentType]} (${assistantId.substring(0, 8)}...)`);
+  console.log(`[Orchestrate] Calling ${AGENT_NAMES[agentType]} via Lovable AI`);
   onStatus(`${AGENT_NAMES[agentType]} is thinking...`);
   
-  const response = await fetch(url, {
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      assistantId,
-      messages: [{ role: 'user', content: prompt }],
+      model: 'google/gemini-3-flash-preview',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
       stream: true,
     }),
   });
   
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Langdock API error (${response.status}): ${errorText}`);
+    
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+    }
+    if (response.status === 402) {
+      throw new Error('AI credits exhausted. Please add credits in Settings → Workspace → Usage.');
+    }
+    
+    throw new Error(`Lovable AI error (${response.status}): ${errorText}`);
   }
   
   if (!response.body) {
-    throw new Error('No response body from Langdock');
+    throw new Error('No response body from Lovable AI');
   }
   
   onStatus(`${AGENT_NAMES[agentType]} is generating code...`);
@@ -318,7 +331,7 @@ Deno.serve(async (req: Request) => {
           JSON.stringify({ 
             success: true, 
             envVars: envStatus,
-            message: 'Environment variable diagnostic'
+            message: 'Environment variable diagnostic - using Lovable AI'
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -385,7 +398,7 @@ Deno.serve(async (req: Request) => {
                 phase: orchestrationState.phase,
               });
               
-              const { content, files } = await callLangdockAssistant(
+              const { content, files } = await callLovableAI(
                 agentType,
                 context,
                 (chunk) => {
@@ -402,7 +415,7 @@ Deno.serve(async (req: Request) => {
                 send({
                   type: 'warning',
                   agent: agentType,
-                  message: `${AGENT_NAMES[agentType]} did not generate any code. This may indicate an issue with the Langdock assistant configuration.`,
+                  message: `${AGENT_NAMES[agentType]} did not generate any code. Try rephrasing your request.`,
                 });
               }
               
@@ -469,7 +482,7 @@ Deno.serve(async (req: Request) => {
                   progress: orchestrationState.progress,
                 });
                 
-                const { content, files } = await callLangdockAssistant(
+                const { content, files } = await callLovableAI(
                   agent,
                   pipelineContext,
                   (chunk) => {
@@ -482,8 +495,17 @@ Deno.serve(async (req: Request) => {
                 
                 // Update context for next agent
                 if (agent === 'architect') {
-                  pipelineContext.plan = content;
-                  orchestrationState.plan = content;
+                  // Try to parse JSON plan from content
+                  try {
+                    const jsonMatch = content.match(/```json\n([\s\S]*?)```/);
+                    if (jsonMatch) {
+                      pipelineContext.plan = JSON.parse(jsonMatch[1]);
+                      orchestrationState.plan = pipelineContext.plan;
+                    }
+                  } catch {
+                    pipelineContext.plan = content;
+                    orchestrationState.plan = content;
+                  }
                 } else if (agent === 'backend') {
                   pipelineContext.backendArtifacts = { content, files };
                 } else if (agent === 'frontend') {
@@ -500,7 +522,7 @@ Deno.serve(async (req: Request) => {
                   send({
                     type: 'warning',
                     agent,
-                    message: `${AGENT_NAMES[agent]} did not generate any code. The orchestration will continue, but results may be incomplete.`,
+                    message: `${AGENT_NAMES[agent]} did not generate any code. The orchestration will continue.`,
                   });
                 }
                 
