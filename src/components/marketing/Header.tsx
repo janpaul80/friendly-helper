@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { Zap } from "lucide-react";
 
 export function Header() {
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-md px-6 py-4 flex justify-between items-center">
       <div className="flex items-center space-x-8">
