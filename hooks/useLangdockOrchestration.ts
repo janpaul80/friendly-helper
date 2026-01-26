@@ -12,14 +12,15 @@ export type AgentType = 'architect' | 'backend' | 'frontend' | 'integrator' | 'q
 export interface AgentStatus {
   id: AgentType;
   name: string;
-  status: 'idle' | 'thinking' | 'generating' | 'complete' | 'error';
+  status: 'idle' | 'thinking' | 'generating' | 'complete' | 'error' | 'warning';
   output: string;
   statusLabel: string;
   filesGenerated: string[];
+  warning?: string;
 }
 
 export interface StreamEvent {
-  type: 'agent_start' | 'status' | 'stream' | 'agent_complete' | 'pipeline_complete' | 'error' | '[DONE]';
+  type: 'agent_start' | 'status' | 'stream' | 'agent_complete' | 'pipeline_complete' | 'warning' | 'error' | '[DONE]';
   agent?: AgentType;
   name?: string;
   phase?: string;
@@ -28,6 +29,7 @@ export interface StreamEvent {
   content?: string;
   files?: { path: string; content: string; language: string }[];
   progress?: number;
+  warning?: string;
 }
 
 export interface OrchestrationState {
@@ -50,12 +52,12 @@ const AGENT_NAMES: Record<AgentType, string> = {
 };
 
 const initialAgentStatuses: AgentStatus[] = [
-  { id: 'architect', name: 'The Architect', status: 'idle', output: '', statusLabel: 'Planning', filesGenerated: [] },
-  { id: 'backend', name: 'Backend Engineer', status: 'idle', output: '', statusLabel: 'Backend', filesGenerated: [] },
-  { id: 'frontend', name: 'Frontend Engineer', status: 'idle', output: '', statusLabel: 'Frontend', filesGenerated: [] },
-  { id: 'integrator', name: 'The Integrator', status: 'idle', output: '', statusLabel: 'Integration', filesGenerated: [] },
-  { id: 'qa', name: 'QA & Hardening', status: 'idle', output: '', statusLabel: 'Testing', filesGenerated: [] },
-  { id: 'devops', name: 'DevOps', status: 'idle', output: '', statusLabel: 'Deploy', filesGenerated: [] },
+  { id: 'architect', name: 'The Architect', status: 'idle', output: '', statusLabel: 'Planning', filesGenerated: [], warning: undefined },
+  { id: 'backend', name: 'Backend Engineer', status: 'idle', output: '', statusLabel: 'Backend', filesGenerated: [], warning: undefined },
+  { id: 'frontend', name: 'Frontend Engineer', status: 'idle', output: '', statusLabel: 'Frontend', filesGenerated: [], warning: undefined },
+  { id: 'integrator', name: 'The Integrator', status: 'idle', output: '', statusLabel: 'Integration', filesGenerated: [], warning: undefined },
+  { id: 'qa', name: 'QA & Hardening', status: 'idle', output: '', statusLabel: 'Testing', filesGenerated: [], warning: undefined },
+  { id: 'devops', name: 'DevOps', status: 'idle', output: '', statusLabel: 'Deploy', filesGenerated: [], warning: undefined },
 ];
 
 export function useLangdockOrchestration() {
@@ -220,15 +222,25 @@ export function useLangdockOrchestration() {
               case 'agent_complete':
                 if (event.agent) {
                   const files = event.files || [];
+                  const hasWarning = event.warning || (!files.length && !event.content?.trim());
                   updateAgent(event.agent, {
-                    status: 'complete',
-                    statusLabel: `Done (${files.length} files)`,
+                    status: hasWarning ? 'warning' : 'complete',
+                    statusLabel: hasWarning ? 'No code generated' : `Done (${files.length} files)`,
                     filesGenerated: files.map(f => f.path),
+                    warning: event.warning,
                   });
                   setGeneratedFiles(prev => [...prev, ...files]);
                 }
                 if (event.progress) {
                   setProgress(event.progress);
+                }
+                break;
+
+              case 'warning':
+                if (event.agent && event.message) {
+                  updateAgent(event.agent, {
+                    warning: event.message,
+                  });
                 }
                 break;
 

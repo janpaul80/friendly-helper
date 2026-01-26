@@ -49,6 +49,8 @@ function AgentProgressBar({
         return <Loader2 size={14} className="animate-spin text-orange-500" />;
       case 'complete':
         return <CheckCircle size={14} className="text-green-500" />;
+      case 'warning':
+        return <AlertCircle size={14} className="text-amber-500" />;
       case 'error':
         return <AlertCircle size={14} className="text-red-500" />;
       default:
@@ -64,6 +66,8 @@ function AgentProgressBar({
         return 'border-orange-500/50 bg-orange-500/10';
       case 'complete':
         return 'border-green-500/50 bg-green-500/10';
+      case 'warning':
+        return 'border-amber-500/50 bg-amber-500/10';
       case 'error':
         return 'border-red-500/50 bg-red-500/10';
       default:
