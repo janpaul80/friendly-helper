@@ -16,7 +16,7 @@ import {
   Share2,
   LogOut
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 
 interface UserData {
   id: string;
