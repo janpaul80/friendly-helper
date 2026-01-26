@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 import { motion, useInView } from "framer-motion";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
+import { CookieConsent } from "../components/marketing/CookieConsent";
 import { toast } from "sonner";
 import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
 import {
@@ -677,6 +678,9 @@ export default function LandingPage() {
       </section>
 
       <Footer />
+
+      {/* Cookie Consent Banner */}
+      <CookieConsent />
     </div>
   );
 }
