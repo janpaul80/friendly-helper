@@ -313,16 +313,82 @@ function getPhaseForAgent(agentType: AgentType): string {
   return phaseMap[agentType];
 }
 
+// Helper to verify authentication
+async function verifyAuth(req: Request): Promise<{ userId: string } | null> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[Orchestrate] Missing Supabase env vars for auth');
+      return null;
+    }
+    
+    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        'Authorization': authHeader,
+        'apikey': supabaseServiceKey,
+      },
+    });
+    
+    if (!userResponse.ok) {
+      console.log('[Orchestrate] Auth verification failed:', userResponse.status);
+      return null;
+    }
+    
+    const userData = await userResponse.json();
+    return { userId: userData.id };
+  } catch (error) {
+    console.error('[Orchestrate] Auth error:', error);
+    return null;
+  }
+}
+
+// User-specific state storage (keyed by userId)
+const userOrchestrationStates = new Map<string, typeof orchestrationState>();
+
+function getUserState(userId: string) {
+  if (!userOrchestrationStates.has(userId)) {
+    userOrchestrationStates.set(userId, {
+      phase: 'idle',
+      currentAgent: null,
+      plan: null,
+      progress: 0,
+      executionLog: [],
+      error: null,
+      generatedFiles: [],
+    });
+  }
+  return userOrchestrationStates.get(userId)!;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
+    // Verify authentication for all requests
+    const authResult = await verifyAuth(req);
+    if (!authResult) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized. Please log in to use the orchestration service.' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { userId } = authResult;
+    const userState = getUserState(userId);
+    
     const body: OrchestrationRequest = await req.json();
     const { action, userRequest, plan, agentType, context } = body;
     
-    console.log(`[Orchestrate] Action: ${action}`);
+    console.log(`[Orchestrate] User: ${userId}, Action: ${action}`);
     
     switch (action) {
       case 'diagnose': {
@@ -338,39 +404,38 @@ Deno.serve(async (req: Request) => {
       }
       
       case 'start': {
-        orchestrationState = {
-          phase: 'planning',
-          currentAgent: 'architect',
-          plan: null,
-          progress: 5,
-          executionLog: [{
-            timestamp: new Date().toISOString(),
-            agent: 'architect',
-            message: 'Starting project analysis...'
-          }],
-          error: null,
-          generatedFiles: [],
-        };
+        // Reset user state for new orchestration
+        userState.phase = 'planning';
+        userState.currentAgent = 'architect';
+        userState.plan = null;
+        userState.progress = 5;
+        userState.executionLog = [{
+          timestamp: new Date().toISOString(),
+          agent: 'architect',
+          message: 'Starting project analysis...'
+        }];
+        userState.error = null;
+        userState.generatedFiles = [];
         
         return new Response(
-          JSON.stringify({ success: true, state: orchestrationState }),
+          JSON.stringify({ success: true, state: userState }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
       case 'approve_plan': {
-        orchestrationState.plan = plan;
-        orchestrationState.phase = 'building_backend';
-        orchestrationState.currentAgent = 'backend';
-        orchestrationState.progress = 20;
-        orchestrationState.executionLog.push({
+        userState.plan = plan;
+        userState.phase = 'building_backend';
+        userState.currentAgent = 'backend';
+        userState.progress = 20;
+        userState.executionLog.push({
           timestamp: new Date().toISOString(),
           agent: 'backend',
           message: 'Plan approved. Starting backend generation...'
         });
         
         return new Response(
-          JSON.stringify({ success: true, state: orchestrationState }),
+          JSON.stringify({ success: true, state: userState }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -388,14 +453,14 @@ Deno.serve(async (req: Request) => {
             };
             
             try {
-              orchestrationState.currentAgent = agentType;
-              orchestrationState.phase = getPhaseForAgent(agentType);
+              userState.currentAgent = agentType;
+              userState.phase = getPhaseForAgent(agentType);
               
               send({
                 type: 'agent_start',
                 agent: agentType,
                 name: AGENT_NAMES[agentType],
-                phase: orchestrationState.phase,
+                phase: userState.phase,
               });
               
               const { content, files } = await callLovableAI(
@@ -420,11 +485,11 @@ Deno.serve(async (req: Request) => {
               }
               
               // Store files
-              orchestrationState.generatedFiles.push(...files);
-              orchestrationState.progress = getProgressForAgent(agentType);
+              userState.generatedFiles.push(...files);
+              userState.progress = getProgressForAgent(agentType);
               
               // Log completion
-              orchestrationState.executionLog.push({
+              userState.executionLog.push({
                 timestamp: new Date().toISOString(),
                 agent: agentType,
                 message: files.length > 0 ? `Completed. Generated ${files.length} files.` : 'Completed with no files generated.',
@@ -436,14 +501,14 @@ Deno.serve(async (req: Request) => {
                 agent: agentType,
                 content,
                 files,
-                progress: orchestrationState.progress,
+                progress: userState.progress,
                 warning: !content.trim() && files.length === 0 ? 'No code was generated by this agent' : undefined,
               });
               
             } catch (error) {
               const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-              orchestrationState.error = errorMsg;
-              orchestrationState.phase = 'error';
+              userState.error = errorMsg;
+              userState.phase = 'error';
               
               send({ type: 'error', agent: agentType, message: errorMsg });
             }
@@ -471,15 +536,15 @@ Deno.serve(async (req: Request) => {
             
             for (const agent of AGENT_PIPELINE) {
               try {
-                orchestrationState.currentAgent = agent;
-                orchestrationState.phase = getPhaseForAgent(agent);
+                userState.currentAgent = agent;
+                userState.phase = getPhaseForAgent(agent);
                 
                 send({
                   type: 'agent_start',
                   agent,
                   name: AGENT_NAMES[agent],
-                  phase: orchestrationState.phase,
-                  progress: orchestrationState.progress,
+                  phase: userState.phase,
+                  progress: userState.progress,
                 });
                 
                 const { content, files } = await callLovableAI(
@@ -500,11 +565,11 @@ Deno.serve(async (req: Request) => {
                     const jsonMatch = content.match(/```json\n([\s\S]*?)```/);
                     if (jsonMatch) {
                       pipelineContext.plan = JSON.parse(jsonMatch[1]);
-                      orchestrationState.plan = pipelineContext.plan;
+                      userState.plan = pipelineContext.plan;
                     }
                   } catch {
                     pipelineContext.plan = content;
-                    orchestrationState.plan = content;
+                    userState.plan = content;
                   }
                 } else if (agent === 'backend') {
                   pipelineContext.backendArtifacts = { content, files };
@@ -526,10 +591,10 @@ Deno.serve(async (req: Request) => {
                   });
                 }
                 
-                orchestrationState.generatedFiles.push(...files);
-                orchestrationState.progress = getProgressForAgent(agent);
+                userState.generatedFiles.push(...files);
+                userState.progress = getProgressForAgent(agent);
                 
-                orchestrationState.executionLog.push({
+                userState.executionLog.push({
                   timestamp: new Date().toISOString(),
                   agent,
                   message: files.length > 0 ? `Completed. Generated ${files.length} files.` : 'Completed with no files generated.',
@@ -539,25 +604,25 @@ Deno.serve(async (req: Request) => {
                   type: 'agent_complete',
                   agent,
                   files,
-                  progress: orchestrationState.progress,
+                  progress: userState.progress,
                   warning: !content.trim() && files.length === 0 ? 'No code was generated by this agent' : undefined,
                 });
                 
               } catch (error) {
                 const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-                orchestrationState.error = errorMsg;
-                orchestrationState.phase = 'error';
+                userState.error = errorMsg;
+                userState.phase = 'error';
                 
                 send({ type: 'error', agent, message: errorMsg });
                 break;
               }
             }
             
-            if (!orchestrationState.error) {
-              orchestrationState.phase = 'complete';
+            if (!userState.error) {
+              userState.phase = 'complete';
               send({
                 type: 'pipeline_complete',
-                files: orchestrationState.generatedFiles,
+                files: userState.generatedFiles,
                 progress: 100,
               });
             }
@@ -574,24 +639,23 @@ Deno.serve(async (req: Request) => {
       
       case 'get_state': {
         return new Response(
-          JSON.stringify({ success: true, state: orchestrationState }),
+          JSON.stringify({ success: true, state: userState }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
       case 'reset': {
-        orchestrationState = {
-          phase: 'idle',
-          currentAgent: null,
-          plan: null,
-          progress: 0,
-          executionLog: [],
-          error: null,
-          generatedFiles: [],
-        };
+        // Reset user's state
+        userState.phase = 'idle';
+        userState.currentAgent = null;
+        userState.plan = null;
+        userState.progress = 0;
+        userState.executionLog = [];
+        userState.error = null;
+        userState.generatedFiles = [];
         
         return new Response(
-          JSON.stringify({ success: true, state: orchestrationState }),
+          JSON.stringify({ success: true, state: userState }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
