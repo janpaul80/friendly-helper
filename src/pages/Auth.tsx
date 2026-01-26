@@ -1,17 +1,28 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoStarted, setAutoStarted] = useState(false);
+
+  // Auto-start Google OAuth if ?provider=google is in URL
+  useEffect(() => {
+    const provider = searchParams.get("provider");
+    if (provider === "google" && !autoStarted) {
+      setAutoStarted(true);
+      handleGoogleLogin();
+    }
+  }, [searchParams, autoStarted]);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -31,6 +42,23 @@ export default function Auth() {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message || "Google sign-in failed");
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,24 +88,6 @@ export default function Auth() {
       setLoading(false);
     }
   };
-
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      setError(err.message || "Google sign-in failed");
-      setGoogleLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
