@@ -128,12 +128,12 @@ export function CookieConsent() {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <h2 
-                    id="cookie-consent-title" 
-                    className="text-base sm:text-lg font-bold text-white mb-1 sm:mb-2"
-                  >
-                    We value your privacy 🍪
-                  </h2>
+                <h2 
+                  id="cookie-consent-title" 
+                  className="text-base sm:text-lg font-bold text-white mb-1 sm:mb-2"
+                >
+                  We value your privacy
+                </h2>
                   <p 
                     id="cookie-consent-description" 
                     className="text-xs sm:text-sm text-gray-400 leading-relaxed"
