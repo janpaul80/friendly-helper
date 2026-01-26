@@ -17,6 +17,7 @@ import { DeveloperUtilities } from '../components/dashboard/DeveloperUtilities';
 import { SavedArchives } from '../components/dashboard/SavedArchives';
 import { ReferralWidget } from '../components/dashboard/ReferralWidget';
 import { TrialPrompt } from '../components/dashboard/TrialPrompt';
+import { PaywallModal } from '../components/dashboard/PaywallModal';
 
 interface Project {
   id: string;
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('recents');
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [pendingWorkspaceUrl, setPendingWorkspaceUrl] = useState('');
 
@@ -160,12 +162,34 @@ export default function Dashboard() {
     }
   }, [checkWorkspaceAvailability]);
 
+  // Open external workspace (always go to home to avoid 404)
+  const handleOpenWorkspace = useCallback(() => {
+    // Require active subscription to access workspace
+    if (subscriptionStatus !== 'active') {
+      setShowPaywallModal(true);
+      return;
+    }
+    // Open workspace home (no deep-link to avoid 404)
+    window.location.href = WORKSPACE_BASE_URL;
+  }, [subscriptionStatus]);
+
   const handleShowCreateModal = () => {
+    // Require active subscription to create project
+    if (subscriptionStatus !== 'active') {
+      setShowPaywallModal(true);
+      return;
+    }
     setShowCreateModal(true);
   };
 
   const handleCreateProject = async (projectName: string) => {
     if (!user) return;
+    
+    // Double-check subscription
+    if (subscriptionStatus !== 'active') {
+      setShowPaywallModal(true);
+      return;
+    }
     
     setIsCreatingProject(true);
     
@@ -176,30 +200,24 @@ export default function Dashboard() {
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '') || 'project';
     
-    const userId = user.id.replace(/-/g, '').slice(0, 12);
-    // External workspace expects /user/:id (not /user{id})
-    const externalUrl = `${WORKSPACE_BASE_URL}/user/${userId}?new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
-    
-    // Check if external workspace is available
-    const isExternalAvailable = await checkWorkspaceAvailability(externalUrl);
-    
     setShowCreateModal(false);
     setIsCreatingProject(false);
     
-    if (isExternalAvailable) {
-      window.location.href = externalUrl;
-    } else {
-      // Fallback to internal workspace
-      navigate(`/workspace/new?name=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`);
-    }
+    // Always navigate to workspace home (no deep-link)
+    window.location.href = `${WORKSPACE_BASE_URL}?new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
   };
 
   const handleOpenProject = (projectId: string) => {
     if (!user) return;
     
-    const userId = user.id.replace(/-/g, '').slice(0, 12);
-    const targetUrl = `${WORKSPACE_BASE_URL}/user/${userId}?project=${projectId}`;
-    handleNavigateToWorkspace(targetUrl);
+    // Require active subscription
+    if (subscriptionStatus !== 'active') {
+      setShowPaywallModal(true);
+      return;
+    }
+    
+    // Navigate to workspace home with project param
+    window.location.href = `${WORKSPACE_BASE_URL}?project=${projectId}`;
   };
 
   const handleRetryWorkspace = () => {
@@ -295,13 +313,20 @@ export default function Dashboard() {
         />
       )}
 
+      {/* Paywall Modal */}
+      <PaywallModal
+        isOpen={showPaywallModal}
+        onClose={() => setShowPaywallModal(false)}
+        onUpgrade={handleUpgrade}
+      />
+
       {/* Header */}
       <DashboardHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onCreateProject={handleShowCreateModal}
         onLogout={handleLogout}
-        onOpenWorkspace={handleShowCreateModal}
+        onOpenWorkspace={handleOpenWorkspace}
       />
 
       <main className="relative z-10 py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
