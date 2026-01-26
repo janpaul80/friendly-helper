@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Grid, Terminal } from 'lucide-react';
+import { RefreshCw, Grid, Terminal, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { openExternalUrl, preopenExternalWindow } from '../lib/openExternal';
@@ -14,6 +14,7 @@ import { NewProjectCard } from '../components/dashboard/NewProjectCard';
 import { StudioAnalytics } from '../components/dashboard/StudioAnalytics';
 import { DeveloperUtilities } from '../components/dashboard/DeveloperUtilities';
 import { SavedArchives } from '../components/dashboard/SavedArchives';
+import { ReferralWidget } from '../components/dashboard/ReferralWidget';
 
 interface Project {
   id: string;
@@ -41,9 +42,9 @@ export default function Dashboard() {
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
   const [pendingWorkspaceUrl, setPendingWorkspaceUrl] = useState('');
 
-  // Stats for Studio
-  const [totalViews, setTotalViews] = useState(0);
-  const [creditsUsed, setCreditsUsed] = useState(0);
+  // Mock Stats for Studio (demo data)
+  const [totalViews] = useState(12847);
+  const [creditsUsed] = useState(1250);
 
   // Archives
   const [savedArchives] = useState<any[]>([]);
@@ -190,11 +191,11 @@ export default function Dashboard() {
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
         <div className="relative">
           <RefreshCw className="w-8 h-8 animate-spin text-orange-500" />
-          <div className="absolute inset-0 w-8 h-8 bg-orange-500/20 rounded-full blur-xl" />
+          <div className="absolute inset-0 w-8 h-8 bg-orange-500/30 rounded-full blur-xl animate-pulse" />
         </div>
         <div className="flex items-center gap-2">
-          <Terminal size={14} className="text-gray-600" />
-          <span className="text-xs font-mono text-gray-600 uppercase tracking-widest">Initializing Command Center</span>
+          <Terminal size={14} className="text-orange-500/50" />
+          <span className="text-xs font-mono text-orange-500/50 uppercase tracking-widest">Initializing Command Center</span>
         </div>
       </div>
     );
@@ -202,10 +203,16 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-orange-500/30">
+      {/* Ambient Glow Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-600/5 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-orange-500/5 rounded-full blur-[120px]" />
+      </div>
+      
       {/* Grid Background */}
-      <div className="fixed inset-0 opacity-[0.02] pointer-events-none">
+      <div className="fixed inset-0 opacity-[0.03] pointer-events-none">
         <div className="h-full w-full" style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(251,146,60,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(251,146,60,0.1) 1px, transparent 1px)',
           backgroundSize: '40px 40px'
         }} />
       </div>
@@ -229,7 +236,7 @@ export default function Dashboard() {
       />
 
       <main className="relative z-10 py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
-        {/* User HUD */}
+        {/* User HUD - Always visible at top */}
         <UserHUD
           user={user}
           credits={credits}
@@ -237,47 +244,98 @@ export default function Dashboard() {
           onUpgrade={handleUpgrade}
         />
 
+        {/* Quick Stats Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Reach</p>
+              <p className="text-2xl font-black text-white mt-1">{totalViews.toLocaleString()}</p>
+              <p className="text-[9px] text-emerald-400 mt-1">↑ 23% this week</p>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Credits Used</p>
+              <p className="text-2xl font-black text-white mt-1">{creditsUsed.toLocaleString()}</p>
+              <p className="text-[9px] text-orange-400 mt-1">of {credits.toLocaleString()}</p>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Active Projects</p>
+              <p className="text-2xl font-black text-white mt-1">{projects?.length || 0}</p>
+              <p className="text-[9px] text-emerald-400 mt-1 flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                All systems live
+              </p>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Efficiency</p>
+              <p className="text-2xl font-black text-white mt-1">94%</p>
+              <p className="text-[9px] text-purple-400 mt-1">Agent performance</p>
+            </div>
+          </div>
+        </div>
+
         {/* Tab Content */}
         <div className="min-h-[400px]">
           {/* Projects Tab */}
           {activeTab === 'recents' && (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-lg font-black uppercase tracking-widest text-white">Command Center</h2>
-                  <p className="text-xs text-gray-500 mt-1">Your deployed AI applications</p>
-                </div>
-                <div className="flex items-center gap-2 text-[10px] text-gray-600 font-mono">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  {projects?.length || 0} active
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <NewProjectCard onClick={handleCreateProject} />
-
-                {projects === undefined ? (
-                  [1, 2, 3].map(i => (
-                    <div key={i} className="bg-[#0a0a0f] rounded-2xl h-[280px] animate-pulse border border-white/5" />
-                  ))
-                ) : (
-                  projects.map((project) => (
-                    <ProjectCard
-                      key={project.id}
-                      project={project}
-                      onOpen={handleOpenProject}
-                    />
-                  ))
-                )}
-
-                {projects?.length === 0 && projects !== undefined && (
-                  <div className="col-span-full py-16 flex flex-col items-center justify-center">
-                    <Grid size={40} className="text-gray-800 mb-4" />
-                    <p className="text-sm uppercase tracking-widest font-black text-gray-600">No projects yet</p>
-                    <p className="text-xs text-gray-700 mt-2">Launch your first AI-powered application</p>
+            <div className="space-y-8">
+              {/* Command Center */}
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
+                      <Terminal size={18} className="text-orange-500" />
+                      Command Center
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-1">Your deployed AI applications</p>
                   </div>
-                )}
+                  <div className="flex items-center gap-2 text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                    {projects?.length || 0} active
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <NewProjectCard onClick={handleCreateProject} />
+
+                  {projects === undefined ? (
+                    [1, 2, 3].map(i => (
+                      <div key={i} className="bg-[#0a0a0f] rounded-2xl h-[280px] animate-pulse border border-orange-500/5" />
+                    ))
+                  ) : (
+                    projects.map((project) => (
+                      <ProjectCard
+                        key={project.id}
+                        project={project}
+                        onOpen={handleOpenProject}
+                      />
+                    ))
+                  )}
+
+                  {projects?.length === 0 && projects !== undefined && (
+                    <div className="col-span-full py-16 flex flex-col items-center justify-center border border-dashed border-orange-500/20 rounded-2xl bg-gradient-to-br from-orange-500/5 to-transparent">
+                      <div className="relative">
+                        <Grid size={40} className="text-orange-500/30" />
+                        <div className="absolute inset-0 bg-orange-500/20 blur-xl" />
+                      </div>
+                      <p className="text-sm uppercase tracking-widest font-black text-gray-400 mt-4">No projects yet</p>
+                      <p className="text-xs text-gray-600 mt-2">Launch your first AI-powered application</p>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Referral Widget - Always visible on main tab */}
+              <ReferralWidget userId={user?.id || ''} />
             </div>
           )}
 
@@ -285,7 +343,10 @@ export default function Dashboard() {
           {activeTab === 'studio' && (
             <div>
               <div className="mb-6">
-                <h2 className="text-lg font-black uppercase tracking-widest text-white">Performance Studio</h2>
+                <h2 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
+                  <Zap size={18} className="text-orange-500" />
+                  Performance Studio
+                </h2>
                 <p className="text-xs text-gray-500 mt-1">Analytics and deployment metrics</p>
               </div>
               <StudioAnalytics
@@ -300,7 +361,10 @@ export default function Dashboard() {
           {activeTab === 'utilities' && (
             <div>
               <div className="mb-6">
-                <h2 className="text-lg font-black uppercase tracking-widest text-white">Developer Utilities</h2>
+                <h2 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
+                  <Terminal size={18} className="text-orange-500" />
+                  Developer Utilities
+                </h2>
                 <p className="text-xs text-gray-500 mt-1">Backend status and referral system</p>
               </div>
               <DeveloperUtilities userId={user?.id || ''} />
@@ -311,7 +375,10 @@ export default function Dashboard() {
           {activeTab === 'saved' && (
             <div>
               <div className="mb-6">
-                <h2 className="text-lg font-black uppercase tracking-widest text-white">Saved Archives</h2>
+                <h2 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
+                  <Grid size={18} className="text-orange-500" />
+                  Saved Archives
+                </h2>
                 <p className="text-xs text-gray-500 mt-1">Bookmarked snippets and templates</p>
               </div>
               <SavedArchives archives={savedArchives} />
@@ -321,10 +388,13 @@ export default function Dashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-6 mt-12">
+      <footer className="border-t border-orange-500/10 py-6 mt-12">
         <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between text-[10px] text-gray-600 font-mono uppercase tracking-widest">
           <span>© 2025 HeftCoder</span>
-          <span>v2.0.0 • Command Center</span>
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>v2.0.0 • Command Center</span>
+          </div>
         </div>
       </footer>
     </div>
