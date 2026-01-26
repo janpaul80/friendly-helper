@@ -250,6 +250,10 @@ export default function Dashboard() {
         <WorkspaceUnavailableModal
           onClose={() => setShowUnavailableModal(false)}
           onRetry={handleRetryWorkspace}
+          onUseFallback={() => {
+            setShowUnavailableModal(false);
+            navigate('/workspace/new');
+          }}
           targetUrl={pendingWorkspaceUrl}
         />
       )}
@@ -281,41 +285,41 @@ export default function Dashboard() {
           onUpgrade={handleUpgrade}
         />
 
-        {/* Quick Stats Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
+        {/* Quick Stats Bar - 2x2 on mobile, 4 cols on desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-3 sm:p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative">
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Reach</p>
-              <p className="text-2xl font-black text-white mt-1">{totalViews.toLocaleString()}</p>
-              <p className="text-[9px] text-emerald-400 mt-1">↑ 23% this week</p>
+              <p className="text-[8px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Reach</p>
+              <p className="text-xl sm:text-2xl font-black text-white mt-1">{totalViews.toLocaleString()}</p>
+              <p className="text-[8px] sm:text-[9px] text-emerald-400 mt-1">↑ 23% this week</p>
             </div>
           </div>
-          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
+          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-3 sm:p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative">
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Credits Used</p>
-              <p className="text-2xl font-black text-white mt-1">{creditsUsed.toLocaleString()}</p>
-              <p className="text-[9px] text-orange-400 mt-1">of {credits.toLocaleString()}</p>
+              <p className="text-[8px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest">Credits Used</p>
+              <p className="text-xl sm:text-2xl font-black text-white mt-1">{creditsUsed.toLocaleString()}</p>
+              <p className="text-[8px] sm:text-[9px] text-orange-400 mt-1">of {credits.toLocaleString()}</p>
             </div>
           </div>
-          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
+          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-3 sm:p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative">
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Active Projects</p>
-              <p className="text-2xl font-black text-white mt-1">{projects?.length || 0}</p>
-              <p className="text-[9px] text-emerald-400 mt-1 flex items-center gap-1">
+              <p className="text-[8px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest">Active Projects</p>
+              <p className="text-xl sm:text-2xl font-black text-white mt-1">{projects?.length || 0}</p>
+              <p className="text-[8px] sm:text-[9px] text-emerald-400 mt-1 flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 All systems live
               </p>
             </div>
           </div>
-          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
+          <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-3 sm:p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative">
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Efficiency</p>
-              <p className="text-2xl font-black text-white mt-1">94%</p>
-              <p className="text-[9px] text-purple-400 mt-1">Agent performance</p>
+              <p className="text-[8px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest">Efficiency</p>
+              <p className="text-xl sm:text-2xl font-black text-white mt-1">94%</p>
+              <p className="text-[8px] sm:text-[9px] text-purple-400 mt-1">Agent performance</p>
             </div>
           </div>
         </div>
@@ -324,24 +328,25 @@ export default function Dashboard() {
         <div className="min-h-[400px]">
           {/* Projects Tab */}
           {activeTab === 'recents' && (
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               {/* Command Center */}
               <div>
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
                   <div>
-                    <h2 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
-                      <Terminal size={18} className="text-orange-500" />
+                    <h2 className="text-base sm:text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
+                      <Terminal size={16} className="text-orange-500 sm:hidden" />
+                      <Terminal size={18} className="text-orange-500 hidden sm:block" />
                       Command Center
                     </h2>
-                    <p className="text-xs text-gray-500 mt-1">Your deployed AI applications</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-1">Your deployed AI applications</p>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
+                  <div className="flex items-center gap-2 text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 self-start">
                     <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                     {projects?.length || 0} active
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   <NewProjectCard onClick={handleShowCreateModal} />
 
                   {projects === undefined ? (

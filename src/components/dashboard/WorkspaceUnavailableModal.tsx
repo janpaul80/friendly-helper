@@ -4,10 +4,11 @@ import { X, Clock, ExternalLink, RefreshCw, Zap, AlertTriangle } from 'lucide-re
 interface WorkspaceUnavailableModalProps {
   onClose: () => void;
   onRetry: () => void;
+  onUseFallback?: () => void;
   targetUrl: string;
 }
 
-export function WorkspaceUnavailableModal({ onClose, onRetry, targetUrl }: WorkspaceUnavailableModalProps) {
+export function WorkspaceUnavailableModal({ onClose, onRetry, onUseFallback, targetUrl }: WorkspaceUnavailableModalProps) {
   const [isRetrying, setIsRetrying] = useState(false);
 
   const handleRetry = async () => {
@@ -50,10 +51,9 @@ export function WorkspaceUnavailableModal({ onClose, onRetry, targetUrl }: Works
             <div className="h-20 w-20 bg-gradient-to-br from-orange-500/20 to-orange-600/10 rounded-2xl flex items-center justify-center mx-auto border border-orange-500/30 shadow-[0_0_30px_rgba(251,146,60,0.2)]">
               <AlertTriangle size={36} className="text-orange-500" />
             </div>
-            <h3 className="text-white font-black text-xl">External Workspace Coming Soon</h3>
+            <h3 className="text-white font-black text-xl">Workspace Loading</h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              The HeftCoder workspace at <span className="text-orange-400 font-mono">workspace.heftcoder.icu</span> is being deployed. 
-              Expected availability within <span className="text-orange-400 font-bold">48 hours</span>.
+              The external workspace is being prepared. You can use the <span className="text-orange-400 font-bold">internal workspace</span> in the meantime, or wait for the external one.
             </p>
           </div>
 
@@ -81,12 +81,22 @@ export function WorkspaceUnavailableModal({ onClose, onRetry, targetUrl }: Works
               )}
             </button>
             
+            {onUseFallback && (
+              <button
+                onClick={onUseFallback}
+                className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_25px_rgba(16,185,129,0.3)] text-sm active:scale-[0.98]"
+              >
+                <Zap size={16} />
+                Use Internal Workspace
+              </button>
+            )}
+
             <button
               onClick={handleForceOpen}
               className="w-full bg-white/5 hover:bg-white/10 text-gray-300 font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all text-sm border border-white/10 hover:border-orange-500/30"
             >
               <ExternalLink size={16} />
-              Open Anyway (New Tab)
+              Open External Anyway
             </button>
           </div>
 
