@@ -16,6 +16,7 @@ import { StudioAnalytics } from '../components/dashboard/StudioAnalytics';
 import { DeveloperUtilities } from '../components/dashboard/DeveloperUtilities';
 import { SavedArchives } from '../components/dashboard/SavedArchives';
 import { ReferralWidget } from '../components/dashboard/ReferralWidget';
+import { TrialPrompt } from '../components/dashboard/TrialPrompt';
 
 interface Project {
   id: string;
@@ -35,8 +36,10 @@ interface Project {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [credits, setCredits] = useState(2500);
-  const [subscriptionTier, setSubscriptionTier] = useState('free');
+  const [credits, setCredits] = useState(0);
+  const [subscriptionTier, setSubscriptionTier] = useState('none');
+  const [subscriptionStatus, setSubscriptionStatus] = useState('none');
+  const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recents');
@@ -77,6 +80,7 @@ export default function Dashboard() {
 
     const fetchData = async () => {
       try {
+        // Fetch projects
         const { data: projectsData, error: projectsError } = await supabase
           .from('project_history' as any)
           .select('*')
@@ -85,6 +89,29 @@ export default function Dashboard() {
 
         if (projectsError) throw projectsError;
         setProjects((projectsData || []) as unknown as Project[]);
+
+        // Fetch user credits
+        const { data: creditsData, error: creditsError } = await supabase
+          .from('user_credits' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (creditsError && creditsError.code !== 'PGRST116') {
+          console.error('Error fetching credits:', creditsError);
+        }
+
+        if (creditsData) {
+          setCredits(creditsData.credits || 0);
+          setSubscriptionTier(creditsData.subscription_tier || 'none');
+          setSubscriptionStatus(creditsData.subscription_status || 'none');
+          setTrialEndDate(creditsData.trial_end_date);
+        } else {
+          // Create initial credits row for new user
+          await supabase
+            .from('user_credits' as any)
+            .insert({ user_id: user.id, credits: 0, subscription_status: 'none' });
+        }
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setProjects([]);
@@ -282,8 +309,18 @@ export default function Dashboard() {
           user={user}
           credits={credits}
           subscriptionTier={subscriptionTier}
+          subscriptionStatus={subscriptionStatus}
           onUpgrade={handleUpgrade}
         />
+
+        {/* Trial Prompt - Show for users without subscription */}
+        {subscriptionStatus !== 'active' && (
+          <TrialPrompt
+            onStartTrial={handleUpgrade}
+            trialEndDate={trialEndDate}
+            subscriptionStatus={subscriptionStatus}
+          />
+        )}
 
         {/* Quick Stats Bar - 2x2 on mobile, 4 cols on desktop */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
