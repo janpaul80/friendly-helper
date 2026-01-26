@@ -411,31 +411,26 @@ export default function LandingPage() {
               <div className="flex gap-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">U</div>
                 <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm text-gray-300 border border-white/5">
-                  Build me a SaaS platform with user auth, dashboard, and Stripe billing
+                  Build me a custom dashboard with real-time analytics and dark mode.
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center">
-                  <Zap size={16} className="text-white" />
-                </div>
-                <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm border border-white/5">
-                  <span className="text-orange-500 font-mono text-xs">ORCHESTRATING</span>
-                  <p className="text-gray-400 mt-1">Analyzing requirements... Spawning 3 specialized agents...</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white text-xs font-bold">AI</div>
+                <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white text-xs font-bold">AI</div>
                 <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm text-gray-300 border border-white/5">
-                  ✓ Auth system complete<br />
-                  ✓ Dashboard UI generated<br />
-                  ✓ Stripe integration ready
+                  Architecting React infrastructure... Setting up Tailwind colors... Injecting Lucide icons...
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white text-xs font-bold">AI</div>
+                <div className="flex-1 bg-[#1a1a1a] rounded-lg p-3 text-sm text-green-400 border border-white/5">
+                  ✓ Done! Deployment live at dashboard-v1.heftcoder.icu
                 </div>
               </div>
             </div>
           </div>
           <div className="text-white">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-              Orchestrator Agents <span className="text-orange-200">by HeftCoder</span>
+              Orchestrator Agents<br /><span className="text-orange-200">by HeftCoder</span>
             </h2>
             <p className="text-xl text-orange-100/80 mb-8 leading-relaxed">
               The most powerful autonomous AI agents for building production-ready applications in minutes. Turn <strong className="text-white">Extended Thinking</strong> on for complex enterprise architectures.
@@ -487,8 +482,10 @@ export default function LandingPage() {
 
             {/* Pro */}
             <div className="bg-[#111] border-2 border-orange-500 rounded-2xl p-8 text-left relative scale-105 shadow-[0_0_60px_rgba(234,88,12,0.2)]">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider">
-                Most Popular
+              <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                <span className="bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider">
+                  Most Popular
+                </span>
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
               <div className="mb-6 mt-4">
