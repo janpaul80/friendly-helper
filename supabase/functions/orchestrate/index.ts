@@ -367,6 +367,79 @@ function getUserState(userId: string) {
   return userOrchestrationStates.get(userId)!;
 }
 
+// Rate limiting configuration
+const RATE_LIMIT_CONFIG = {
+  // Window duration in milliseconds (1 minute)
+  windowMs: 60 * 1000,
+  // Maximum requests per window for expensive operations
+  maxExpensiveRequests: 5,
+  // Maximum requests per window for cheap operations
+  maxCheapRequests: 30,
+  // Cleanup interval (5 minutes)
+  cleanupIntervalMs: 5 * 60 * 1000,
+};
+
+// Expensive operations that trigger AI calls
+const EXPENSIVE_ACTIONS = ['execute_agent', 'execute_pipeline', 'start'];
+
+// Rate limiting state (keyed by `${userId}_${actionType}`)
+interface RateLimitEntry {
+  count: number;
+  windowStart: number;
+}
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+// Cleanup old rate limit entries periodically
+let lastCleanup = Date.now();
+function cleanupRateLimitStore() {
+  const now = Date.now();
+  if (now - lastCleanup < RATE_LIMIT_CONFIG.cleanupIntervalMs) {
+    return;
+  }
+  
+  lastCleanup = now;
+  const expiredThreshold = now - RATE_LIMIT_CONFIG.windowMs * 2;
+  
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (entry.windowStart < expiredThreshold) {
+      rateLimitStore.delete(key);
+    }
+  }
+}
+
+// Check and update rate limit for a user/action
+function checkRateLimit(userId: string, action: string): { allowed: boolean; remaining: number; resetIn: number } {
+  cleanupRateLimitStore();
+  
+  const isExpensive = EXPENSIVE_ACTIONS.includes(action);
+  const maxRequests = isExpensive 
+    ? RATE_LIMIT_CONFIG.maxExpensiveRequests 
+    : RATE_LIMIT_CONFIG.maxCheapRequests;
+  
+  const key = `${userId}_${isExpensive ? 'expensive' : 'cheap'}`;
+  const now = Date.now();
+  
+  let entry = rateLimitStore.get(key);
+  
+  // Start new window if none exists or window expired
+  if (!entry || now - entry.windowStart >= RATE_LIMIT_CONFIG.windowMs) {
+    entry = { count: 0, windowStart: now };
+    rateLimitStore.set(key, entry);
+  }
+  
+  const resetIn = Math.max(0, RATE_LIMIT_CONFIG.windowMs - (now - entry.windowStart));
+  const remaining = Math.max(0, maxRequests - entry.count);
+  
+  if (entry.count >= maxRequests) {
+    return { allowed: false, remaining: 0, resetIn };
+  }
+  
+  // Increment counter
+  entry.count++;
+  
+  return { allowed: true, remaining: maxRequests - entry.count, resetIn };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -383,12 +456,37 @@ Deno.serve(async (req: Request) => {
     }
     
     const { userId } = authResult;
-    const userState = getUserState(userId);
     
+    // Parse request body first to get action for rate limiting
     const body: OrchestrationRequest = await req.json();
     const { action, userRequest, plan, agentType, context } = body;
     
-    console.log(`[Orchestrate] User: ${userId}, Action: ${action}`);
+    // Apply rate limiting
+    const rateLimit = checkRateLimit(userId, action);
+    if (!rateLimit.allowed) {
+      const resetSeconds = Math.ceil(rateLimit.resetIn / 1000);
+      console.log(`[Orchestrate] Rate limit exceeded for user ${userId}, action: ${action}`);
+      return new Response(
+        JSON.stringify({ 
+          error: `Rate limit exceeded. Please wait ${resetSeconds} seconds before trying again.`,
+          retryAfter: resetSeconds 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': String(resetSeconds),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(Math.ceil((Date.now() + rateLimit.resetIn) / 1000))
+          } 
+        }
+      );
+    }
+    
+    const userState = getUserState(userId);
+    
+    console.log(`[Orchestrate] User: ${userId}, Action: ${action}, Remaining: ${rateLimit.remaining}`);
     
     switch (action) {
       case 'diagnose': {
