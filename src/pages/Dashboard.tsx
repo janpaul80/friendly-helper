@@ -93,7 +93,9 @@ export default function Dashboard() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session: Session | null) => {
         setUser(session?.user ?? null);
-        if (!session?.user) {
+        // Avoid redirect loops during INITIAL_SESSION / token refresh.
+        // Only force redirect when we are explicitly signed out.
+        if (event === 'SIGNED_OUT') {
           navigate('/auth');
         }
       }

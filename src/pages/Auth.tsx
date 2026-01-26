@@ -127,15 +127,24 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+
+        // Navigate immediately on successful login to avoid any race with
+        // other route-level auth checks.
+        if (data?.session?.user) {
+          navigate("/dashboard");
+        } else {
+          setInfo("Signed in—loading your dashboard...");
+        }
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -145,6 +154,9 @@ export default function Auth() {
           },
         });
         if (error) throw error;
+
+        // If email confirmations are enabled, they may need to confirm first.
+        setInfo("Account created. If prompted, confirm your email, then return to sign in.");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred");
