@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, Code, Shield, Rocket, Target, Eye, User } from "lucide-react";
+import { ArrowLeft, Zap, Code, Shield, Rocket, Target, Eye } from "lucide-react";
+import jpHartmannPhoto from "@/assets/jp-hartmann.png";
 import { Footer } from "@/components/marketing/Footer";
 
 export default function About() {
@@ -123,9 +124,13 @@ export default function About() {
           </div>
           
           <div className="relative p-8 md:p-12 rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-transparent">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-              <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center flex-shrink-0 shadow-lg shadow-orange-500/20">
-                <User className="w-16 h-16 text-white" />
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="w-32 h-32 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg shadow-orange-500/20 border-2 border-orange-500/30">
+                <img 
+                  src={jpHartmannPhoto} 
+                  alt="JP Hartmann - CEO & Founder of HeftCoder"
+                  className="w-full h-full object-cover object-top"
+                />
               </div>
               
               <div className="text-center md:text-left">
