@@ -114,7 +114,7 @@ export default function Dashboard() {
     
     // Redirect to external HeftCoder workspace
     const userId = user.id.replace(/-/g, '').slice(0, 12); // Create short user identifier
-    window.location.href = `https://heftcoder.icu/user${userId}`;
+    window.location.href = `https://workspace.heftcoder.icu/user${userId}`;
   };
 
   const handleOpenExternalWorkspace = (projectId: string) => {
@@ -122,7 +122,7 @@ export default function Dashboard() {
     
     // Redirect to external HeftCoder workspace with project context
     const userId = user.id.replace(/-/g, '').slice(0, 12);
-    window.location.href = `https://heftcoder.icu/user${userId}?project=${projectId}`;
+    window.location.href = `https://workspace.heftcoder.icu/user${userId}?project=${projectId}`;
   };
 
   const getCreditDisplay = () => {
