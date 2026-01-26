@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 const Workspace = lazy(() => import("./pages/Workspace"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Auth = lazy(() => import("./pages/Auth"));
+const About = lazy(() => import("./pages/About"));
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Auth />} />
             <Route path="/signup" element={<Auth />} />
