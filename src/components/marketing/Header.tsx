@@ -20,16 +20,16 @@ export function Header() {
       <div className="flex items-center space-x-4">
         <div className="flex items-center gap-4 text-sm font-medium">
            <Link
-             to="/dashboard"
+             to="/auth"
              className="text-gray-400 hover:text-white transition-colors"
            >
-             Dashboard
+             Log in
            </Link>
            <Link
-             to="/workspace/new"
+             to="/auth"
              className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg font-bold transition-all hover:scale-105 shadow-[0_0_15px_rgba(234,88,12,0.2)]"
            >
-             Get Started
+             Sign up
            </Link>
         </div>
       </div>
