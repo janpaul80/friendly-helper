@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
-import { supabase } from "../integrations/supabase/client";
+import { supabase } from "../lib/supabase";
 import { motion, useInView } from "framer-motion";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
