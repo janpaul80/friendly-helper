@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Users, MessageSquare, Github, Twitter, Linkedin, Youtube, Globe, Award, Star, Heart, Code, Rocket, Calendar, MapPin, ExternalLink } from "lucide-react";
-import { Footer } from "@/components/marketing/Footer";
+import { Footer } from "../components/marketing/Footer";
 
 export default function Community() {
   const stats = [

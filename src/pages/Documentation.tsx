@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Book, Code, Rocket, Terminal, Database, Shield, Layers, GitBranch, Settings, FileCode, Play, CheckCircle } from "lucide-react";
-import { Footer } from "@/components/marketing/Footer";
+import { Footer } from "../components/marketing/Footer";
 
 export default function Documentation() {
   const sections = [

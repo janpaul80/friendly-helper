@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Code, Shield, Rocket, Target, Eye } from "lucide-react";
 import jpHartmannPhoto from "@/assets/jp-hartmann.png";
-import { Footer } from "@/components/marketing/Footer";
+import { Footer } from "../components/marketing/Footer";
 
 export default function About() {
   return (

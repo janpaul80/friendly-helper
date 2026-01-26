@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Shield, Eye, Lock, Database, Globe, UserCheck, Bell, Trash2, Mail, FileText } from "lucide-react";
-import { Footer } from "@/components/marketing/Footer";
+import { Footer } from "../components/marketing/Footer";
 
 export default function Privacy() {
   const sections = [
