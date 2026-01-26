@@ -430,8 +430,8 @@ export default function LandingPage() {
                 <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white text-xs font-bold shadow-[0_0_10px_rgba(234,88,12,0.5)]">AI</div>
               </div>
               <div className="flex gap-3 justify-end">
-                <div className="bg-green-500/10 border border-green-500/20 rounded-2xl px-4 py-3 text-green-400 text-sm max-w-[85%]">
-                  ✓ Done! Deployment live at dashboard-v1.nextcoder.icu
+              <div className="bg-green-500/10 border border-green-500/20 rounded-2xl px-4 py-3 text-green-400 text-sm max-w-[85%]">
+                  ✓ Done! Deployment live at dashboard-v1.heftcoder.icu
                 </div>
                 <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white text-xs font-bold">AI</div>
               </div>
@@ -458,62 +458,80 @@ export default function LandingPage() {
             <p className="text-gray-500 max-w-lg mx-auto">AI-powered coding with transparent pricing. Credits reset monthly. No surprise overages.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                name: 'Basic', price: '9', credits: '10,000',
-                features: ['GPT-5.1 Orchestrator', 'Auto-Save Projects', 'Public Workspaces'],
-                color: 'orange'
-              },
-              {
-                name: 'Pro', price: '25', credits: '50,000', popular: true,
-                features: ['VIBE Multi-Agent Mode', 'Private Workspaces', 'High-Power Models', 'Flux.2 PRO Image Gen'],
-                color: 'blue'
-              },
-              {
-                name: 'Studio', price: '59', credits: '150,000',
-                features: ['Full Orchestration', 'Smart Model Routing', 'Team Workspaces', 'Priority Compute'],
-                color: 'purple'
-              }
-            ].map((plan, i) => (
-              <div key={plan.name} className={`relative p-8 rounded-3xl border transition-all hover:translate-y-[-8px] flex flex-col ${plan.popular ? 'bg-gradient-to-b from-blue-900/20 to-black border-blue-500/50 scale-105 shadow-2xl shadow-blue-500/10' : 'bg-[#111] border-white/5 shadow-xl'}`}>
-                {plan.popular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-[10px] font-black tracking-widest px-4 py-1 rounded-full uppercase">MOST POPULAR</div>}
-                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                <div className="mb-6">
-                  {plan.name === 'Basic' ? (
-                    <div>
-                      <span className="text-sm font-bold text-green-500 uppercase tracking-wider block mb-1">7 Day Free Trial</span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm text-gray-400">then</span>
-                        <span className="text-4xl font-black">${plan.price}</span>
-                        <span className="text-gray-600">/mo</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black">${plan.price}</span>
-                      <span className="text-gray-600">/mo</span>
-                    </div>
-                  )}
-                </div>
-                <div className={`text-sm font-bold mb-8 uppercase tracking-widest ${plan.color === 'orange' ? 'text-orange-500' : plan.color === 'blue' ? 'text-blue-400' : 'text-purple-400'}`}>
-                  {plan.credits} HeftCredits
-                </div>
-                <ul className="space-y-4 mb-10 flex-1">
-                  {plan.features.map(f => (
-                    <li key={f} className="flex gap-3 text-sm text-gray-400">
-                      <CheckCircle className="w-5 h-5 text-orange-500 shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => handleUpgrade(plan.name)}
-                  disabled={!!loadingPlan}
-                  className={`w-full py-4 rounded-xl font-black transition-all flex items-center justify-center gap-2 ${plan.popular ? 'bg-blue-600 hover:bg-blue-700 text-white' : plan.name === 'Studio' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 hover:bg-white/10 text-white'}`}
-                >
-                  {loadingPlan === plan.name ? <Loader2 className="w-5 h-5 animate-spin" /> : `Choose ${plan.name}`}
-                </button>
+            {/* Basic */}
+            <div className="relative p-8 rounded-3xl border bg-[#111] border-white/5 shadow-xl transition-all hover:translate-y-[-8px] flex flex-col hover:border-white/20">
+              <h3 className="text-xl font-bold mb-2">Basic</h3>
+              <p className="text-orange-500 text-sm mb-4">7 Day Free Trial</p>
+              <div className="mb-6">
+                <span className="text-gray-500 text-sm">then</span>
+                <span className="text-4xl font-bold text-white">$9</span>
+                <span className="text-gray-500">/mo</span>
               </div>
-            ))}
+              <p className="text-orange-400 font-medium mb-6">10,000 HeftCredits</p>
+              <ul className="space-y-3 text-gray-400 text-sm mb-8 flex-1">
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> GPT-5.1 Orchestrator</li>
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Auto-Save Projects</li>
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Public Workspaces</li>
+              </ul>
+              <button
+                onClick={() => handleUpgrade('basic')}
+                disabled={!!loadingPlan}
+                className="w-full py-3 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors disabled:opacity-50"
+              >
+                {loadingPlan === 'Basic' ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Choose Basic'}
+              </button>
+            </div>
+
+            {/* Pro */}
+            <div className="relative p-8 rounded-3xl border-2 border-orange-500 bg-[#111] scale-105 shadow-[0_0_60px_rgba(234,88,12,0.2)] transition-all hover:translate-y-[-8px] flex flex-col">
+              <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                <span className="bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider">
+                  Most Popular
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
+              <div className="mb-6 mt-4">
+                <span className="text-4xl font-bold text-white">$25</span>
+                <span className="text-gray-500">/mo</span>
+              </div>
+              <p className="text-orange-400 font-medium mb-6">50,000 HeftCredits</p>
+              <ul className="space-y-3 text-gray-400 text-sm mb-8 flex-1">
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> VIBE Multi-Agent Mode</li>
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Private Workspaces</li>
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> High-Power Models</li>
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Flux.2 PRO Image Gen</li>
+              </ul>
+              <button
+                onClick={() => handleUpgrade('pro')}
+                disabled={!!loadingPlan}
+                className="w-full py-3 rounded-xl bg-orange-600 text-white font-bold hover:bg-orange-700 transition-colors disabled:opacity-50 shadow-[0_0_20px_rgba(234,88,12,0.4)]"
+              >
+                {loadingPlan === 'Pro' ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Choose Pro'}
+              </button>
+            </div>
+
+            {/* Studio */}
+            <div className="relative p-8 rounded-3xl border bg-[#111] border-white/5 shadow-xl transition-all hover:translate-y-[-8px] flex flex-col hover:border-white/20">
+              <h3 className="text-xl font-bold text-white mb-2">Studio</h3>
+              <div className="mb-6 mt-4">
+                <span className="text-4xl font-bold text-white">$59</span>
+                <span className="text-gray-500">/mo</span>
+              </div>
+              <p className="text-orange-400 font-medium mb-6">150,000 HeftCredits</p>
+              <ul className="space-y-3 text-gray-400 text-sm mb-8 flex-1">
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Full Orchestration</li>
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Smart Model Routing</li>
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Team Workspaces</li>
+                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Priority Compute</li>
+              </ul>
+              <button
+                onClick={() => handleUpgrade('studio')}
+                disabled={!!loadingPlan}
+                className="w-full py-3 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors disabled:opacity-50"
+              >
+                {loadingPlan === 'Studio' ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Choose Studio'}
+              </button>
+            </div>
           </div>
         </div>
       </section>
