@@ -1,24 +1,26 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Zap, Mail, Lock, RefreshCw, AlertCircle } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 
 export default function Auth() {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Redirect if already logged in
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         navigate('/dashboard');
       }
     });
 
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         navigate('/dashboard');
@@ -40,6 +42,7 @@ export default function Auth() {
           password
         });
         if (error) throw error;
+        // Navigation happens automatically via onAuthStateChange
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -53,7 +56,16 @@ export default function Auth() {
         setError('Check your email to confirm your account!');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      // Handle common errors with friendly messages
+      if (err.message?.includes('User already registered')) {
+        setError('This email is already registered. Try signing in instead.');
+      } else if (err.message?.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please try again.');
+      } else if (err.message?.includes('Email not confirmed')) {
+        setError('Please check your email and confirm your account first.');
+      } else {
+        setError(err.message || 'An error occurred');
+      }
     } finally {
       setLoading(false);
     }
