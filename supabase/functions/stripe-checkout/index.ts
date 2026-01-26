@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,35 +13,45 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Dynamic import for Stripe
-    const Stripe = (await import("https://esm.sh/stripe@14.21.0?target=deno")).default;
-    
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.error("STRIPE_SECRET_KEY not configured");
+      return new Response(JSON.stringify({ error: "Stripe not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
     const { plan, userId, userEmail } = await req.json();
+    console.log("Checkout request:", { plan, userId, userEmail });
 
-    const prices: Record<string, string> = {
-      Basic: Deno.env.get("STRIPE_PRICE_BASIC_ID") || "",
-      Pro: Deno.env.get("STRIPE_PRICE_PRO_ID") || "",
-      Studio: Deno.env.get("STRIPE_PRICE_STUDIO_ID") || "",
+    const prices: Record<string, string | undefined> = {
+      Basic: Deno.env.get("STRIPE_PRICE_BASIC_ID"),
+      Pro: Deno.env.get("STRIPE_PRICE_PRO_ID"),
+      Studio: Deno.env.get("STRIPE_PRICE_STUDIO_ID"),
     };
 
-    if (!prices[plan]) {
-      return new Response(JSON.stringify({ error: "Invalid plan" }), {
+    const priceId = prices[plan];
+    if (!priceId) {
+      console.error("Invalid plan or missing price ID:", plan);
+      return new Response(JSON.stringify({ error: `Invalid plan: ${plan}` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const origin = req.headers.get("origin") || "https://heftcoder.lovable.app";
+    console.log("Creating checkout session with origin:", origin);
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       line_items: [
         {
-          price: prices[plan],
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -48,12 +59,23 @@ Deno.serve(async (req: Request) => {
       success_url: `${origin}/dashboard?success=true`,
       cancel_url: `${origin}/?canceled=true`,
       metadata: {
-        userId: userId,
+        userId: userId || "",
         plan: plan,
       },
-      customer_email: userEmail,
-      subscription_data: plan === "Basic" ? { trial_period_days: 7 } : undefined,
-    });
+    };
+
+    // Add customer email if provided
+    if (userEmail) {
+      sessionParams.customer_email = userEmail;
+    }
+
+    // Add trial for Basic plan
+    if (plan === "Basic") {
+      sessionParams.subscription_data = { trial_period_days: 7 };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    console.log("Checkout session created:", session.id);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
