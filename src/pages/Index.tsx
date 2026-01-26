@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Paperclip,
   Github,
@@ -135,7 +135,6 @@ const trustedLogos = ['Stripe', 'Vercel', 'Hg', 'Oscar', 'ARK Invest', 'Zillow',
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [prompt, setPrompt] = useState('');
   const [selectedModel, setSelectedModel] = useState('heftcoder-pro');
@@ -189,11 +188,7 @@ export default function LandingPage() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Response not OK:", errorText);
-        toast({
-          title: "Checkout Error",
-          description: "Failed to create checkout session. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Failed to create checkout session. Please try again.");
         return;
       }
       
@@ -205,26 +200,14 @@ export default function LandingPage() {
         window.location.href = data.url;
       } else if (data?.error) {
         console.error("Checkout error:", data.error);
-        toast({
-          title: "Checkout Error",
-          description: data.error || "An error occurred. Please try again.",
-          variant: "destructive",
-        });
+        toast.error(data.error || "An error occurred. Please try again.");
       } else {
         console.error("No URL in response:", data);
-        toast({
-          title: "Checkout Error",
-          description: "Failed to get checkout URL. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Failed to get checkout URL. Please try again.");
       }
     } catch (error) {
       console.error("Upgrade error:", error);
-      toast({
-        title: "Checkout Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setLoadingPlan(null);
     }
