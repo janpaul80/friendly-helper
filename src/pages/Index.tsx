@@ -397,34 +397,9 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                <div className="relative" ref={modelDropdownRef}>
-                  <button
-                    onClick={() => setShowModelDropdown(!showModelDropdown)}
-                    className="h-9 px-3 flex items-center gap-2 bg-[#1a1a1a] border border-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition-colors"
-                  >
-                    <ModelIcon provider={models.find(m => m.id === selectedModel)?.provider || 'anthropic'} />
-                    <span className="hidden sm:inline">{getSelectedModelName()}</span>
-                    <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                  {showModelDropdown && (
-                    <div className="absolute bottom-full mb-2 left-0 bg-[#1a1a1a] border border-white/10 rounded-xl py-2 w-64 shadow-2xl z-50 overflow-hidden">
-                      {models.map((model) => (
-                        <button
-                          key={model.id}
-                          onClick={() => { setSelectedModel(model.id); setShowModelDropdown(false); }}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-white/5 transition-colors ${selectedModel === model.id ? 'bg-orange-600/10 text-orange-500' : 'text-gray-300'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <ModelIcon provider={model.provider} />
-                            <span>{model.name}</span>
-                          </div>
-                          {model.pro && (
-                            <span className="text-[10px] text-blue-400 bg-blue-500/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">Pro</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                <div className="h-9 px-3 flex items-center gap-2 bg-[#1a1a1a] border border-white/10 rounded-lg text-sm text-gray-300">
+                  <ModelIcon provider="anthropic" />
+                  <span>Heftcoder Orchestrator</span>
                 </div>
               </div>
 
