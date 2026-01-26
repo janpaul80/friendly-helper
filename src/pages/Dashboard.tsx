@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus,
-  ArrowUp,
   User,
   CreditCard,
   RefreshCw,
@@ -16,7 +15,8 @@ import {
   Share2,
   LogOut
 } from 'lucide-react';
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '../lib/supabase';
+import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 interface UserData {
   id: string;
@@ -55,17 +55,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Check auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) {
-        navigate('/login');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        setUser(session?.user ?? null);
+        if (!session?.user) {
+          navigate('/auth');
+        }
       }
-    });
+    );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setUser(session?.user ?? null);
       if (!session?.user) {
-        navigate('/login');
+        navigate('/auth');
       }
     });
 
@@ -79,13 +81,13 @@ export default function Dashboard() {
       try {
         // Fetch user's projects from project_history
         const { data: projectsData, error: projectsError } = await supabase
-          .from('project_history')
+          .from('project_history' as any)
           .select('*')
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false });
 
         if (projectsError) throw projectsError;
-        setProjects(projectsData || []);
+        setProjects((projectsData || []) as unknown as Project[]);
         
         // Set basic user data
         setUserData({
@@ -116,7 +118,7 @@ export default function Dashboard() {
     
     try {
       const { data, error } = await supabase
-        .from('project_history')
+        .from('project_history' as any)
         .insert({
           user_id: user.id,
           name: newProjectName,
@@ -130,7 +132,8 @@ export default function Dashboard() {
       if (error) throw error;
       
       // Navigate to workspace with new project
-      navigate(`/workspace/${data.id}`);
+      const projectData = data as unknown as Project;
+      navigate(`/workspace/${projectData.id}`);
     } catch (err) {
       console.error('Error creating project:', err);
     } finally {

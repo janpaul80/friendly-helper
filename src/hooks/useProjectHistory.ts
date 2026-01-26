@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '../lib/supabase';
 
 export interface GeneratedFile {
   path: string;
@@ -39,13 +39,13 @@ export function useProjectHistory() {
       }
 
       const { data, error } = await supabase
-        .from('project_history')
+        .from('project_history' as any)
         .select('*')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      return data as unknown as ProjectHistoryItem[];
+      return (data || []) as unknown as ProjectHistoryItem[];
     },
   });
 }
@@ -74,7 +74,7 @@ export function useSaveProject() {
       }
 
       const { data, error } = await supabase
-        .from('project_history')
+        .from('project_history' as any)
         .insert({
           user_id: user.id,
           name,
@@ -103,7 +103,7 @@ export function useDeleteProject() {
   return useMutation({
     mutationFn: async (projectId: string) => {
       const { error } = await supabase
-        .from('project_history')
+        .from('project_history' as any)
         .delete()
         .eq('id', projectId);
 
