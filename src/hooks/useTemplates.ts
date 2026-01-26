@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/src/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 
 export interface Template {
   id: string;
