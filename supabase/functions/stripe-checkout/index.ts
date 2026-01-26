@@ -1,6 +1,5 @@
 // @ts-nocheck
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,30 +22,35 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Initialize Supabase client to verify auth
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    
-    // Get the authorization header
+    // Get the authorization header to verify if user is authenticated
     const authHeader = req.headers.get("Authorization");
-    
-    // Create Supabase client with the user's token if provided
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: authHeader ? { Authorization: authHeader } : {},
-      },
-    });
-
-    // Try to get the authenticated user
     let authenticatedUserId: string | null = null;
     let authenticatedUserEmail: string | null = null;
     
-    if (authHeader) {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (!authError && user) {
-        authenticatedUserId = user.id;
-        authenticatedUserEmail = user.email || null;
-        console.log("Authenticated user:", authenticatedUserId);
+    // If authorization header is provided, try to verify the JWT
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        
+        // Verify the token by making a request to Supabase auth
+        const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+          headers: {
+            "Authorization": authHeader,
+            "apikey": supabaseServiceKey,
+          },
+        });
+        
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          authenticatedUserId = userData.id;
+          authenticatedUserEmail = userData.email;
+          console.log("Authenticated user:", authenticatedUserId);
+        }
+      } catch (authError) {
+        console.log("Auth verification failed:", authError);
+        // Continue without authentication - allow unauthenticated checkouts
       }
     }
 
@@ -99,7 +103,7 @@ Deno.serve(async (req: Request) => {
       success_url: `${origin}/dashboard?success=true`,
       cancel_url: `${origin}/?canceled=true`,
       metadata: {
-        // Use server-derived userId, not client-provided
+        // Use server-derived userId if authenticated, otherwise empty
         userId: authenticatedUserId || "",
         plan: normalizedPlan,
       },
