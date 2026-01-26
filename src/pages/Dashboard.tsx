@@ -101,7 +101,7 @@ export default function Dashboard() {
     navigate('/');
   };
 
-  const WORKSPACE_BASE_URL = 'https://workspace.heftcoder.icu';
+  const WORKSPACE_BASE_URL = 'https://heftcoder-workspace.lovable.app';
 
   const checkWorkspaceAvailability = useCallback(async (url: string): Promise<boolean> => {
     try {
