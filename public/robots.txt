@@ -1,0 +1,16 @@
+# HeftCoder Robots.txt
+# https://app.heftcoder.icu
+
+User-agent: *
+Allow: /
+
+# Disallow admin and private routes
+Disallow: /workspace/
+Disallow: /dashboard
+Disallow: /auth
+
+# Sitemap location
+Sitemap: https://app.heftcoder.icu/sitemap.xml
+
+# Crawl-delay for politeness
+Crawl-delay: 1

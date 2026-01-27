@@ -4,6 +4,8 @@ import { Zap, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { openExternalUrl } from "../lib/openExternal";
+import { SEO } from "../components/SEO";
+import { events } from "../lib/analytics";
 
 const isInIframe = () => {
   try {
@@ -100,6 +102,7 @@ export default function Auth() {
           try {
             preopened.location.replace(data.url);
             preopened.focus();
+            events.login('google');
             setGoogleLoading(false);
             setInfo("Finish signing in in the new tab, then come back here.");
             return;
@@ -141,6 +144,7 @@ export default function Auth() {
         // Navigate immediately on successful login to avoid any race with
         // other route-level auth checks.
         if (data?.session?.user) {
+          events.login('email');
           navigate("/dashboard");
         } else {
           setInfo("Signed in—loading your dashboard...");
@@ -155,6 +159,7 @@ export default function Auth() {
         });
         if (error) throw error;
 
+        events.signUp('email');
         // If email confirmations are enabled, they may need to confirm first.
         setInfo("Account created. If prompted, confirm your email, then return to sign in.");
       }
@@ -166,6 +171,12 @@ export default function Auth() {
   };
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+      <SEO
+        title={isLogin ? "Sign In" : "Sign Up"}
+        description="Sign in or create your HeftCoder account to start building production-ready applications with AI."
+        url="/auth"
+        noindex={true}
+      />
       <div className="w-full max-w-md">
         {/* Back button */}
         <button

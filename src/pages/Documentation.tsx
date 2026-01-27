@@ -1,8 +1,31 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Book, Code, Rocket, Terminal, Database, Shield, Layers, GitBranch, Settings, FileCode, Play, CheckCircle } from "lucide-react";
 import { Footer } from "../components/marketing/Footer";
+import { SEO } from "../components/SEO";
 
 export default function Documentation() {
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How do I get started with HeftCoder?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Create an account, start a new project, and describe what you want to build. Our AI agents will generate production-ready code in minutes.'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: 'What technologies does HeftCoder support?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'HeftCoder generates React, TypeScript, Tailwind CSS applications with Supabase backend integration.'
+        }
+      }
+    ]
+  };
   const sections = [
     {
       title: "Getting Started",
@@ -74,6 +97,12 @@ export default function Documentation() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
+      <SEO
+        title="Documentation"
+        description="Comprehensive guides and tutorials for building applications with HeftCoder. Learn AI-powered development, deployment, and best practices."
+        url="/docs"
+        schema={faqSchema}
+      />
       {/* Header */}
       <header className="border-b border-white/5 py-4 px-6 sticky top-0 bg-[#050505]/80 backdrop-blur-xl z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

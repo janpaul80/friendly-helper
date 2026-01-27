@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Shield, Eye, Lock, Database, Globe, UserCheck, Bell, Trash2, Mail, FileText } from "lucide-react";
 import { Footer } from "../components/marketing/Footer";
+import { SEO } from "../components/SEO";
 
 export default function Privacy() {
   const sections = [
@@ -188,6 +189,11 @@ export default function Privacy() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
+      <SEO
+        title="Privacy Policy"
+        description="HeftCoder Privacy Policy - Learn how we collect, use, and protect your data. GDPR compliant with transparent data practices."
+        url="/privacy"
+      />
       {/* Header */}
       <header className="border-b border-white/5 py-4 px-6 sticky top-0 bg-[#050505]/80 backdrop-blur-xl z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

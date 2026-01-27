@@ -7,6 +7,7 @@ import { motion, useInView } from "framer-motion";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
 import { CookieConsent } from "../components/marketing/CookieConsent";
+import { SEO, schemas } from "../components/SEO";
 import { toast } from "sonner";
 import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
 import {
@@ -331,6 +332,13 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-orange-500/30 overflow-x-hidden">
+      <SEO 
+        title="AI-Powered Code Generation Platform"
+        description="Build production-ready applications in minutes with autonomous AI agents. HeftCoder transforms your ideas into reality with intelligent code generation."
+        url="/"
+        schema={schemas.softwareApplication}
+      />
+      
       {/* Background Gradients */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-900/10 blur-[120px] rounded-full mix-blend-screen" />
