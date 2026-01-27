@@ -3,6 +3,7 @@ import { Toaster } from "./components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { usePageTracking } from "./hooks/useAnalytics";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -27,31 +28,39 @@ const PageLoader = () => (
   </div>
 );
 
+// Analytics wrapper component
+function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+  usePageTracking();
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster />
       <BrowserRouter>
-        <ScrollToTop />
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/docs" element={<Documentation />} />
-            <Route path="/api-reference" element={<ApiReference />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/security" element={<Security />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/login" element={<Auth />} />
-            <Route path="/signup" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/workspace/new" element={<Workspace />} />
-            <Route path="/workspace/:id" element={<Workspace />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        <AnalyticsProvider>
+          <ScrollToTop />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/docs" element={<Documentation />} />
+              <Route path="/api-reference" element={<ApiReference />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/login" element={<Auth />} />
+              <Route path="/signup" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/workspace/new" element={<Workspace />} />
+              <Route path="/workspace/:id" element={<Workspace />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </AnalyticsProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

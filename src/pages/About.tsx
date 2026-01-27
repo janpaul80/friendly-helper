@@ -2,10 +2,17 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Code, Shield, Rocket, Target, Eye } from "lucide-react";
 import jpHartmannPhoto from "@/assets/jp-hartmann.png";
 import { Footer } from "../components/marketing/Footer";
+import { SEO, schemas } from "../components/SEO";
 
 export default function About() {
   return (
     <div className="min-h-screen bg-[#050505] text-white">
+      <SEO
+        title="About Us"
+        description="HeftCoder is a modern technology company building powerful, scalable, and human-centered digital products. Founded by JP Hartmann."
+        url="/about"
+        schema={schemas.organization}
+      />
       {/* Header */}
       <header className="border-b border-white/5 py-4 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
