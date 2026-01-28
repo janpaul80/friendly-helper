@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Powered IDE - Build Faster with Intelligent Code Generation | HeftCoder</title>
+  <meta name="description" content="HeftCoder's browser-based IDE features AI code generation, multi-file editing, instant preview, and one-click deployment. Build production-ready React apps 10x faster.">
+  <meta name="keywords" content="AI IDE, code generation, browser IDE, React development, TypeScript, web development">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://heftcoder.icu/features/ide/">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="AI-Powered IDE - Build Faster | HeftCoder">
+  <meta property="og:description" content="Browser-based IDE with AI code generation, instant preview, and one-click deployment.">
+  <meta property="og:image" content="https://heftcoder.icu/assets/og-image.png">
+  <meta property="og:url" content="https://heftcoder.icu/features/ide/">
+  <meta property="og:type" content="website">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/favicon.png">
+  
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "HeftCoder IDE",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web Browser",
+    "description": "AI-powered browser IDE for building production-ready React applications",
+    "featureList": [
+      "AI Code Generation",
+      "Multi-file Editing",
+      "Instant Live Preview",
+      "One-click Deployment",
+      "GitHub Integration",
+      "TypeScript Support"
+    ],
+    "offers": {
+      "@type": "Offer",
+      "price": "9",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+  
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: #0a0a0a;
+      --fg: #ffffff;
+      --muted: #a1a1aa;
+      --orange: #ea580c;
+      --orange-light: #fb923c;
+      --card-bg: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.1);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+    }
+    
+    a { color: inherit; text-decoration: none; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(10,10,10,0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    header .container {
+      display: flex; align-items: center; justify-content: space-between; height: 72px;
+    }
+    
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 700; }
+    .logo img { height: 32px; width: 32px; }
+    
+    nav { display: flex; gap: 32px; align-items: center; }
+    nav a { color: var(--muted); transition: color 0.2s; }
+    nav a:hover { color: var(--fg); }
+    nav a.active { color: var(--orange); }
+    
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 10px 20px; border-radius: 8px; font-weight: 600; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--orange); color: white; }
+    .btn-primary:hover { background: var(--orange-light); }
+    .btn-ghost { background: transparent; color: var(--muted); }
+    .btn-ghost:hover { color: var(--fg); }
+    
+    .hero { padding: 160px 0 80px; text-align: center; }
+    .hero .badge {
+      display: inline-block; background: rgba(234,88,12,0.2); color: var(--orange-light);
+      padding: 6px 16px; border-radius: 20px; font-size: 0.875rem; font-weight: 600; margin-bottom: 24px;
+    }
+    .hero h1 { font-size: clamp(2.5rem, 6vw, 3.5rem); font-weight: 800; line-height: 1.1; margin-bottom: 24px; }
+    .hero h1 span { color: var(--orange); }
+    .hero p { font-size: 1.25rem; color: var(--muted); max-width: 700px; margin: 0 auto 40px; }
+    .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    
+    .features { padding: 100px 0; border-top: 1px solid var(--border); }
+    .features h2 { text-align: center; font-size: 2rem; margin-bottom: 60px; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+    .feature-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px;
+    }
+    .feature-card .icon {
+      width: 48px; height: 48px; background: rgba(234,88,12,0.2);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 20px;
+    }
+    .feature-card h3 { font-size: 1.25rem; margin-bottom: 12px; }
+    .feature-card p { color: var(--muted); font-size: 0.95rem; }
+    
+    .cta { padding: 100px 0; text-align: center; border-top: 1px solid var(--border); }
+    .cta h2 { font-size: 2.5rem; margin-bottom: 16px; }
+    .cta p { color: var(--muted); margin-bottom: 32px; font-size: 1.125rem; }
+    
+    footer {
+      padding: 60px 0; border-top: 1px solid var(--border);
+      text-align: center; color: var(--muted);
+    }
+    footer nav { justify-content: center; margin-bottom: 24px; }
+    
+    @media (max-width: 768px) { nav { display: none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="logo">
+        <img src="/assets/hc-icon.png" alt="HeftCoder">
+        <span>HeftCoder</span>
+      </a>
+      <nav>
+        <a href="/features/ide/" class="active">IDE</a>
+        <a href="/features/cli/">CLI</a>
+        <a href="/pricing/">Pricing</a>
+        <a href="https://app.heftcoder.icu/docs">Docs</a>
+      </nav>
+      <div style="display: flex; gap: 12px;">
+        <a href="https://app.heftcoder.icu/auth" class="btn btn-ghost">Sign In</a>
+        <a href="https://app.heftcoder.icu/auth" class="btn btn-primary">Get Started</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <span class="badge">✨ AI-Powered Development</span>
+        <h1>The IDE That <span>Writes Code</span> For You</h1>
+        <p>Describe what you want to build in plain English. HeftCoder's AI generates production-ready React components, handles styling, and deploys instantly.</p>
+        <div class="hero-buttons">
+          <a href="https://app.heftcoder.icu/auth" class="btn btn-primary">Try the IDE Free</a>
+          <a href="/pricing/" class="btn btn-ghost">View Pricing →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="container">
+        <h2>Everything You Need to Build Faster</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="icon">🤖</div>
+            <h3>AI Code Generation</h3>
+            <p>Describe your feature in natural language and watch as our AI generates clean, production-ready React and TypeScript code.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">📁</div>
+            <h3>Multi-File Support</h3>
+            <p>Work across components, hooks, utilities, and styles simultaneously. The AI understands your entire project structure.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">👁️</div>
+            <h3>Instant Preview</h3>
+            <p>See changes in real-time as you build. No waiting for builds or deployments—your preview updates instantly.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">🚀</div>
+            <h3>One-Click Deploy</h3>
+            <p>Deploy to our global CDN with a single click. Custom domains, SSL certificates, and analytics included.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">🔗</div>
+            <h3>GitHub Sync</h3>
+            <p>Bidirectional sync with GitHub. Work in HeftCoder or your local IDE—changes sync automatically both ways.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">🎨</div>
+            <h3>Tailwind CSS</h3>
+            <p>Built-in Tailwind CSS support with intelligent suggestions. Beautiful, responsive designs without the hassle.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="container">
+        <h2>Ready to Build 10x Faster?</h2>
+        <p>Join thousands of developers shipping production apps with HeftCoder.</p>
+        <a href="https://app.heftcoder.icu/auth" class="btn btn-primary">Start Building Free</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <nav>
+        <a href="/pricing/">Pricing</a>
+        <a href="https://app.heftcoder.icu/docs">Documentation</a>
+        <a href="https://app.heftcoder.icu/privacy">Privacy</a>
+        <a href="https://app.heftcoder.icu/terms">Terms</a>
+      </nav>
+      <p>© 2026 HeftCoder. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>
