@@ -20,6 +20,8 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Security = lazy(() => import("./pages/Security"));
 const Referrals = lazy(() => import("./pages/Referrals"));
+const FeatureIDE = lazy(() => import("./pages/features/IDE"));
+const FeatureCLI = lazy(() => import("./pages/features/CLI"));
 
 const queryClient = new QueryClient();
 
@@ -54,6 +56,8 @@ function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/security" element={<Security />} />
               <Route path="/referrals" element={<Referrals />} />
+              <Route path="/features/ide" element={<FeatureIDE />} />
+              <Route path="/features/cli" element={<FeatureCLI />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/login" element={<Auth />} />
               <Route path="/signup" element={<Auth />} />
