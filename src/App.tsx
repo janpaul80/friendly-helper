@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 const Workspace = lazy(() => import("./pages/Workspace"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Auth = lazy(() => import("./pages/Auth"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const About = lazy(() => import("./pages/About"));
 const Documentation = lazy(() => import("./pages/Documentation"));
 const ApiReference = lazy(() => import("./pages/ApiReference"));
@@ -54,6 +55,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/login" element={<Auth />} />
               <Route path="/signup" element={<Auth />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/workspace/new" element={<Workspace />} />
               <Route path="/workspace/:id" element={<Workspace />} />
