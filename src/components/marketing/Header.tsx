@@ -68,7 +68,7 @@ export function Header() {
             )}
           </div>
           <a href={getSectionLink("#features")} className="hover:text-white transition-colors">Products</a>
-          <a href={getSectionLink("#pricing")} className="hover:text-white transition-colors">Pricing</a>
+          <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link to="/referrals" className="hover:text-white transition-colors">Referrals</Link>
         </nav>
 
@@ -130,7 +130,7 @@ export function Header() {
               </div>
             )}
             <a href={getSectionLink("#features")} className="py-2 hover:text-white transition-colors">Products</a>
-            <a href={getSectionLink("#pricing")} className="py-2 hover:text-white transition-colors">Pricing</a>
+            <Link to="/pricing" className="py-2 hover:text-white transition-colors">Pricing</Link>
             <Link to="/referrals" className="py-2 hover:text-white transition-colors">Referrals</Link>
           </nav>
           <div className="flex flex-col gap-3">
