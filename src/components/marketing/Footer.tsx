@@ -47,7 +47,7 @@ export function Footer() {
       <div className="max-w-6xl mx-auto border-t border-white/5 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
         <p>© 2025 HeftCoder. Built for the VIBE era.</p>
         <div className="flex gap-6">
-          <a href="https://github.com/heftcoder" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+          <a href="https://github.com/janpaul80" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
             <Github className="w-4 h-4" />
           </a>
           <span className="hover:text-white cursor-pointer transition-colors">Twitter / X</span>
