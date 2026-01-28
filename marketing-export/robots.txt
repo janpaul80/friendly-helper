@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://heftcoder.icu/sitemap.xml
+
+# Marketing site - all content is public and crawlable
+# App functionality lives at app.heftcoder.icu
