@@ -359,7 +359,7 @@ export default function LandingPage() {
 
       <Header />
 
-      <main className="relative z-10 pt-40 px-6 pb-20">
+      <main className="relative z-10 pt-24 sm:pt-32 md:pt-40 px-4 sm:px-6 pb-20">
         <motion.div 
           className="max-w-4xl mx-auto text-center"
           initial="hidden"
