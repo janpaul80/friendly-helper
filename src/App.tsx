@@ -19,6 +19,7 @@ const Community = lazy(() => import("./pages/Community"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Security = lazy(() => import("./pages/Security"));
+const Referrals = lazy(() => import("./pages/Referrals"));
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/security" element={<Security />} />
+              <Route path="/referrals" element={<Referrals />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/login" element={<Auth />} />
               <Route path="/signup" element={<Auth />} />
