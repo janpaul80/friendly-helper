@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Zap, Menu, X, ChevronDown, Terminal, Code2 } from "lucide-react";
+import { Menu, X, ChevronDown, Terminal, Code2 } from "lucide-react";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,9 +29,7 @@ export function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-md px-4 sm:px-6 py-4">
       <div className="flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 bg-orange-600 rounded-lg flex items-center justify-center text-white font-bold shadow-[0_0_15px_rgba(234,88,12,0.4)]">
-            <Zap size={20} fill="currentColor" />
-          </div>
+          <img src="/assets/hc-logo.png" alt="HeftCoder" className="h-8 w-8 rounded-lg shadow-[0_0_15px_rgba(234,88,12,0.4)]" />
           <span className="text-white font-bold text-xl tracking-tight">HeftCoder</span>
         </Link>
 

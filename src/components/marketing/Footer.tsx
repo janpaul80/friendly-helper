@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Zap, Github } from "lucide-react";
+import { Github } from "lucide-react";
 
 export function Footer() {
   return (
@@ -7,9 +7,7 @@ export function Footer() {
       <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center mb-6 gap-2">
-            <div className="h-6 w-6 bg-orange-600 rounded flex items-center justify-center text-white">
-              <Zap size={14} fill="currentColor" />
-            </div>
+            <img src="/assets/hc-logo.png" alt="HeftCoder" className="h-6 w-6 rounded" />
             <span className="text-white font-bold text-lg tracking-tighter">HeftCoder</span>
           </div>
           <p className="text-sm leading-relaxed max-w-xs">
