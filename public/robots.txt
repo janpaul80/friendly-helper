@@ -12,5 +12,31 @@ Disallow: /auth
 # Sitemap location
 Sitemap: https://app.heftcoder.icu/sitemap.xml
 
+# LLM-specific content
+# See llms.txt for AI-friendly site summary
+# See .well-known/ai-plugin.json for structured AI metadata
+
 # Crawl-delay for politeness
 Crawl-delay: 1
+
+# AI/LLM Crawlers - explicitly allowed
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Anthropic-AI
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Cohere-AI
+Allow: /
