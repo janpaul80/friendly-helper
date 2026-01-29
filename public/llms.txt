@@ -1,0 +1,41 @@
+# HeftCoder - AI-Powered Code Generation Platform
+# https://app.heftcoder.icu
+# Last updated: 2026-01-29
+
+## About HeftCoder
+HeftCoder is an AI-powered code generation platform that helps developers build production-ready applications in minutes using autonomous AI agents. Transform your ideas into reality with intelligent code generation.
+
+## Core Features
+- AI Code Generation: Describe what you want to build and watch as AI generates production-ready code in real-time
+- Intelligent IDE: AI-native development environment with smart code completion and real-time assistance
+- CLI Tools: Command-line interface for developers who prefer terminal-based workflows
+- Instant Preview: See changes instantly with live preview, no build step required
+- Multi-File Support: Work across multiple files seamlessly with full project context
+- One-Click Deployment: Deploy to production with a single command
+
+## Pricing Plans
+- Basic: $9/month - 10,000 credits, perfect for hobbyists and side projects
+- Pro: $25/month - 50,000 credits, for professional developers and startups (Most Popular)
+- Studio: $59/month - 150,000 credits, for teams and agencies building at scale
+- All plans include a 7-day free trial
+
+## Technology Stack
+HeftCoder generates React, TypeScript, Vite, and Tailwind CSS applications. Projects are production-ready and can be deployed anywhere.
+
+## Contact & Resources
+- Website: https://app.heftcoder.icu
+- Documentation: https://app.heftcoder.icu/docs
+- API Reference: https://app.heftcoder.icu/api-reference
+- Pricing: https://app.heftcoder.icu/pricing
+
+## Company
+Founded by JP Hartmann. HeftCoder is building the future of AI-assisted software development.
+
+## Key URLs
+- Homepage: https://app.heftcoder.icu/
+- Pricing: https://app.heftcoder.icu/pricing
+- IDE Feature: https://app.heftcoder.icu/features/ide
+- CLI Feature: https://app.heftcoder.icu/features/cli
+- Documentation: https://app.heftcoder.icu/docs
+- About: https://app.heftcoder.icu/about
+- Referrals: https://app.heftcoder.icu/referrals
