@@ -4,6 +4,7 @@ import { Zap, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { lovable } from "../integrations/lovable/index";
 import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
+import { openExternalUrl } from "../lib/openExternal";
 import { SEO } from "../components/SEO";
 import { events } from "../lib/analytics";
 
@@ -13,6 +14,18 @@ const isInIframe = () => {
   } catch {
     return true;
   }
+};
+
+const getTopLevelOrigin = () => {
+  // When embedded, prefer the parent origin (helps avoid mismatched preview domains).
+  if (isInIframe()) {
+    try {
+      if (document.referrer) return new URL(document.referrer).origin;
+    } catch {
+      // ignore
+    }
+  }
+  return window.location.origin;
 };
 
 export default function Auth() {
@@ -35,7 +48,7 @@ export default function Auth() {
       // When running in an iframe, Google blocks auth screens.
       // Auto-start would be a non-user gesture (popup blocked), so instead show a hint and wait for a click.
       if (isInIframe()) {
-        setInfo("Click ‘Continue with Google’ to open sign-in in a new tab (required in preview).");
+        setInfo("Click ‘Continue with Google’ to open sign-in in a new tab.");
         return;
       }
       handleGoogleLogin();
@@ -66,8 +79,18 @@ export default function Auth() {
     setError(null);
     setInfo(null);
     try {
+      // Embedded views often cause Google to block popups/iframes.
+      // Open the same app in a full tab (top-level), then start OAuth there.
+      if (isInIframe()) {
+        const topOrigin = getTopLevelOrigin();
+        openExternalUrl(`${topOrigin}/auth?provider=google`);
+        setGoogleLoading(false);
+        setInfo("Finish signing in in the new tab, then come back here.");
+        return;
+      }
+
       const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/dashboard",
+        redirect_uri: `${getTopLevelOrigin()}/dashboard`,
       });
       
       if (error) throw error;
