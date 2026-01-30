@@ -26,7 +26,10 @@ export function CreateProjectModal({ onClose, onSubmit, isLoading = false }: Cre
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[100] p-4 font-sans">
+    <div 
+      className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[100] p-4 font-sans"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[150px]" />
@@ -88,12 +91,12 @@ export function CreateProjectModal({ onClose, onSubmit, isLoading = false }: Cre
             <button
               type="submit"
               disabled={isLoading || !name.trim()}
-              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 disabled:from-gray-700 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-black py-4 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-orange-900/30 text-sm uppercase tracking-widest active:scale-[0.98] group"
+              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 disabled:from-gray-700 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-black py-4 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-orange-900/30 text-sm uppercase tracking-widest active:scale-[0.98] group touch-manipulation"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
-                  <span>Initializing Workspace...</span>
+                  <span>Creating Project...</span>
                 </>
               ) : (
                 <>
