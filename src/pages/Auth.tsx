@@ -4,7 +4,7 @@ import { Zap, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { lovable } from "../integrations/lovable/index";
 import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
-import { openExternalUrl } from "../lib/openExternal";
+import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
 import { SEO } from "../components/SEO";
 import { events } from "../lib/analytics";
 
@@ -32,6 +32,7 @@ export default function Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [externalAuthUrl, setExternalAuthUrl] = useState<string | null>(null);
   const [autoStarted, setAutoStarted] = useState(false);
 
   // Auto-start Google OAuth if ?provider=google is in URL (only in top-level windows)
@@ -68,14 +69,26 @@ export default function Auth() {
     setGoogleLoading(true);
     setError(null);
     setInfo(null);
+    setExternalAuthUrl(null);
     try {
       // Embedded views often cause Google to block popups/iframes.
       // Open the same app in a full tab (top-level), then start OAuth there.
       if (isInIframe()) {
         const appOrigin = getAppOrigin();
-        openExternalUrl(`${appOrigin}/auth?provider=google`);
+        const url = `${appOrigin}/auth?provider=google`;
+
+        // Pre-open synchronously (best chance to bypass popup blockers)
+        const preopened = preopenExternalWindow();
+        const opened = openExternalUrl(url, preopened);
+
         setGoogleLoading(false);
-        setInfo("Complete sign-in in the new tab. This page will update automatically.");
+        if (!opened) {
+          setExternalAuthUrl(url);
+          setInfo("Your browser blocked the popup. Open sign-in in a new tab:");
+          return;
+        }
+
+        setInfo("Finish signing in in the new tab, then return here.");
         return;
       }
 
@@ -197,6 +210,18 @@ export default function Auth() {
           {info && (
             <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-gray-300 text-sm mb-6">
               {info}
+              {externalAuthUrl && (
+                <div className="mt-3">
+                  <a
+                    href={externalAuthUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-md border border-border bg-muted px-3 py-2 text-foreground hover:bg-accent transition-colors"
+                  >
+                    Open Google sign-in
+                  </a>
+                </div>
+              )}
             </div>
           )}
 

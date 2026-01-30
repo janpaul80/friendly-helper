@@ -24,13 +24,13 @@ export const preopenExternalWindow = (): Window | null => {
   }
 };
 
-export const openExternalUrl = (url: string, preopened?: Window | null) => {
+export const openExternalUrl = (url: string, preopened?: Window | null): boolean => {
   // If we pre-opened a tab, use it (best chance to bypass popup blockers).
   if (preopened && !preopened.closed) {
     try {
       preopened.location.href = url;
       preopened.focus();
-      return;
+      return true;
     } catch {
       // fall through
     }
@@ -45,10 +45,14 @@ export const openExternalUrl = (url: string, preopened?: Window | null) => {
       } catch {
         // ignore
       }
-      return;
+      return true;
     }
+
+    // If we couldn't open a new tab, do NOT navigate the iframe (many providers refuse to be framed).
+    return false;
   }
 
   // Fallback
   window.location.href = url;
+  return true;
 };
