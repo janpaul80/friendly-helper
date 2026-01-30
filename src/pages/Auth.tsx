@@ -32,7 +32,7 @@ export default function Auth() {
     const provider = searchParams.get("provider");
     if (provider === "google" && !autoStarted) {
       setAutoStarted(true);
-      // In the Lovable preview the app runs inside an iframe; Google blocks auth screens in iframes.
+      // When running in an iframe, Google blocks auth screens.
       // Auto-start would be a non-user gesture (popup blocked), so instead show a hint and wait for a click.
       if (isInIframe()) {
         setInfo("Click ‘Continue with Google’ to open sign-in in a new tab (required in preview).");

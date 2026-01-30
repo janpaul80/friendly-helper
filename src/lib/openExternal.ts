@@ -1,7 +1,6 @@
 /**
  * Stripe Checkout (and some other third-party pages) often refuse to be embedded in an iframe.
- * In the Lovable editor, the app runs inside an iframe, so a normal `window.location.href = url`
- * can appear as a blank/skeleton screen.
+ * When running in an iframe, a normal `window.location.href = url` can appear as a blank screen.
  *
  * This helper prefers opening a new tab when inside an iframe.
  */
