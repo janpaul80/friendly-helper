@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../integrations/supabase/client";
+import { lovable } from "../integrations/lovable/index";
 import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
-import { openExternalUrl } from "../lib/openExternal";
 import { SEO } from "../components/SEO";
 import { events } from "../lib/analytics";
 
@@ -25,7 +25,6 @@ export default function Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [oauthUrl, setOauthUrl] = useState<string | null>(null);
   const [autoStarted, setAutoStarted] = useState(false);
 
   // Auto-start Google OAuth if ?provider=google is in URL
@@ -39,7 +38,7 @@ export default function Auth() {
         setInfo("Click ‘Continue with Google’ to open sign-in in a new tab (required in preview).");
         return;
       }
-      handleGoogleLogin({ initiatedByUser: false });
+      handleGoogleLogin();
     }
   }, [searchParams, autoStarted]);
 
@@ -62,65 +61,20 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleGoogleLogin = async ({ initiatedByUser }: { initiatedByUser: boolean }) => {
+  const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     setError(null);
     setInfo(null);
-    setOauthUrl(null);
     try {
-      // In preview the app runs in an iframe; open a normal tab first so we can reliably navigate it.
-      // (Using noopener here can make the returned window handle unusable in some browsers.)
-      const preopened =
-        initiatedByUser && isInIframe()
-          ? (() => {
-              try {
-                return window.open("about:blank", "_blank");
-              } catch {
-                return null;
-              }
-            })()
-          : null;
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: true,
-        },
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin + "/dashboard",
       });
+      
       if (error) throw error;
-
-      if (!data?.url) {
-        throw new Error("Google sign-in did not return a redirect URL.");
-      }
-
-      setOauthUrl(data.url);
-
-      if (initiatedByUser) {
-        // Best path: navigate the pre-opened tab.
-        if (preopened && !preopened.closed) {
-          try {
-            preopened.location.replace(data.url);
-            preopened.focus();
-            events.login('google');
-            setGoogleLoading(false);
-            setInfo("Finish signing in in the new tab, then come back here.");
-            return;
-          } catch {
-            // fall through to the fallback below
-          }
-        }
-
-        // Fallback: show a second, synchronous click target that opens the URL.
-        if (isInIframe()) {
-          setGoogleLoading(false);
-          setInfo("Your browser blocked the sign-in tab. Use the button below to open Google sign-in.");
-          return;
-        }
-      }
-
-      // Non-user initiated (e.g. direct navigation outside iframe) fallback.
-      window.location.href = data.url;
+      
+      // If we get here without redirect, session was set - navigate to dashboard
+      events.login('google');
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       setError(err.message || "Google sign-in failed");
       setGoogleLoading(false);
@@ -208,7 +162,7 @@ export default function Auth() {
           {/* OAuth Buttons */}
           <div className="space-y-3 mb-6">
             <button
-              onClick={() => handleGoogleLogin({ initiatedByUser: true })}
+              onClick={handleGoogleLogin}
               disabled={googleLoading}
               className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 rounded-lg py-3 text-white hover:bg-white/10 transition-colors disabled:opacity-50"
             >
@@ -230,16 +184,6 @@ export default function Auth() {
             <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-gray-300 text-sm mb-6">
               {info}
             </div>
-          )}
-
-          {oauthUrl && isInIframe() && (
-            <button
-              type="button"
-              onClick={() => openExternalUrl(oauthUrl)}
-              className="w-full mb-6 bg-white/5 border border-white/10 rounded-lg py-3 text-white hover:bg-white/10 transition-colors"
-            >
-              Open Google sign-in
-            </button>
           )}
 
           <div className="flex items-center gap-4 mb-6">
