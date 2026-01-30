@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// App entry point - Lovable Cloud provides Supabase credentials via env vars
+// HeftCoder app entry point
 // Force dark mode on the document
 document.documentElement.classList.add("dark");
 
