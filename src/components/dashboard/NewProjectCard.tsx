@@ -5,10 +5,18 @@ interface NewProjectCardProps {
 }
 
 export function NewProjectCard({ onClick }: NewProjectCardProps) {
+  const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  };
+
   return (
-    <div
-      onClick={onClick}
-      className="group border-2 border-dashed border-orange-500/20 bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] hover:from-[#0f0f18] hover:to-[#141420] rounded-2xl cursor-pointer hover:border-orange-500/50 transition-all duration-300 flex flex-col items-center justify-center min-h-[280px] relative overflow-hidden"
+    <button
+      type="button"
+      onClick={handleClick}
+      onTouchEnd={handleClick}
+      className="group border-2 border-dashed border-orange-500/20 bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] hover:from-[#0f0f18] hover:to-[#141420] rounded-2xl cursor-pointer hover:border-orange-500/50 transition-all duration-300 flex flex-col items-center justify-center min-h-[280px] relative overflow-hidden w-full text-left active:scale-[0.98]"
     >
       {/* Background Grid Effect with orange tint */}
       <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -50,6 +58,6 @@ export function NewProjectCard({ onClick }: NewProjectCardProps) {
           <span className="text-[9px] text-orange-400 font-mono uppercase tracking-widest font-bold">AI-Powered</span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
