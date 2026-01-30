@@ -208,11 +208,42 @@ export default function Dashboard() {
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '') || 'project';
     
-    setShowCreateModal(false);
-    setIsCreatingProject(false);
-    
-    // Always navigate to workspace home (no deep-link)
-    window.location.href = `${WORKSPACE_BASE_URL}?new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
+    try {
+      // Save the project to database immediately
+      const { data: newProject, error } = await supabase
+        .from('project_history' as any)
+        .insert({
+          user_id: user.id,
+          name: projectName,
+          project_type: 'web',
+          original_prompt: `New project: ${projectName}`,
+          files: [],
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Failed to save project:', error);
+        toast.error('Failed to create project');
+        setIsCreatingProject(false);
+        return;
+      }
+
+      // Update local state immediately for instant UI feedback
+      setProjects(prev => [newProject as unknown as Project, ...(prev || [])]);
+      
+      toast.success('Project created successfully!');
+      
+      setShowCreateModal(false);
+      setIsCreatingProject(false);
+      
+      // Navigate to workspace with the new project ID
+      window.location.href = `${WORKSPACE_BASE_URL}?project=${newProject.id}&new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
+    } catch (err) {
+      console.error('Error creating project:', err);
+      toast.error('Failed to create project');
+      setIsCreatingProject(false);
+    }
   };
 
   const handleOpenProject = (projectId: string) => {
