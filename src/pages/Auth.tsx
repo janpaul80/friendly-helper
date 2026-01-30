@@ -34,17 +34,13 @@ export default function Auth() {
   const [info, setInfo] = useState<string | null>(null);
   const [autoStarted, setAutoStarted] = useState(false);
 
-  // Auto-start Google OAuth if ?provider=google is in URL
+  // Auto-start Google OAuth if ?provider=google is in URL (only in top-level windows)
   useEffect(() => {
     const provider = searchParams.get("provider");
-    if (provider === "google" && !autoStarted) {
+    // Only auto-trigger OAuth in a top-level window (not iframe)
+    // The iframe just shows the normal auth page - user clicks button manually
+    if (provider === "google" && !autoStarted && !isInIframe()) {
       setAutoStarted(true);
-      // When running in an iframe, Google blocks auth screens.
-      // Auto-start would be a non-user gesture (popup blocked), so instead show a hint and wait for a click.
-      if (isInIframe()) {
-        setInfo("Click ‘Continue with Google’ to open sign-in in a new tab.");
-        return;
-      }
       handleGoogleLogin();
     }
   }, [searchParams, autoStarted]);
@@ -79,7 +75,7 @@ export default function Auth() {
         const appOrigin = getAppOrigin();
         openExternalUrl(`${appOrigin}/auth?provider=google`);
         setGoogleLoading(false);
-        setInfo("Finish signing in in the new tab, then come back here.");
+        setInfo("Complete sign-in in the new tab. This page will update automatically.");
         return;
       }
 
@@ -140,6 +136,7 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
       <SEO
