@@ -16,15 +16,9 @@ const isInIframe = () => {
   }
 };
 
-const getTopLevelOrigin = () => {
-  // When embedded, prefer the parent origin (helps avoid mismatched preview domains).
-  if (isInIframe()) {
-    try {
-      if (document.referrer) return new URL(document.referrer).origin;
-    } catch {
-      // ignore
-    }
-  }
+const getAppOrigin = () => {
+  // Always use the current window origin - this is the app's actual URL
+  // (whether preview, published, or custom domain)
   return window.location.origin;
 };
 
@@ -82,15 +76,15 @@ export default function Auth() {
       // Embedded views often cause Google to block popups/iframes.
       // Open the same app in a full tab (top-level), then start OAuth there.
       if (isInIframe()) {
-        const topOrigin = getTopLevelOrigin();
-        openExternalUrl(`${topOrigin}/auth?provider=google`);
+        const appOrigin = getAppOrigin();
+        openExternalUrl(`${appOrigin}/auth?provider=google`);
         setGoogleLoading(false);
         setInfo("Finish signing in in the new tab, then come back here.");
         return;
       }
 
       const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${getTopLevelOrigin()}/dashboard`,
+        redirect_uri: `${getAppOrigin()}/dashboard`,
       });
       
       if (error) throw error;
