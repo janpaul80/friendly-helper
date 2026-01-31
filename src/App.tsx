@@ -23,6 +23,7 @@ const Referrals = lazy(() => import("./pages/Referrals"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const FeatureIDE = lazy(() => import("./pages/features/IDE"));
 const FeatureCLI = lazy(() => import("./pages/features/CLI"));
+const UIRefactor = lazy(() => import("./pages/UIRefactor"));
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/workspace/new" element={<Workspace />} />
               <Route path="/workspace/:id" element={<Workspace />} />
+              <Route path="/ui-refactor" element={<UIRefactor />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
