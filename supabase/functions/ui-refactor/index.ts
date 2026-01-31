@@ -1,8 +1,9 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-nocheck
+// Edge function for UI Refactor - runs in Deno runtime
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface RefactorSettings {
@@ -13,7 +14,7 @@ interface RefactorSettings {
   generatePromptAndCode: boolean;
 }
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -72,6 +73,8 @@ Respond with a JSON object containing:
 
 Keep responses professional, actionable, and architecture-focused. No full code dumps.`;
 
+    console.log("Starting UI analysis with preset:", settings.preset);
+
     // First, analyze the image
     const analysisResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -96,6 +99,7 @@ Keep responses professional, actionable, and architecture-focused. No full code 
     });
 
     if (!analysisResponse.ok) {
+      console.error("AI analysis failed:", analysisResponse.status);
       if (analysisResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
@@ -114,10 +118,13 @@ Keep responses professional, actionable, and architecture-focused. No full code 
     const analysisData = await analysisResponse.json();
     const analysisContent = analysisData.choices?.[0]?.message?.content;
     
+    console.log("Analysis complete, parsing response");
+
     let analysis;
     try {
       analysis = JSON.parse(analysisContent);
     } catch {
+      console.log("Could not parse JSON, using raw content");
       analysis = {
         designPrompt: analysisContent,
         implementation: {
@@ -134,6 +141,7 @@ Keep responses professional, actionable, and architecture-focused. No full code 
     // Generate UI previews if requested
     let concepts = [];
     if (settings.generatePreviews && analysis.conceptDescriptions) {
+      console.log("Generating UI preview images");
       for (let i = 0; i < Math.min(analysis.conceptDescriptions.length, 3); i++) {
         const concept = analysis.conceptDescriptions[i];
         try {
@@ -161,6 +169,7 @@ Keep responses professional, actionable, and architecture-focused. No full code 
                 title: concept.title,
                 imageUrl: generatedImage
               });
+              console.log(`Generated concept ${i + 1}`);
             }
           }
         } catch (err) {
@@ -171,7 +180,7 @@ Keep responses professional, actionable, and architecture-focused. No full code 
 
     // If no images were generated, create placeholder concepts
     if (concepts.length === 0) {
-      concepts = (analysis.conceptDescriptions || []).map((c: any, i: number) => ({
+      concepts = (analysis.conceptDescriptions || []).map((c: { id?: string; title?: string }, i: number) => ({
         id: c.id || `concept-${i + 1}`,
         title: c.title || `Concept ${i + 1}`,
         imageUrl: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect fill="#0a0a0f" width="400" height="200"/><rect fill="#1a1a24" x="20" y="20" width="360" height="160" rx="8"/><text fill="#666" x="200" y="105" text-anchor="middle" font-family="monospace" font-size="14">${c.title || 'Concept ' + (i + 1)}</text></svg>`)}`
@@ -187,6 +196,8 @@ Keep responses professional, actionable, and architecture-focused. No full code 
         componentOutline: analysis.implementation?.componentOutline || "Component structure pending..."
       }
     };
+
+    console.log("UI Refactor complete, returning results");
 
     return new Response(
       JSON.stringify({ success: true, results }),
