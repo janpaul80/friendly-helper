@@ -153,15 +153,25 @@ export function UIRefactorResults({ results, onReset, uploadedImage }: UIRefacto
                         <h3 className="text-base font-bold text-white">{currentConcept.title}</h3>
                         <p className="text-xs text-gray-500 mt-0.5">AI-generated UI concept • Click thumbnails to switch</p>
                       </div>
-                      <a
-                        href={currentConcept.imageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => {
+                          const newWindow = window.open('', '_blank');
+                          if (newWindow) {
+                            newWindow.document.write(`
+                              <!DOCTYPE html>
+                              <html>
+                                <head><title>UI Concept ${selectedConcept + 1}</title><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;}img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head>
+                                <body><img src="${currentConcept.imageUrl}" alt="${currentConcept.title}" /></body>
+                              </html>
+                            `);
+                            newWindow.document.close();
+                          }
+                        }}
                         className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-orange-400 transition-colors"
                       >
                         <ExternalLink size={12} />
                         Full Size
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>
