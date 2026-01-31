@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { Plus, Zap, LogOut, Menu, ExternalLink } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Zap, LogOut, Menu, ExternalLink, Layers } from 'lucide-react';
 import { useState } from 'react';
 
 interface DashboardHeaderProps {
@@ -11,6 +11,7 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLogout, onOpenWorkspace }: DashboardHeaderProps) {
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const tabs = [
@@ -53,6 +54,15 @@ export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLog
 
         {/* Actions */}
         <div className="flex items-center gap-3">
+          {/* UI Refactor Button */}
+          <button
+            onClick={() => navigate('/ui-refactor')}
+            className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-[#111118] hover:bg-[#1a1a24] border border-orange-500/20 hover:border-orange-500/40 rounded-xl text-sm font-bold transition-all text-orange-400 hover:text-orange-300"
+          >
+            <Layers size={14} />
+            UI Refactor
+          </button>
+
           {/* Workspace Button */}
           {onOpenWorkspace && (
             <button
@@ -112,6 +122,18 @@ export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLog
             ))}
           </div>
           
+          {/* Mobile UI Refactor Button */}
+          <button
+            onClick={() => {
+              navigate('/ui-refactor');
+              setMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-sm font-bold text-orange-400"
+          >
+            <Layers size={14} />
+            UI Refactor
+          </button>
+
           {/* Mobile Workspace Button */}
           {onOpenWorkspace && (
             <button
