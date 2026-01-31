@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.ui-refactor]
 verify_jwt = false
+
+[functions.sync-public-apis]
+verify_jwt = false

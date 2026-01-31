@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Zap, LogOut, Menu, ExternalLink, Layers } from 'lucide-react';
+import { Plus, Zap, LogOut, Menu, ExternalLink, Layers, Package } from 'lucide-react';
 import { useState } from 'react';
 
 interface DashboardHeaderProps {
@@ -16,6 +16,7 @@ export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLog
 
   const tabs = [
     { id: 'recents', label: 'Projects' },
+    { id: 'marketplace', label: 'API Market', icon: Package },
     { id: 'studio', label: 'Studio' },
     { id: 'utilities', label: 'Utilities' },
     { id: 'saved', label: 'Archives' },

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { RefreshCw, Grid, Terminal, Zap } from 'lucide-react';
+import { RefreshCw, Grid, Terminal, Zap, Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { openExternalUrl, preopenExternalWindow } from '../lib/openExternal';
@@ -21,6 +21,7 @@ import { ReferralWidget } from '../components/dashboard/ReferralWidget';
 import { TrialPrompt } from '../components/dashboard/TrialPrompt';
 import { PaywallModal } from '../components/dashboard/PaywallModal';
 import { LowBalanceModal } from '../components/dashboard/LowBalanceModal';
+import { APIMarketplace } from '../components/marketplace/APIMarketplace';
 interface Project {
   id: string;
   name: string;
@@ -579,6 +580,20 @@ export default function Dashboard() {
                 <p className="text-xs text-gray-500 mt-1">Bookmarked snippets and templates</p>
               </div>
               <SavedArchives userId={user?.id || ''} />
+            </div>
+          )}
+
+          {/* API Marketplace Tab */}
+          {activeTab === 'marketplace' && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
+                  <Package size={18} className="text-orange-500" />
+                  API Marketplace
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">Discover, test, and compose 1000+ free APIs</p>
+              </div>
+              <APIMarketplace userId={user?.id || ''} />
             </div>
           )}
         </div>
