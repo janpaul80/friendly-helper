@@ -113,7 +113,7 @@ export default function UIRefactor() {
     setProcessingStatus('Analyzing UI structure...');
 
     try {
-      // Simulate progress stages
+      // Progress stages for UI feedback
       const progressStages = [
         { progress: 15, status: 'Analyzing UI structure...' },
         { progress: 30, status: 'Identifying components...' },
@@ -123,12 +123,26 @@ export default function UIRefactor() {
         { progress: 95, status: 'Finalizing results...' },
       ];
 
+      // Use hardcoded URL as fallback (matches pattern in Dashboard.tsx)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ythuhewbaulqirjrkgly.supabase.co';
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI';
+
+      // Start progress animation
+      let currentStage = 0;
+      const progressInterval = setInterval(() => {
+        if (currentStage < progressStages.length) {
+          setProgress(progressStages[currentStage].progress);
+          setProcessingStatus(progressStages[currentStage].status);
+          currentStage++;
+        }
+      }, 2000);
+
       // Call the edge function
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ui-refactor`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/ui-refactor`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'Authorization': `Bearer ${supabaseKey}`,
         },
         body: JSON.stringify({
           image: uploadedImage,
@@ -136,26 +150,19 @@ export default function UIRefactor() {
         }),
       });
 
-      // Simulate progress while waiting
-      for (const stage of progressStages.slice(0, 3)) {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setProgress(stage.progress);
-        setProcessingStatus(stage.status);
-      }
+      clearInterval(progressInterval);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to process UI refactor');
-      }
-
-      // Continue progress
-      for (const stage of progressStages.slice(3)) {
-        await new Promise(resolve => setTimeout(resolve, 600));
-        setProgress(stage.progress);
-        setProcessingStatus(stage.status);
+      // Check response content type to handle errors gracefully
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned an invalid response. Please try again.');
       }
 
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to process UI refactor');
+      }
       
       setProgress(100);
       setProcessingStatus('Complete');
