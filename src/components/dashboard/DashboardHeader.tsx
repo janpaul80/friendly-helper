@@ -53,21 +53,21 @@ export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLog
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-3">
-          {/* UI Refactor Button */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* UI Refactor Button - Always visible on desktop */}
           <button
             onClick={() => navigate('/ui-refactor')}
-            className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-[#111118] hover:bg-[#1a1a24] border border-orange-500/20 hover:border-orange-500/40 rounded-xl text-sm font-bold transition-all text-orange-400 hover:text-orange-300"
+            className="hidden md:flex items-center gap-2 px-3 py-2 bg-[#111118] hover:bg-[#1a1a24] border border-orange-500/30 hover:border-orange-500/50 rounded-lg text-xs font-bold transition-all text-orange-400 hover:text-orange-300"
           >
             <Layers size={14} />
-            UI Refactor
+            <span>UI Refactor</span>
           </button>
 
           {/* Workspace Button */}
           {onOpenWorkspace && (
             <button
               onClick={onOpenWorkspace}
-              className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-[#111118] hover:bg-[#1a1a24] border border-white/10 hover:border-orange-500/30 rounded-xl text-sm font-bold transition-all text-gray-300 hover:text-white"
+              className="hidden md:flex items-center gap-2 px-3 py-2 bg-[#111118] hover:bg-[#1a1a24] border border-white/10 hover:border-orange-500/30 rounded-lg text-xs font-bold transition-all text-gray-300 hover:text-white"
             >
               <ExternalLink size={14} />
               Workspace
@@ -76,7 +76,7 @@ export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLog
 
           <button
             onClick={onCreateProject}
-            className="bg-gradient-to-br from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-orange-900/30 text-white"
+            className="bg-gradient-to-br from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-orange-900/30 text-white"
           >
             <Plus size={16} />
             <span className="hidden sm:inline">New Project</span>
@@ -84,7 +84,7 @@ export function DashboardHeader({ activeTab, onTabChange, onCreateProject, onLog
           
           <button
             onClick={onLogout}
-            className="p-2.5 hover:bg-white/5 rounded-xl transition-colors text-gray-500 hover:text-white border border-white/5"
+            className="p-2 sm:p-2.5 hover:bg-white/5 rounded-xl transition-colors text-gray-500 hover:text-white border border-white/5"
             title="Sign out"
           >
             <LogOut size={18} />
