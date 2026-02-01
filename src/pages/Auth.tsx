@@ -92,12 +92,9 @@ export default function Auth() {
         return;
       }
 
-      // Use standard Supabase OAuth with user's own Google credentials
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        }
+      // Use Lovable Cloud OAuth handler for BYOK credentials
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
       
       if (error) throw error;
