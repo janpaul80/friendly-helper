@@ -590,7 +590,7 @@ export default function LandingPage() {
               className="bg-[#111] border border-white/10 rounded-2xl p-8 text-left hover:border-white/20 transition-all group"
             >
               <h3 className="text-xl font-bold text-white mb-2">Basic</h3>
-              <p className="text-orange-500 text-sm mb-4">7 Day Free Trial</p>
+              <p className="text-orange-500 text-sm mb-4">3 Day Free Trial</p>
               <div className="mb-6">
                 <span className="text-gray-500 text-sm">then</span>
                 <span className="text-4xl font-bold text-white">$9</span>

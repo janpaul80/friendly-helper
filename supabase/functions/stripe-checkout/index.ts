@@ -180,7 +180,7 @@ const prices: Record<string, string | undefined> = {
     }
 
     if (normalizedPlan === "Basic") {
-      sessionParams.subscription_data = { trial_period_days: 7 };
+      sessionParams.subscription_data = { trial_period_days: 3 };
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);

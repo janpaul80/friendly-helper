@@ -89,7 +89,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       <SEO
         title="Pricing - Plans for Every Developer"
-        description="Choose the perfect HeftCoder plan. Basic at $9/mo with 2,500 credits, Pro at $29/mo with 10,000 credits, or Studio at $99/mo with 50,000 credits. Start with a 7-day free trial."
+        description="Choose the perfect HeftCoder plan. Basic at $9/mo with 10,000 credits, Pro at $25/mo with 50,000 credits, or Studio at $59/mo with 150,000 credits. Start with a 3-day free trial."
         keywords="HeftCoder pricing, AI code generation pricing, developer tools pricing, software development plans"
         url="/pricing"
         schema={pricingSchema}
@@ -102,7 +102,7 @@ export default function Pricing() {
           Simple, Transparent <span className="text-orange-500">Pricing</span>
         </h1>
         <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-          Start building for free. Upgrade when you need more power. All plans include a 7-day free trial.
+          Start building for free. Upgrade when you need more power. All plans include a 3-day free trial.
         </p>
       </section>
 
@@ -189,7 +189,7 @@ export default function Pricing() {
             <div className="bg-white/5 rounded-xl p-6">
               <h3 className="font-bold mb-2">Do you offer refunds?</h3>
               <p className="text-gray-400 text-sm">
-                We offer a 7-day free trial on all plans. If you're not satisfied within the first 14 days of a paid subscription, contact support for a full refund.
+                We offer a 3-day free trial on all plans. If you're not satisfied within the first 14 days of a paid subscription, contact support for a full refund.
               </p>
             </div>
           </div>
