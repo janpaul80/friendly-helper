@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Zap, Phone, ArrowLeft, Loader2 } from "lucide-react";
+import { Zap, Phone, ArrowLeft, Loader2, MessageCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { SEO } from "../components/SEO";
@@ -57,16 +57,19 @@ export default function Auth() {
         throw new Error("Please enter a valid phone number with country code (e.g., +1234567890)");
       }
 
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
+      // Call our custom WhatsApp OTP edge function
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-otp', {
+        body: { phone: formattedPhone }
       });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       setStep("otp");
-      setInfo("We've sent a 6-digit code to your phone. Enter it below to sign in.");
-    } catch (err: any) {
-      setError(err.message || "Failed to send verification code");
+      setInfo("We've sent a 6-digit code to your WhatsApp. Enter it below to sign in.");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to send verification code";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -81,20 +84,37 @@ export default function Auth() {
     try {
       const formattedPhone = formatPhoneNumber(phone);
       
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
-        token: otp,
-        type: 'sms',
+      // Call our custom verify edge function
+      const { data, error } = await supabase.functions.invoke('verify-whatsapp-otp', {
+        body: { phone: formattedPhone, code: otp }
       });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      if (data?.session?.user) {
-        events.login('phone');
+      if (data?.session) {
+        // Set the session in Supabase client
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+        
+        events.login('whatsapp');
         navigate("/dashboard");
+      } else if (data?.verified) {
+        // Session wasn't returned but user is verified
+        setInfo("Verified! Redirecting...");
+        // Try to check session again
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          navigate("/dashboard");
+        } else {
+          setError("Verified but session not found. Please try again.");
+        }
       }
-    } catch (err: any) {
-      setError(err.message || "Invalid verification code");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Invalid verification code";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -104,7 +124,7 @@ export default function Auth() {
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
       <SEO
         title="Sign In"
-        description="Sign in to your HeftCoder account with phone verification."
+        description="Sign in to your HeftCoder account with WhatsApp verification."
         url="/auth"
         noindex={true}
       />
@@ -156,6 +176,14 @@ export default function Auth() {
                 <p className="text-gray-500 text-xs mt-2">Include your country code (e.g., +1 for US)</p>
               </div>
 
+              {/* WhatsApp notice */}
+              <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                <MessageCircle className="text-green-500 flex-shrink-0" size={20} />
+                <p className="text-green-400 text-sm">
+                  We'll send your verification code via WhatsApp
+                </p>
+              </div>
+
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
                   {error}
@@ -179,7 +207,10 @@ export default function Auth() {
                     Sending code...
                   </>
                 ) : (
-                  "Send verification code"
+                  <>
+                    <MessageCircle size={18} />
+                    Send WhatsApp code
+                  </>
                 )}
               </button>
             </form>
