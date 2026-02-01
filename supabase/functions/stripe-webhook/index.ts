@@ -11,67 +11,19 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+// Credit allocations per subscription tier
 const CREDITS_PER_TIER: Record<string, number> = {
-  Basic: 2500,
-  Pro: 5000,
-  Studio: 10000,
+  Basic: 10000,   // $9/mo = 10,000 credits
+  Pro: 50000,     // $25/mo = 50,000 credits
+  Studio: 150000, // $59/mo = 150,000 credits
 };
 
-// Helper function to add credits with transaction logging
-async function addCreditsWithLogging(
-  userId: string,
-  amount: number,
-  transactionType: string,
-  description: string,
-  metadata: Record<string, any> = {}
-) {
-  // Get current balance
-  const { data: currentData } = await supabase
-    .from("user_credits")
-    .select("credits")
-    .eq("user_id", userId)
-    .single();
-
-  const currentCredits = currentData?.credits || 0;
-  const newBalance = currentCredits + amount;
-
-  // Update user credits
-  const { error: updateError } = await supabase
-    .from("user_credits")
-    .update({
-      credits: newBalance,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", userId);
-
-  if (updateError) {
-    console.error("Error updating credits:", updateError);
-    return false;
-  }
-
-  // Log the transaction (using service role bypasses RLS)
-  const { error: logError } = await supabase
-    .from("credit_transactions")
-    .insert({
-      user_id: userId,
-      amount: amount,
-      balance_after: newBalance,
-      transaction_type: transactionType,
-      description: description,
-      metadata: metadata,
-    });
-
-  if (logError) {
-    console.error("Error logging transaction:", logError);
-  }
-
-  console.log(`Added ${amount} credits to user ${userId}. New balance: ${newBalance}`);
-  return true;
-}
+// Trial credits
+const TRIAL_CREDITS = 2500;
 
 Deno.serve(async (req: Request) => {
   const signature = req.headers.get("stripe-signature");
-  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET_KEY");
+  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
   if (!signature || !webhookSecret) {
     console.error("Missing signature or webhook secret");
@@ -98,17 +50,28 @@ Deno.serve(async (req: Request) => {
         // Handle credit top-up
         if (checkoutType === "topup") {
           const credits = parseInt(session.metadata?.credits || "0", 10);
-          const packId = session.metadata?.packId;
 
           if (credits > 0) {
-            await addCreditsWithLogging(
-              userId,
-              credits,
-              "topup",
-              `Credit top-up: ${credits.toLocaleString()} credits`,
-              { packId, sessionId: session.id }
-            );
-            console.log("Top-up completed for user:", userId, "credits:", credits);
+            // Get current balance
+            const { data: currentData } = await supabase
+              .from("user_credits")
+              .select("credits, credits_spent")
+              .eq("user_id", userId)
+              .maybeSingle();
+
+            const currentCredits = currentData?.credits || 0;
+            const newBalance = currentCredits + credits;
+
+            await supabase
+              .from("user_credits")
+              .upsert({
+                user_id: userId,
+                credits: newBalance,
+                credits_spent: currentData?.credits_spent || 0,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: "user_id" });
+
+            console.log("Top-up completed for user:", userId, "added credits:", credits);
           }
           break;
         }
@@ -127,7 +90,8 @@ Deno.serve(async (req: Request) => {
           ? new Date(subscription.trial_end * 1000).toISOString()
           : null;
 
-        const credits = CREDITS_PER_TIER[plan] || 2500;
+        // Trial = 2,500 credits, Active = full tier credits
+        const credits = isTrialing ? TRIAL_CREDITS : (CREDITS_PER_TIER[plan] || 10000);
 
         // Update user credits
         const { error } = await supabase
@@ -135,30 +99,25 @@ Deno.serve(async (req: Request) => {
           .upsert({
             user_id: userId,
             credits: credits,
+            credits_spent: 0,
             subscription_status: isTrialing ? "trial" : "active",
-            subscription_tier: plan,
+            subscription_tier: plan.toLowerCase(),
             trial_end_date: trialEnd,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
+            current_period_start: subscription.current_period_start 
+              ? new Date(subscription.current_period_start * 1000).toISOString() 
+              : null,
+            current_period_end: subscription.current_period_end 
+              ? new Date(subscription.current_period_end * 1000).toISOString() 
+              : null,
             updated_at: new Date().toISOString(),
           }, { onConflict: "user_id" });
 
         if (error) {
           console.error("Error updating user credits:", error);
         } else {
-          // Log the subscription credit grant
-          await supabase
-            .from("credit_transactions")
-            .insert({
-              user_id: userId,
-              amount: credits,
-              balance_after: credits,
-              transaction_type: "subscription",
-              description: `${plan} plan subscription started`,
-              metadata: { plan, subscriptionId, isTrialing },
-            });
-
-          console.log("Updated credits for user:", userId, "credits:", credits);
+          console.log("Updated credits for user:", userId, "credits:", credits, "plan:", plan);
         }
         break;
       }
@@ -170,9 +129,9 @@ Deno.serve(async (req: Request) => {
         // Find user by stripe_customer_id
         const { data: userCredit } = await supabase
           .from("user_credits")
-          .select("user_id, subscription_tier, credits")
+          .select("user_id, subscription_tier, credits, subscription_status")
           .eq("stripe_customer_id", customerId)
-          .single();
+          .maybeSingle();
 
         if (!userCredit) {
           console.log("No user found for customer:", customerId);
@@ -190,18 +149,30 @@ Deno.serve(async (req: Request) => {
           subscriptionStatus = "cancelled";
         }
 
-        // If subscription became active after trial, refresh credits
-        if (status === "active") {
-          const credits = CREDITS_PER_TIER[userCredit.subscription_tier] || 2500;
+        // If subscription became active after trial, grant full credits
+        if (status === "active" && userCredit.subscription_status === "trial") {
+          const tier = userCredit.subscription_tier?.charAt(0).toUpperCase() + 
+                      userCredit.subscription_tier?.slice(1) || "Basic";
+          const credits = CREDITS_PER_TIER[tier] || 10000;
+          
           await supabase
             .from("user_credits")
             .update({
               subscription_status: subscriptionStatus,
               credits: credits,
+              credits_spent: 0,
               trial_end_date: null,
+              current_period_start: subscription.current_period_start 
+                ? new Date(subscription.current_period_start * 1000).toISOString() 
+                : null,
+              current_period_end: subscription.current_period_end 
+                ? new Date(subscription.current_period_end * 1000).toISOString() 
+                : null,
               updated_at: new Date().toISOString(),
             })
             .eq("user_id", userCredit.user_id);
+            
+          console.log("Trial ended, granted full credits:", credits, "for user:", userCredit.user_id);
         } else {
           await supabase
             .from("user_credits")
@@ -212,7 +183,7 @@ Deno.serve(async (req: Request) => {
             .eq("user_id", userCredit.user_id);
         }
 
-        console.log("Updated subscription status for user:", userCredit.user_id);
+        console.log("Updated subscription status for user:", userCredit.user_id, "status:", subscriptionStatus);
         break;
       }
 
@@ -225,7 +196,7 @@ Deno.serve(async (req: Request) => {
           .from("user_credits")
           .select("user_id")
           .eq("stripe_customer_id", customerId)
-          .single();
+          .maybeSingle();
 
         if (userCredit) {
           await supabase
@@ -233,7 +204,7 @@ Deno.serve(async (req: Request) => {
             .update({
               subscription_status: "cancelled",
               credits: 0,
-              subscription_tier: null,
+              subscription_tier: "free",
               trial_end_date: null,
               updated_at: new Date().toISOString(),
             })
@@ -260,36 +231,26 @@ Deno.serve(async (req: Request) => {
         // Find user and refresh credits for new billing period
         const { data: userCredit } = await supabase
           .from("user_credits")
-          .select("user_id, subscription_tier, credits")
+          .select("user_id, subscription_tier")
           .eq("stripe_customer_id", customerId)
-          .single();
+          .maybeSingle();
 
         if (userCredit && userCredit.subscription_tier) {
-          const newCredits = CREDITS_PER_TIER[userCredit.subscription_tier] || 2500;
-          const newBalance = userCredit.credits + newCredits;
+          const tier = userCredit.subscription_tier.charAt(0).toUpperCase() + 
+                      userCredit.subscription_tier.slice(1);
+          const newCredits = CREDITS_PER_TIER[tier] || 10000;
 
           await supabase
             .from("user_credits")
             .update({
-              credits: newBalance,
+              credits: newCredits,
+              credits_spent: 0,
               subscription_status: "active",
               updated_at: new Date().toISOString(),
             })
             .eq("user_id", userCredit.user_id);
 
-          // Log the renewal
-          await supabase
-            .from("credit_transactions")
-            .insert({
-              user_id: userCredit.user_id,
-              amount: newCredits,
-              balance_after: newBalance,
-              transaction_type: "subscription",
-              description: `${userCredit.subscription_tier} plan renewal`,
-              metadata: { invoiceId: invoice.id },
-            });
-
-          console.log("Refreshed credits for user:", userCredit.user_id);
+          console.log("Renewed credits for user:", userCredit.user_id, "credits:", newCredits);
         }
         break;
       }
