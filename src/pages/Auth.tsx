@@ -7,24 +7,24 @@ import { SEO } from "../components/SEO";
 import { events } from "../lib/analytics";
 
 const COUNTRY_CODES = [
-  { code: "+593", country: "Ecuador", flag: "🇪🇨" },
-  { code: "+1", country: "United States", flag: "🇺🇸" },
-  { code: "+44", country: "United Kingdom", flag: "🇬🇧" },
-  { code: "+34", country: "Spain", flag: "🇪🇸" },
-  { code: "+52", country: "Mexico", flag: "🇲🇽" },
-  { code: "+57", country: "Colombia", flag: "🇨🇴" },
-  { code: "+51", country: "Peru", flag: "🇵🇪" },
   { code: "+54", country: "Argentina", flag: "🇦🇷" },
+  { code: "+61", country: "Australia", flag: "🇦🇺" },
   { code: "+55", country: "Brazil", flag: "🇧🇷" },
   { code: "+56", country: "Chile", flag: "🇨🇱" },
-  { code: "+49", country: "Germany", flag: "🇩🇪" },
+  { code: "+86", country: "China", flag: "🇨🇳" },
+  { code: "+57", country: "Colombia", flag: "🇨🇴" },
+  { code: "+593", country: "Ecuador", flag: "🇪🇨" },
   { code: "+33", country: "France", flag: "🇫🇷" },
+  { code: "+49", country: "Germany", flag: "🇩🇪" },
+  { code: "+91", country: "India", flag: "🇮🇳" },
   { code: "+39", country: "Italy", flag: "🇮🇹" },
   { code: "+81", country: "Japan", flag: "🇯🇵" },
-  { code: "+86", country: "China", flag: "🇨🇳" },
-  { code: "+91", country: "India", flag: "🇮🇳" },
-  { code: "+61", country: "Australia", flag: "🇦🇺" },
+  { code: "+52", country: "Mexico", flag: "🇲🇽" },
   { code: "+64", country: "New Zealand", flag: "🇳🇿" },
+  { code: "+51", country: "Peru", flag: "🇵🇪" },
+  { code: "+34", country: "Spain", flag: "🇪🇸" },
+  { code: "+44", country: "United Kingdom", flag: "🇬🇧" },
+  { code: "+1", country: "United States", flag: "🇺🇸" },
 ];
 
 export default function Auth() {
