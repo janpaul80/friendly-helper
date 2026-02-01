@@ -1,50 +1,19 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Zap, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Zap, Phone, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { lovable } from "../integrations/lovable/index";
 import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
-import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
 import { SEO } from "../components/SEO";
 import { events } from "../lib/analytics";
 
-const isInIframe = () => {
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-};
-
-const getAppOrigin = () => {
-  // Always use the current window origin - this is the app's actual URL
-  // (whether preview, published, or custom domain)
-  return window.location.origin;
-};
-
 export default function Auth() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<"phone" | "otp">("phone");
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [externalAuthUrl, setExternalAuthUrl] = useState<string | null>(null);
-  const [autoStarted, setAutoStarted] = useState(false);
-
-  // Auto-start Google OAuth if ?provider=google is in URL (only in top-level windows)
-  useEffect(() => {
-    const provider = searchParams.get("provider");
-    // Only auto-trigger OAuth in a top-level window (not iframe)
-    // The iframe just shows the normal auth page - user clicks button manually
-    if (provider === "google" && !autoStarted && !isInIframe()) {
-      setAutoStarted(true);
-      handleGoogleLogin();
-    }
-  }, [searchParams, autoStarted]);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -65,87 +34,67 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    setError(null);
-    setInfo(null);
-    setExternalAuthUrl(null);
-    try {
-      // Embedded views often cause Google to block popups/iframes.
-      // Open the same app in a full tab (top-level), then start OAuth there.
-      if (isInIframe()) {
-        const appOrigin = getAppOrigin();
-        const url = `${appOrigin}/auth?provider=google`;
-
-        // Pre-open synchronously (best chance to bypass popup blockers)
-        const preopened = preopenExternalWindow();
-        const opened = openExternalUrl(url, preopened);
-
-        setGoogleLoading(false);
-        if (!opened) {
-          setExternalAuthUrl(url);
-          setInfo("Your browser blocked the popup. Open sign-in in a new tab:");
-          return;
-        }
-
-        setInfo("Finish signing in in the new tab, then return here.");
-        return;
-      }
-
-      // Use Lovable Cloud OAuth handler for BYOK credentials
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      
-      if (error) throw error;
-      
-      // OAuth will redirect - if we get here without redirect, session was set
-      events.login('google');
-      navigate("/dashboard", { replace: true });
-    } catch (err: any) {
-      setError(err.message || "Google sign-in failed");
-      setGoogleLoading(false);
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digits except +
+    const cleaned = value.replace(/[^\d+]/g, '');
+    // Ensure it starts with +
+    if (cleaned && !cleaned.startsWith('+')) {
+      return '+' + cleaned;
     }
+    return cleaned;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setInfo(null);
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+      const formattedPhone = formatPhoneNumber(phone);
+      
+      if (!formattedPhone || formattedPhone.length < 10) {
+        throw new Error("Please enter a valid phone number with country code (e.g., +1234567890)");
+      }
 
-        // Navigate immediately on successful login to avoid any race with
-        // other route-level auth checks.
-        if (data?.session?.user) {
-          events.login('email');
-          navigate("/dashboard");
-        } else {
-          setInfo("Signed in—loading your dashboard...");
-        }
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-          },
-        });
-        if (error) throw error;
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone,
+      });
 
-        events.signUp('email');
-        // If email confirmations are enabled, they may need to confirm first.
-        setInfo("Account created. If prompted, confirm your email, then return to sign in.");
+      if (error) throw error;
+
+      setStep("otp");
+      setInfo("We've sent a 6-digit code to your phone. Enter it below to sign in.");
+    } catch (err: any) {
+      setError(err.message || "Failed to send verification code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    setLoading(true);
+
+    try {
+      const formattedPhone = formatPhoneNumber(phone);
+      
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: formattedPhone,
+        token: otp,
+        type: 'sms',
+      });
+
+      if (error) throw error;
+
+      if (data?.session?.user) {
+        events.login('phone');
+        navigate("/dashboard");
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      setError(err.message || "Invalid verification code");
     } finally {
       setLoading(false);
     }
@@ -154,19 +103,19 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
       <SEO
-        title={isLogin ? "Sign In" : "Sign Up"}
-        description="Sign in or create your HeftCoder account to start building production-ready applications with AI."
+        title="Sign In"
+        description="Sign in to your HeftCoder account with phone verification."
         url="/auth"
         noindex={true}
       />
       <div className="w-full max-w-md">
         {/* Back button */}
         <button
-          onClick={() => navigate("/")}
+          onClick={() => step === "otp" ? setStep("phone") : navigate("/")}
           className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"
         >
           <ArrowLeft size={18} />
-          Back to home
+          {step === "otp" ? "Change phone number" : "Back to home"}
         </button>
 
         {/* Card */}
@@ -181,132 +130,111 @@ export default function Auth() {
 
           {/* Title */}
           <h1 className="text-2xl font-bold text-white text-center mb-2">
-            {isLogin ? "Welcome back" : "Create an account"}
+            {step === "phone" ? "Welcome" : "Verify your phone"}
           </h1>
           <p className="text-gray-400 text-center mb-8">
-            {isLogin ? "Sign in to continue building" : "Start building amazing apps"}
+            {step === "phone" 
+              ? "Enter your phone number to sign in or create an account" 
+              : `Enter the code sent to ${phone}`}
           </p>
 
-          {/* OAuth Buttons */}
-          <div className="space-y-3 mb-6">
-            <button
-              onClick={handleGoogleLogin}
-              disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 rounded-lg py-3 text-white hover:bg-white/10 transition-colors disabled:opacity-50"
-            >
-              {googleLoading ? (
-                <Loader2 className="animate-spin" size={18} />
-              ) : (
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-              )}
-              Continue with Google
-            </button>
-          </div>
+          {step === "phone" ? (
+            <form onSubmit={handleSendOTP} className="space-y-4">
+              <div>
+                <label className="text-gray-400 text-sm mb-2 block">Phone Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
+                    placeholder="+1 234 567 8900"
+                    required
+                    className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition-colors"
+                  />
+                </div>
+                <p className="text-gray-500 text-xs mt-2">Include your country code (e.g., +1 for US)</p>
+              </div>
 
-          {info && (
-            <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-gray-300 text-sm mb-6">
-              {info}
-              {externalAuthUrl && (
-                <div className="mt-3">
-                  <a
-                    href={externalAuthUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center rounded-md border border-border bg-muted px-3 py-2 text-foreground hover:bg-accent transition-colors"
-                  >
-                    Open Google sign-in
-                  </a>
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
+                  {error}
                 </div>
               )}
-            </div>
+
+              {info && (
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-gray-300 text-sm">
+                  {info}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-bold transition-all hover:scale-[1.02] shadow-[0_0_20px_rgba(234,88,12,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Sending code...
+                  </>
+                ) : (
+                  "Send verification code"
+                )}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div>
+                <label className="text-gray-400 text-sm mb-2 block">Verification Code</label>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="123456"
+                  required
+                  maxLength={6}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white text-center text-2xl tracking-[0.5em] placeholder-gray-500 focus:outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
+              {info && (
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-gray-300 text-sm">
+                  {info}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-bold transition-all hover:scale-[1.02] shadow-[0_0_20px_rgba(234,88,12,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify & Sign In"
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSendOTP({ preventDefault: () => {} } as React.FormEvent)}
+                disabled={loading}
+                className="w-full text-gray-400 hover:text-white py-2 text-sm transition-colors"
+              >
+                Didn't receive code? Resend
+              </button>
+            </form>
           )}
-
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-gray-500 text-sm">or</span>
-            <div className="flex-1 h-px bg-white/10" />
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-gray-400 text-sm mb-2 block">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition-colors"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-gray-400 text-sm mb-2 block">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition-colors"
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-bold transition-all hover:scale-[1.02] shadow-[0_0_20px_rgba(234,88,12,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  {isLogin ? "Signing in..." : "Creating account..."}
-                </>
-              ) : (
-                isLogin ? "Sign in" : "Create account"
-              )}
-            </button>
-          </form>
-
-          {/* Toggle */}
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError(null);
-              }}
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              {isLogin ? (
-                <>
-                  Don't have an account? <span className="text-orange-500 font-medium">Sign up</span>
-                </>
-              ) : (
-                <>
-                  Already have an account? <span className="text-orange-500 font-medium">Sign in</span>
-                </>
-              )}
-            </button>
-          </div>
         </div>
       </div>
     </div>
