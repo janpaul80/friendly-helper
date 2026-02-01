@@ -29,7 +29,7 @@ const COUNTRY_CODES = [
 
 export default function Auth() {
   const navigate = useNavigate();
-  const [countryCode, setCountryCode] = useState("+593");
+  const [countryCode, setCountryCode] = useState("+1");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [otp, setOtp] = useState("");
