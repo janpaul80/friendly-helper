@@ -84,8 +84,6 @@ export default function ClerkAuth() {
                   socialButtonsVariant: 'blockButton',
                 },
               }}
-              routing="path"
-              path="/auth"
               signUpUrl="/signup"
               forceRedirectUrl="/dashboard"
             />
@@ -118,8 +116,6 @@ export default function ClerkAuth() {
                   socialButtonsVariant: 'blockButton',
                 },
               }}
-              routing="path"
-              path="/signup"
               signInUrl="/auth"
               forceRedirectUrl="/dashboard"
             />
