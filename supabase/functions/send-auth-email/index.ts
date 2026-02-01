@@ -311,7 +311,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: "HeftCoder <noreply@heftcoder.com>",
+      from: "HeftCoder <noreply@heftcoder.icu>",
       to: [user.email],
       subject: getSubject(email_action_type),
       html,
