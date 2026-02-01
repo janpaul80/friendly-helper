@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { RefreshCw, Grid, Terminal, Zap, Package } from 'lucide-react';
+import { useClerkUser } from '../hooks/useClerkUser';
 import { supabase } from '../lib/supabase';
-import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { openExternalUrl, preopenExternalWindow } from '../lib/openExternal';
 import { useCreditBalance, LOW_BALANCE_THRESHOLD } from '../hooks/useCreditBalance';
 import { toast } from 'sonner';
@@ -40,7 +40,7 @@ interface Project {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [user, setUser] = useState<any>(null);
+  const { user, isLoaded, isSignedIn, signOut } = useClerkUser();
   const [projects, setProjects] = useState<Project[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recents');
@@ -58,7 +58,7 @@ export default function Dashboard() {
     subscriptionStatus,
     isLowBalance,
     refetch: refetchCredits,
-  } = useCreditBalance(user?.id);
+  } = useCreditBalance(user?.id ?? null);
 
   // Calculate quick stats from real data
   const totalViews = (projects?.length || 0) * 1000 + credits; // Estimated reach
@@ -87,27 +87,12 @@ export default function Dashboard() {
     }
   }, [isLowBalance, subscriptionStatus]);
 
+  // Redirect to auth if not signed in with Clerk
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-        setUser(session?.user ?? null);
-        // Avoid redirect loops during INITIAL_SESSION / token refresh.
-        // Only force redirect when we are explicitly signed out.
-        if (event === 'SIGNED_OUT') {
-          navigate('/auth');
-        }
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) {
-        navigate('/auth');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (isLoaded && !isSignedIn) {
+      navigate('/auth');
+    }
+  }, [isLoaded, isSignedIn, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -135,7 +120,7 @@ export default function Dashboard() {
   }, [user]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate('/');
   };
 
