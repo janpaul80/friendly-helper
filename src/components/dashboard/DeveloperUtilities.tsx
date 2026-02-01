@@ -80,48 +80,19 @@ export function DeveloperUtilities({ userId }: DeveloperUtilitiesProps) {
     setServices(updatedServices);
   }, []);
 
-  // Fetch referral data
+  // Fetch referral data - using fallback since tables don't exist yet
   const fetchReferralData = useCallback(async () => {
     if (!userId) return;
 
     try {
-      const { data: referrals, error } = await supabase
-        .from('referrals' as any)
-        .select('*')
-        .eq('referrer_id', userId);
-
-      if (error) throw error;
-
-      if (referrals && referrals.length > 0) {
-        const completed = referrals.filter((r: any) => r.status === 'completed');
-        const earnings = completed.reduce((sum: number, r: any) => sum + (r.credits_awarded || 0), 0);
-
-        setReferral({
-          code: referrals[0].referral_code,
-          count: completed.length,
-          earnings,
-        });
-      } else {
-        // Generate a new code
-        const { data: codeData } = await supabase.rpc('generate_referral_code', { p_user_id: userId });
-        
-        if (codeData) {
-          await supabase.from('referrals' as any).insert({
-            referrer_id: userId,
-            referral_code: codeData,
-            status: 'pending',
-          });
-
-          setReferral({
-            code: codeData as string,
-            count: 0,
-            earnings: 0,
-          });
-        }
-      }
+      // Use a simple fallback code since referrals table doesn't exist yet
+      setReferral({
+        code: `HEFT-${userId.slice(0, 5).toUpperCase()}`,
+        count: 0,
+        earnings: 0,
+      });
     } catch (err) {
       console.error('Error fetching referral:', err);
-      // Fallback code
       setReferral(prev => ({
         ...prev,
         code: `HEFT-${userId.slice(0, 5).toUpperCase()}`,

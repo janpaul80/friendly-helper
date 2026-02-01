@@ -28,55 +28,16 @@ export function ReferralWidget({ userId }: ReferralWidgetProps) {
     if (!userId) return;
 
     try {
-      // Check for existing referral code
-      const { data: existingReferrals, error: fetchError } = await supabase
-        .from('referrals' as any)
-        .select('*')
-        .eq('referrer_id', userId);
-
-      if (fetchError) throw fetchError;
-
-      if (existingReferrals && existingReferrals.length > 0) {
-        // Calculate stats from existing referrals
-        const completed = existingReferrals.filter((r: any) => r.status === 'completed');
-        const earnings = completed.reduce((sum: number, r: any) => sum + (r.credits_awarded || 0), 0);
-        
-        setStats({
-          referralCode: existingReferrals[0].referral_code,
-          totalReferrals: existingReferrals.length,
-          completedReferrals: completed.length,
-          totalEarnings: earnings,
-        });
-      } else {
-        // Generate new referral code using the database function
-        const { data: codeData, error: codeError } = await supabase
-          .rpc('generate_referral_code', { p_user_id: userId });
-
-        if (codeError) throw codeError;
-
-        const newCode = codeData as string;
-
-        // Insert the new referral record
-        const { error: insertError } = await supabase
-          .from('referrals' as any)
-          .insert({
-            referrer_id: userId,
-            referral_code: newCode,
-            status: 'pending',
-          });
-
-        if (insertError) throw insertError;
-
-        setStats({
-          referralCode: newCode,
-          totalReferrals: 0,
-          completedReferrals: 0,
-          totalEarnings: 0,
-        });
-      }
+      // Use a simple fallback code since referrals table doesn't exist yet
+      const fallbackCode = `HEFT-${userId.slice(0, 5).toUpperCase()}`;
+      setStats({
+        referralCode: fallbackCode,
+        totalReferrals: 0,
+        completedReferrals: 0,
+        totalEarnings: 0,
+      });
     } catch (err) {
       console.error('Error with referral code:', err);
-      // Fallback to a generated code
       const fallbackCode = `HEFT-${userId.slice(0, 5).toUpperCase()}`;
       setStats(prev => ({ ...prev, referralCode: fallbackCode }));
     } finally {
