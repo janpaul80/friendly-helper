@@ -79,7 +79,7 @@ export function Header() {
             Log in
           </Link>
           <Link
-            to="/auth?provider=google"
+            to="/auth"
             className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg font-bold transition-all hover:scale-105 shadow-[0_0_15px_rgba(234,88,12,0.2)]"
           >
             Sign up
@@ -139,7 +139,7 @@ export function Header() {
               Log in
             </Link>
             <Link
-              to="/auth?provider=google"
+              to="/auth"
               className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-lg font-bold transition-all text-center shadow-[0_0_15px_rgba(234,88,12,0.2)]"
             >
               Sign up
