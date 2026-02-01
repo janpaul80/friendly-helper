@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -26,8 +26,8 @@ serve(async (req) => {
     const cleanCode = code.trim();
 
     // Initialize Supabase with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Find the OTP record
@@ -97,9 +97,8 @@ serve(async (req) => {
     // Create or sign in the user using Supabase Admin API
     // First, check if user exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.phone === cleanPhone);
+    const existingUser = existingUsers?.users?.find((u) => u.phone === cleanPhone);
 
-    let session;
     let user;
 
     if (existingUser) {
@@ -107,7 +106,7 @@ serve(async (req) => {
       console.log('Existing user found, creating session');
       
       // Generate a magic link token for the user
-      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      const { error: linkError } = await supabase.auth.admin.generateLink({
         type: 'magiclink',
         email: existingUser.email || `${cleanPhone.replace('+', '')}@phone.local`,
       });
@@ -115,7 +114,7 @@ serve(async (req) => {
       if (linkError) {
         console.error('Error generating magic link:', linkError);
         // Fallback: Update phone and create session directly
-        const { data: sessionData, error: sessionError } = await supabase.auth.admin.createUser({
+        const { error: sessionError } = await supabase.auth.admin.createUser({
           phone: cleanPhone,
           phone_confirm: true,
           user_metadata: { phone_verified: true }
@@ -202,8 +201,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in verify-whatsapp-otp:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
