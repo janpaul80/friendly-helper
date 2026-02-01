@@ -54,15 +54,16 @@ export default function Dashboard() {
   // Use the credit balance hook
   const {
     credits,
+    creditsSpent,
     subscriptionTier,
     subscriptionStatus,
+    trialEndDate,
     isLowBalance,
     refetch: refetchCredits,
   } = useCreditBalance(user?.id ?? null);
 
   // Calculate quick stats from real data
   const totalViews = (projects?.length || 0) * 1000 + credits; // Estimated reach
-  const creditsUsed = 150000 - credits; // Approximate usage based on remaining credits
 
   // Check for top-up success/cancel in URL params
   useEffect(() => {
@@ -158,8 +159,8 @@ export default function Dashboard() {
 
   // Open external workspace (always go to home to avoid 404)
   const handleOpenWorkspace = useCallback(() => {
-    // Require active subscription to access workspace
-    if (subscriptionStatus !== 'active') {
+    // Require active subscription or trial to access workspace
+    if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trial') {
       setShowPaywallModal(true);
       return;
     }
@@ -168,8 +169,8 @@ export default function Dashboard() {
   }, [subscriptionStatus]);
 
   const handleShowCreateModal = () => {
-    // Require active subscription to create project
-    if (subscriptionStatus !== 'active') {
+    // Require active subscription or trial to create project
+    if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trial') {
       setShowPaywallModal(true);
       return;
     }
@@ -179,8 +180,8 @@ export default function Dashboard() {
   const handleCreateProject = async (projectName: string) => {
     if (!user) return;
     
-    // Double-check subscription
-    if (subscriptionStatus !== 'active') {
+    // Double-check subscription or trial
+    if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trial') {
       setShowPaywallModal(true);
       return;
     }
@@ -213,8 +214,8 @@ export default function Dashboard() {
   const handleOpenProject = (projectId: string) => {
     if (!user) return;
     
-    // Require active subscription
-    if (subscriptionStatus !== 'active') {
+    // Require active subscription or trial
+    if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trial') {
       setShowPaywallModal(true);
       return;
     }
@@ -396,11 +397,11 @@ export default function Dashboard() {
           onUpgrade={handleUpgrade}
         />
 
-        {/* Trial Prompt - Show for users without subscription */}
-        {subscriptionStatus !== 'active' && (
+        {/* Trial Prompt - Show for users without subscription or in trial */}
+        {(subscriptionStatus === 'none' || subscriptionStatus === 'trial') && (
           <TrialPrompt
             onStartTrial={handleUpgrade}
-            trialEndDate={null}
+            trialEndDate={trialEndDate}
             subscriptionStatus={subscriptionStatus}
           />
         )}
@@ -418,9 +419,9 @@ export default function Dashboard() {
           <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-3 sm:p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">
             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative">
-              <p className="text-[8px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest">Credits Used</p>
-              <p className="text-xl sm:text-2xl font-black text-white mt-1">{creditsUsed.toLocaleString()}</p>
-              <p className="text-[8px] sm:text-[9px] text-orange-400 mt-1">of {credits.toLocaleString()}</p>
+              <p className="text-[8px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest">Credits Spent</p>
+              <p className="text-xl sm:text-2xl font-black text-white mt-1">{creditsSpent.toLocaleString()}</p>
+              <p className="text-[8px] sm:text-[9px] text-orange-400 mt-1">{credits.toLocaleString()} remaining</p>
             </div>
           </div>
           <div className="bg-gradient-to-br from-[#0a0a0f] to-[#0f0f18] border border-orange-500/10 rounded-xl p-3 sm:p-4 relative overflow-hidden group hover:border-orange-500/30 transition-all">

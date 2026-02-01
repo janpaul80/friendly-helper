@@ -135,11 +135,15 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const prices: Record<string, string | undefined> = {
-      Basic: Deno.env.get("STRIPE_PRICE_BASIC_ID"),
-      Pro: Deno.env.get("STRIPE_PRICE_PRO_ID"),
-      Studio: Deno.env.get("STRIPE_PRICE_STUDIO_ID"),
-    };
+// Price IDs for subscription tiers
+// Basic: $9/mo = 10,000 credits
+// Pro: $25/mo = 50,000 credits  
+// Studio: $59/mo = 150,000 credits
+const prices: Record<string, string | undefined> = {
+  Basic: Deno.env.get("STRIPE_PRICE_BASIC_ID"),
+  Pro: Deno.env.get("STRIPE_PRICE_PRO_ID"),
+  Studio: Deno.env.get("STRIPE_PRICE_STUDIO_ID"),
+};
 
     const priceId = prices[normalizedPlan];
     if (!priceId) {
