@@ -155,23 +155,6 @@ export default function ClerkAuth() {
           )}
         </div>
 
-        {/* Toggle Mode */}
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => {
-              if (mode === 'sign-in') {
-                navigate('/signup');
-              } else {
-                navigate('/auth');
-              }
-            }}
-            className="text-orange-400 hover:text-orange-300 text-sm transition-colors"
-          >
-            {mode === 'sign-in'
-              ? "Don't have an account? Sign up"
-              : 'Already have an account? Sign in'}
-          </button>
-        </div>
       </div>
     </div>
   );
