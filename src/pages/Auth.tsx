@@ -92,12 +92,10 @@ export default function Auth() {
         return;
       }
 
-      // IMPORTANT: redirect_uri must be a registered OAuth redirect URL.
-      // Using app routes like "/dashboard" will cause Google "redirect_uri_mismatch".
-      // Lovable Cloud auth handles the callback routing internally; we just provide the app origin.
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: getAppOrigin(),
-      });
+      // Let Lovable Cloud handle the provider redirect URI.
+      // Passing a custom redirect_uri can cause Google "redirect_uri_mismatch" when BYOK settings
+      // only whitelist the Lovable callback URLs.
+      const { error } = await lovable.auth.signInWithOAuth("google");
       
       if (error) throw error;
       
