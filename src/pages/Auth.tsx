@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Zap, Phone, ArrowLeft, Loader2, MessageCircle, ChevronDown } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../integrations/supabase/client";
 import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { SEO } from "../components/SEO";
 import { events } from "../lib/analytics";
