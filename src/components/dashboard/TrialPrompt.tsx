@@ -55,7 +55,7 @@ export function TrialPrompt({ onStartTrial, trialEndDate, subscriptionStatus }: 
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-orange-400" />
-              Start Your Free 7-Day Trial
+              Start Your Free 3-Day Trial
             </h3>
             <p className="text-sm text-gray-400">
               Get 2,500 credits instantly • No charge for 7 days • Cancel anytime
