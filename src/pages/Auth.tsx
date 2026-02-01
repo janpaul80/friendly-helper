@@ -92,14 +92,17 @@ export default function Auth() {
         return;
       }
 
-      // Let Lovable Cloud handle the provider redirect URI.
-      // Passing a custom redirect_uri can cause Google "redirect_uri_mismatch" when BYOK settings
-      // only whitelist the Lovable callback URLs.
-      const { error } = await lovable.auth.signInWithOAuth("google");
+      // Use standard Supabase OAuth with user's own Google credentials
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
       
       if (error) throw error;
       
-      // If we get here without redirect, session was set - navigate to dashboard
+      // OAuth will redirect - if we get here without redirect, session was set
       events.login('google');
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
