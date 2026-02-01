@@ -257,8 +257,8 @@ export default function LandingPage() {
     // In the editor, open Stripe in a new tab (Stripe Checkout doesn't like iframes)
     const checkoutWindow = preopenExternalWindow();
     try {
-      const supabaseUrl = "https://ythuhewbaulqirjrkgly.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI";
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       
       console.log("Starting checkout for plan:", plan);
       
