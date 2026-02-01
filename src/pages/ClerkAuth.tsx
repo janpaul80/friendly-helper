@@ -1,7 +1,7 @@
 import { SignIn, SignUp, useAuth } from '@clerk/clerk-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Zap, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { SEO } from '../components/SEO';
 
 export default function ClerkAuth() {
@@ -30,7 +30,7 @@ export default function ClerkAuth() {
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-4">
-        <RefreshCw className="w-8 h-8 animate-spin text-violet-500" />
+        <RefreshCw className="w-8 h-8 animate-spin text-orange-500" />
         <span className="text-gray-400 text-sm">Loading authentication...</span>
       </div>
     );
@@ -55,13 +55,6 @@ export default function ClerkAuth() {
           Back to home
         </button>
 
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="h-10 w-10 bg-orange-600 rounded-lg flex items-center justify-center text-white shadow-[0_0_20px_rgba(234,88,12,0.4)]">
-            <Zap size={24} fill="currentColor" />
-          </div>
-          <span className="text-white font-bold text-2xl tracking-tight">HeftCoder</span>
-        </div>
 
         {/* Clerk Component */}
         <div className="clerk-container">
@@ -74,7 +67,7 @@ export default function ClerkAuth() {
                   colorInputBackground: '#1a1a2e',
                   colorText: '#ffffff',
                   colorTextSecondary: '#9ca3af',
-                  colorPrimary: '#7c3aed',
+                  colorPrimary: '#ea580c',
                   colorInputText: '#ffffff',
                   colorNeutral: '#ffffff',
                 },
@@ -89,10 +82,10 @@ export default function ClerkAuth() {
                   dividerLine: 'bg-white/10',
                   dividerText: 'text-gray-500 text-sm',
                   formFieldLabel: 'text-white text-sm font-medium',
-                  formFieldInput: 'bg-[#1a1a2e] border border-white/10 text-white placeholder-gray-500 focus:border-violet-500 focus:ring-violet-500 rounded-lg py-2.5',
-                  formButtonPrimary: 'bg-violet-600 hover:bg-violet-700 text-white font-medium transition-all rounded-lg py-2.5 normal-case',
-                  footerActionLink: 'text-violet-400 hover:text-violet-300',
-                  identityPreviewEditButton: 'text-violet-400',
+                  formFieldInput: 'bg-[#1a1a2e] border border-white/10 text-white placeholder-gray-500 focus:border-orange-500 focus:ring-orange-500 rounded-lg py-2.5',
+                  formButtonPrimary: 'bg-orange-600 hover:bg-orange-700 text-white font-medium transition-all rounded-lg py-2.5 normal-case',
+                  footerActionLink: 'text-orange-400 hover:text-orange-300',
+                  identityPreviewEditButton: 'text-orange-400',
                   formFieldInputShowPasswordButton: 'text-gray-400 hover:text-white',
                   otpCodeFieldInput: 'bg-[#1a1a2e] border border-white/10 text-white',
                   alert: 'bg-red-500/10 border border-red-500/20 text-red-400',
@@ -121,7 +114,7 @@ export default function ClerkAuth() {
                   colorInputBackground: '#1a1a2e',
                   colorText: '#ffffff',
                   colorTextSecondary: '#9ca3af',
-                  colorPrimary: '#7c3aed',
+                  colorPrimary: '#ea580c',
                   colorInputText: '#ffffff',
                   colorNeutral: '#ffffff',
                 },
@@ -136,10 +129,10 @@ export default function ClerkAuth() {
                   dividerLine: 'bg-white/10',
                   dividerText: 'text-gray-500 text-sm',
                   formFieldLabel: 'text-white text-sm font-medium',
-                  formFieldInput: 'bg-[#1a1a2e] border border-white/10 text-white placeholder-gray-500 focus:border-violet-500 focus:ring-violet-500 rounded-lg py-2.5',
-                  formButtonPrimary: 'bg-violet-600 hover:bg-violet-700 text-white font-medium transition-all rounded-lg py-2.5 normal-case',
-                  footerActionLink: 'text-violet-400 hover:text-violet-300',
-                  identityPreviewEditButton: 'text-violet-400',
+                  formFieldInput: 'bg-[#1a1a2e] border border-white/10 text-white placeholder-gray-500 focus:border-orange-500 focus:ring-orange-500 rounded-lg py-2.5',
+                  formButtonPrimary: 'bg-orange-600 hover:bg-orange-700 text-white font-medium transition-all rounded-lg py-2.5 normal-case',
+                  footerActionLink: 'text-orange-400 hover:text-orange-300',
+                  identityPreviewEditButton: 'text-orange-400',
                   formFieldInputShowPasswordButton: 'text-gray-400 hover:text-white',
                   otpCodeFieldInput: 'bg-[#1a1a2e] border border-white/10 text-white',
                   alert: 'bg-red-500/10 border border-red-500/20 text-red-400',
@@ -172,7 +165,7 @@ export default function ClerkAuth() {
                 navigate('/auth');
               }
             }}
-            className="text-gray-400 hover:text-white text-sm transition-colors"
+            className="text-orange-400 hover:text-orange-300 text-sm transition-colors"
           >
             {mode === 'sign-in'
               ? "Don't have an account? Sign up"
