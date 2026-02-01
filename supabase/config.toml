@@ -1,16 +1,1 @@
-project_id = "ythuhewbaulqirjrkgly"
-
-[functions.orchestrate]
-verify_jwt = false
-
-[functions.stripe-checkout]
-verify_jwt = false
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.ui-refactor]
-verify_jwt = false
-
-[functions.sync-public-apis]
-verify_jwt = false
+project_id = "pmgqviuvrliqkipfntsn"
