@@ -1,7 +1,7 @@
 import { SignIn, SignUp, useAuth } from '@clerk/clerk-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Zap } from 'lucide-react';
+import { ArrowLeft, Zap, RefreshCw } from 'lucide-react';
 import { SEO } from '../components/SEO';
 
 export default function ClerkAuth() {
@@ -25,6 +25,16 @@ export default function ClerkAuth() {
       navigate('/dashboard');
     }
   }, [isLoaded, isSignedIn, navigate]);
+
+  // Show loading state while Clerk initializes
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-4">
+        <RefreshCw className="w-8 h-8 animate-spin text-violet-500" />
+        <span className="text-gray-400 text-sm">Loading authentication...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
