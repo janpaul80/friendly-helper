@@ -25,22 +25,10 @@ export function useCreditBalance(userId: string | null): CreditBalance {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('user_credits' as any)
-        .select('credits, subscription_tier, subscription_status')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching credit balance:', error);
-        return;
-      }
-
-      if (data) {
-        setCredits(data.credits || 0);
-        setSubscriptionTier(data.subscription_tier);
-        setSubscriptionStatus(data.subscription_status || 'none');
-      }
+      // user_credits table doesn't exist yet - use defaults
+      setCredits(10000);
+      setSubscriptionTier('free');
+      setSubscriptionStatus('none');
     } catch (err) {
       console.error('Failed to fetch credit balance:', err);
     } finally {

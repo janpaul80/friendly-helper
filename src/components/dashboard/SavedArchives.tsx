@@ -37,14 +37,8 @@ export function SavedArchives({ userId }: SavedArchivesProps) {
     if (!userId) return;
 
     try {
-      const { data, error } = await supabase
-        .from('archives' as any)
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setArchives((data || []) as Archive[]);
+      // Archives table doesn't exist yet - use empty array
+      setArchives([]);
     } catch (err) {
       console.error('Error fetching archives:', err);
     } finally {
