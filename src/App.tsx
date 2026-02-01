@@ -7,10 +7,10 @@ import { usePageTracking } from "./hooks/useAnalytics";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
-// Lazy load pages that require Supabase to prevent blocking the main bundle
+// Lazy load pages
 const Workspace = lazy(() => import("./pages/Workspace"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Auth = lazy(() => import("./pages/Auth"));
+const ClerkAuth = lazy(() => import("./pages/ClerkAuth"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const About = lazy(() => import("./pages/About"));
 const Documentation = lazy(() => import("./pages/Documentation"));
@@ -61,10 +61,14 @@ function App() {
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/features/ide" element={<FeatureIDE />} />
               <Route path="/features/cli" element={<FeatureCLI />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/login" element={<Auth />} />
-              <Route path="/signup" element={<Auth />} />
+              {/* Clerk Auth Routes */}
+              <Route path="/auth" element={<ClerkAuth />} />
+              <Route path="/auth/*" element={<ClerkAuth />} />
+              <Route path="/login" element={<ClerkAuth />} />
+              <Route path="/signup" element={<ClerkAuth />} />
+              <Route path="/signup/*" element={<ClerkAuth />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              {/* Protected Routes */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/workspace/new" element={<Workspace />} />
               <Route path="/workspace/:id" element={<Workspace />} />
