@@ -55,14 +55,7 @@ export function useCreditBalance(userId: string | null, userEmail?: string | nul
         if (emailResult.data) {
           data = emailResult.data;
           error = emailResult.error;
-          // Update the record to use Clerk ID instead of email for future lookups
-          if (userId && emailResult.data.user_id === userEmail) {
-            console.log('Migrating user_credits record from email to Clerk ID');
-            await supabase
-              .from('user_credits')
-              .update({ user_id: userId })
-              .eq('user_id', userEmail);
-          }
+          console.log('Found credits record by email:', userEmail);
         }
       }
 
