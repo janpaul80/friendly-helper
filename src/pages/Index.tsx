@@ -219,12 +219,23 @@ export default function LandingPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Check if user should be redirected to auth
+  // User must be signed in to use the prompt - redirect if not signed in
+  const requireAuth = () => {
+    // If Clerk is loaded and user is signed in, allow access
+    if (isLoaded && isSignedIn) {
+      return false; // No auth required, user is signed in
+    }
+    // Otherwise, redirect to auth (either not loaded, loading, or not signed in)
+    return true;
+  };
+
   // Redirect to auth when user starts typing (if not signed in)
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     
     // If user starts typing and is not signed in, redirect to auth
-    if (value.length > 0 && isLoaded && !isSignedIn) {
+    if (value.length > 0 && requireAuth()) {
       navigate('/auth');
       return;
     }
@@ -234,7 +245,7 @@ export default function LandingPage() {
 
   const handleSend = () => {
     // Redirect to auth if not signed in
-    if (isLoaded && !isSignedIn) {
+    if (requireAuth()) {
       navigate('/auth');
       return;
     }
