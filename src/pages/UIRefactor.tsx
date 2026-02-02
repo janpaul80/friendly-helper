@@ -177,25 +177,25 @@ export default function UIRefactor() {
 
       {/* Header */}
       <header className="relative z-20 border-b border-orange-500/10 bg-black/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+                className="flex items-center gap-1 sm:gap-2 text-gray-400 hover:text-white transition-colors group flex-shrink-0"
               >
                 <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-                <span className="text-sm font-medium">Dashboard</span>
+                <span className="text-sm font-medium hidden sm:inline">Dashboard</span>
               </button>
-              <div className="h-6 w-px bg-orange-500/20" />
-              <div>
-                <h1 className="text-lg font-black text-white tracking-tight">UI Refactor</h1>
-                <p className="text-xs text-gray-500 font-medium">Analyze and refactor UI designs using HeftCoder's AI agents</p>
+              <div className="h-6 w-px bg-orange-500/20 hidden sm:block" />
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-black text-white tracking-tight truncate">UI Refactor</h1>
+                <p className="text-[10px] sm:text-xs text-gray-500 font-medium hidden sm:block">Analyze and refactor UI designs using HeftCoder's AI agents</p>
               </div>
             </div>
             
-            <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
-              <span className="px-2 py-1 bg-orange-500/10 border border-orange-500/20 rounded text-orange-400 font-mono">
+            <div className="flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
+              <span className="px-2 py-1 bg-orange-500/10 border border-orange-500/20 rounded text-orange-400 font-mono text-[10px] sm:text-xs">
                 Beta
               </span>
             </div>
@@ -204,7 +204,7 @@ export default function UIRefactor() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-6 sm:py-8">
         {results ? (
           <UIRefactorResults
             results={results}
