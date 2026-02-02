@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { RefreshCw, Grid, Terminal, Zap, Package } from 'lucide-react';
+import { RefreshCw, Grid, Terminal, Zap, Package, Gift } from 'lucide-react';
 import { useClerkUser } from '../hooks/useClerkUser';
 import { supabase } from '../lib/supabase';
 import { openExternalUrl, preopenExternalWindow } from '../lib/openExternal';
@@ -15,6 +15,7 @@ import { UserHUD } from '../components/dashboard/UserHUD';
 import { ProjectCard } from '../components/dashboard/ProjectCard';
 import { NewProjectCard } from '../components/dashboard/NewProjectCard';
 import { StudioAnalytics } from '../components/dashboard/StudioAnalytics';
+import { StudioReferrals } from '../components/dashboard/StudioReferrals';
 import { DeveloperUtilities } from '../components/dashboard/DeveloperUtilities';
 import { SavedArchives } from '../components/dashboard/SavedArchives';
 import { ReferralWidget } from '../components/dashboard/ReferralWidget';
@@ -502,20 +503,17 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Studio Tab */}
+          {/* Studio Tab - Referrals */}
           {activeTab === 'studio' && (
             <div>
               <div className="mb-6">
                 <h2 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
-                  <Zap size={18} className="text-orange-500" />
-                  Performance Studio
+                  <Gift size={18} className="text-orange-500" />
+                  Referral Program
                 </h2>
-                <p className="text-xs text-gray-500 mt-1">Analytics and deployment metrics</p>
+                <p className="text-xs text-gray-500 mt-1">Invite friends and earn 500 HeftCredits for each subscription</p>
               </div>
-              <StudioAnalytics
-                projects={projects || []}
-                userId={user?.id || ''}
-              />
+              <StudioReferrals userId={user?.id || ''} />
             </div>
           )}
 

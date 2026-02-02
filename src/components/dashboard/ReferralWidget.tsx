@@ -1,53 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { Gift, Copy, Check, Users, Zap, Loader2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
+import { useReferrals } from '../../hooks/useReferrals';
 
 interface ReferralWidgetProps {
   userId: string;
 }
 
-interface ReferralStats {
-  referralCode: string;
-  totalReferrals: number;
-  completedReferrals: number;
-  totalEarnings: number;
-}
-
 export function ReferralWidget({ userId }: ReferralWidgetProps) {
   const [copied, setCopied] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<ReferralStats>({
-    referralCode: '',
-    totalReferrals: 0,
-    completedReferrals: 0,
-    totalEarnings: 0,
-  });
-
-  const fetchOrCreateReferralCode = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      // Use a simple fallback code since referrals table doesn't exist yet
-      const fallbackCode = `HEFT-${userId.slice(0, 5).toUpperCase()}`;
-      setStats({
-        referralCode: fallbackCode,
-        totalReferrals: 0,
-        completedReferrals: 0,
-        totalEarnings: 0,
-      });
-    } catch (err) {
-      console.error('Error with referral code:', err);
-      const fallbackCode = `HEFT-${userId.slice(0, 5).toUpperCase()}`;
-      setStats(prev => ({ ...prev, referralCode: fallbackCode }));
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    fetchOrCreateReferralCode();
-  }, [fetchOrCreateReferralCode]);
+  const { stats, loading } = useReferrals(userId);
 
   const referralLink = `https://heftcoder.icu/signup?ref=${stats.referralCode}`;
 
