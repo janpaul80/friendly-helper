@@ -233,6 +233,12 @@ export default function LandingPage() {
   };
 
   const handleSend = () => {
+    // Redirect to auth if not signed in
+    if (isLoaded && !isSignedIn) {
+      navigate('/auth');
+      return;
+    }
+    
     if (!prompt.trim()) return;
     const tempId = `temp-${Date.now()}`;
     navigate(`/workspace/${tempId}?prompt=${encodeURIComponent(prompt)}`);
