@@ -52,7 +52,7 @@ export default function Dashboard() {
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [pendingWorkspaceUrl, setPendingWorkspaceUrl] = useState('');
 
-  // Use the credit balance hook
+  // Use the credit balance hook - pass both ID and email for legacy record lookup
   const {
     credits,
     creditsSpent,
@@ -61,7 +61,7 @@ export default function Dashboard() {
     trialEndDate,
     isLowBalance,
     refetch: refetchCredits,
-  } = useCreditBalance(user?.id ?? null);
+  } = useCreditBalance(user?.id ?? null, user?.email ?? null);
 
   // Calculate quick stats from real data
   const totalViews = (projects?.length || 0) * 1000 + credits; // Estimated reach
