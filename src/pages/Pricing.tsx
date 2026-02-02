@@ -7,6 +7,7 @@ import { SEO } from "../components/SEO";
 import { toast } from "sonner";
 import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
 import { supabase } from "../lib/supabase";
+import { useClerkUser } from "../hooks/useClerkUser";
 
 interface FeatureGroup {
   category: string;
@@ -206,13 +207,18 @@ const pricingSchema = {
 
 export default function Pricing() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const { user } = useClerkUser();
 
   const handleUpgrade = async (plan: string) => {
     setLoadingPlan(plan);
     const checkoutWindow = preopenExternalWindow();
     try {
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-        body: { plan },
+        body: { 
+          plan,
+          clerkUserId: user?.id,
+          clerkUserEmail: user?.email,
+        },
       });
 
       if (error) {

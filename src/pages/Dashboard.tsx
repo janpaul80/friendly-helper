@@ -234,32 +234,24 @@ export default function Dashboard() {
   const handleUpgrade = async () => {
     const checkoutWindow = preopenExternalWindow();
     try {
-      const supabaseUrl = "https://ythuhewbaulqirjrkgly.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI";
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-          "Authorization": session?.access_token ? `Bearer ${session.access_token}` : `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: { 
           plan: "Pro",
-        }),
+          clerkUserId: user?.id,
+          clerkUserEmail: user?.email,
+        },
       });
       
-      if (!response.ok) {
-        console.error("Stripe checkout failed");
+      if (error) {
+        console.error("Stripe checkout failed:", error);
         toast.error("Failed to start checkout");
         return;
       }
       
-      const data = await response.json();
       if (data?.url) {
         openExternalUrl(data.url, checkoutWindow);
+      } else if (data?.error) {
+        toast.error(data.error);
       }
     } catch (error) {
       console.error("Upgrade error:", error);
@@ -270,38 +262,30 @@ export default function Dashboard() {
   const handleTopUp = async (packId: string, creditsAmount: number) => {
     const checkoutWindow = preopenExternalWindow();
     try {
-      const supabaseUrl = "https://ythuhewbaulqirjrkgly.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI";
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
+      if (!user?.email) {
         toast.error("Please sign in to top up credits");
         return;
       }
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: { 
           topup: packId,
-        }),
+          clerkUserId: user?.id,
+          clerkUserEmail: user?.email,
+        },
       });
       
-      if (!response.ok) {
-        console.error("Top-up checkout failed");
+      if (error) {
+        console.error("Top-up checkout failed:", error);
         toast.error("Failed to start top-up");
         return;
       }
       
-      const data = await response.json();
       if (data?.url) {
         openExternalUrl(data.url, checkoutWindow);
         setShowLowBalanceModal(false);
+      } else if (data?.error) {
+        toast.error(data.error);
       }
     } catch (error) {
       console.error("Top-up error:", error);
