@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 const Workspace = lazy(() => import("./pages/Workspace"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ClerkAuth = lazy(() => import("./pages/ClerkAuth"));
+const SupabaseAuth = lazy(() => import("./pages/Auth"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const About = lazy(() => import("./pages/About"));
 const Documentation = lazy(() => import("./pages/Documentation"));
@@ -67,6 +68,8 @@ function App() {
               <Route path="/login" element={<ClerkAuth />} />
               <Route path="/signup" element={<ClerkAuth />} />
               <Route path="/signup/*" element={<ClerkAuth />} />
+              {/* Supabase Auth Fallback (for preview environments) */}
+              <Route path="/auth/email" element={<SupabaseAuth />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               {/* Protected Routes */}
               <Route path="/dashboard" element={<Dashboard />} />
