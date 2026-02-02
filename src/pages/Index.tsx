@@ -1,8 +1,7 @@
 // HeftCoder Landing Page - Main Entry
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import { useAuth } from "@clerk/clerk-react";
 import { motion, useInView } from "framer-motion";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
@@ -200,30 +199,15 @@ const trustedLogos = ['Stripe', 'Vercel', 'Hg', 'Oscar', 'ARK Invest', 'Zillow',
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isSignedIn, isLoaded } = useAuth();
 
   const [prompt, setPrompt] = useState('');
   const [showAttachDropdown, setShowAttachDropdown] = useState(false);
   const [showConnectorsModal, setShowConnectorsModal] = useState(false);
   const [isGithubConnected, setIsGithubConnected] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const attachDropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Check auth state on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-    };
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-      setIsAuthenticated(!!session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -235,11 +219,17 @@ export default function LandingPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Redirect to auth when user interacts with chat input
-  const handlePromptFocus = () => {
-    if (isAuthenticated === false) {
-      navigate('/auth?provider=google');
+  // Redirect to auth when user starts typing (if not signed in)
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    
+    // If user starts typing and is not signed in, redirect to auth
+    if (value.length > 0 && isLoaded && !isSignedIn) {
+      navigate('/auth');
+      return;
     }
+    
+    setPrompt(value);
   };
 
   const handleSend = () => {
@@ -323,8 +313,7 @@ export default function LandingPage() {
           >
             <textarea
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onFocus={handlePromptFocus}
+              onChange={handlePromptChange}
               placeholder="Build me a SaaS platform for..."
               className="w-full h-20 sm:h-24 bg-transparent text-base sm:text-lg text-white placeholder-gray-600 resize-none focus:outline-none p-2 mb-14 sm:mb-12"
             />
