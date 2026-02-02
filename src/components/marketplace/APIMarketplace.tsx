@@ -129,14 +129,15 @@ export function APIMarketplace({ userId, onUseAPI }: APIMarketplaceProps) {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const supabaseUrl = "https://ythuhewbaulqirjrkgly.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aHVoZXdiYXVscWlyanJrZ2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTkwMDgsImV4cCI6MjA4NDk3NTAwOH0.lbkprUMf_qkyzQOBqSOboipowjA0K8HZ2yaPglwe8MI";
+      // Use environment variables with fallback
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pmgqviuvrliqkipfntsn.supabase.co';
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtZ3F2aXV2cmxpcWtpcGZudHNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5NTUzODYsImV4cCI6MjA4NTUzMTM4Nn0.BNRO7W200PUHRZyUTzDbBWwKrwwMidH25XhpN5PaBEk';
       
       const response = await fetch(`${supabaseUrl}/functions/v1/sync-public-apis`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
         },
       });
 

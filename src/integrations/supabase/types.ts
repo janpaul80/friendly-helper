@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_catalog: {
+        Row: {
+          auth_type: string
+          category: string
+          cors: string | null
+          created_at: string
+          description: string
+          example_request: Json | null
+          example_response: Json | null
+          https: boolean
+          id: string
+          is_custom: boolean
+          is_featured: boolean
+          link: string
+          name: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          auth_type?: string
+          category: string
+          cors?: string | null
+          created_at?: string
+          description?: string
+          example_request?: Json | null
+          example_response?: Json | null
+          https?: boolean
+          id?: string
+          is_custom?: boolean
+          is_featured?: boolean
+          link: string
+          name: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          auth_type?: string
+          category?: string
+          cors?: string | null
+          created_at?: string
+          description?: string
+          example_request?: Json | null
+          example_response?: Json | null
+          https?: boolean
+          id?: string
+          is_custom?: boolean
+          is_featured?: boolean
+          link?: string
+          name?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           attempts: number
@@ -43,6 +97,35 @@ export type Database = {
           verified?: boolean
         }
         Relationships: []
+      }
+      user_api_favorites: {
+        Row: {
+          api_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          api_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          api_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_api_favorites_api_id_fkey"
+            columns: ["api_id"]
+            isOneToOne: false
+            referencedRelation: "api_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_credits: {
         Row: {
