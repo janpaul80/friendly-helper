@@ -1,8 +1,11 @@
-import { Link } from "react-router-dom";
-import { Check, Zap, Command, Crown, ChevronRight } from "lucide-react";
+import { useState } from "react";
+
+import { Check, Zap, Command, Crown, ChevronRight, Loader2 } from "lucide-react";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
 import { SEO } from "../components/SEO";
+import { toast } from "sonner";
+import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
 
 interface FeatureGroup {
   category: string;
@@ -21,6 +24,8 @@ interface PricingTier {
   popular: boolean;
   icon: typeof Zap;
   gradient?: string;
+  stripePlan: string; // Plan name for Stripe checkout
+  trialDays?: number; // Optional trial period
 }
 
 const plans: PricingTier[] = [
@@ -67,6 +72,8 @@ const plans: PricingTier[] = [
     cta: "Start Building",
     popular: false,
     icon: Zap,
+    stripePlan: "Basic",
+    trialDays: 3,
   },
   {
     name: "Operator",
@@ -115,6 +122,7 @@ const plans: PricingTier[] = [
     popular: true,
     icon: Command,
     gradient: "from-orange-600/30 via-orange-500/10 to-transparent",
+    stripePlan: "Pro",
   },
   {
     name: "Command Center",
@@ -170,6 +178,7 @@ const plans: PricingTier[] = [
     cta: "Take Command",
     popular: false,
     icon: Crown,
+    stripePlan: "Studio",
   },
 ];
 
@@ -195,6 +204,49 @@ const pricingSchema = {
 };
 
 export default function Pricing() {
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleUpgrade = async (plan: string) => {
+    setLoadingPlan(plan);
+    const checkoutWindow = preopenExternalWindow();
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          plan: plan,
+        }),
+      });
+
+      if (!response.ok) {
+        toast.error("Failed to create checkout session. Please try again.");
+        return;
+      }
+      
+      const data = await response.json();
+      
+      if (data?.url) {
+        openExternalUrl(data.url, checkoutWindow);
+      } else if (data?.error) {
+        toast.error(data.error || "An error occurred. Please try again.");
+      } else {
+        toast.error("Failed to get checkout URL. Please try again.");
+      }
+    } catch (error) {
+      console.error("Upgrade error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       <SEO
@@ -256,6 +308,9 @@ export default function Pricing() {
                   
                   {/* Price */}
                   <div className="flex items-baseline gap-1 mb-2">
+                    {plan.trialDays && (
+                      <span className="text-orange-500 text-sm font-medium mr-2">{plan.trialDays}-day free trial, then</span>
+                    )}
                     <span className="text-5xl font-bold tracking-tight">{plan.price}</span>
                     <span className="text-gray-500">{plan.period}</span>
                   </div>
@@ -289,17 +344,24 @@ export default function Pricing() {
                 </div>
 
                 {/* CTA */}
-                <Link
-                  to="/auth"
-                  className={`group flex items-center justify-center gap-2 w-full py-4 rounded-xl font-bold transition-all ${
+                <button
+                  onClick={() => handleUpgrade(plan.stripePlan)}
+                  disabled={loadingPlan === plan.stripePlan}
+                  className={`group flex items-center justify-center gap-2 w-full py-4 rounded-xl font-bold transition-all disabled:opacity-50 ${
                     plan.popular
                       ? "bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-600/25"
                       : "bg-white/10 hover:bg-white/15 text-white border border-white/10"
                   }`}
                 >
-                  {plan.cta}
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
+                  {loadingPlan === plan.stripePlan ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      {plan.cta}
+                      <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    </>
+                  )}
+                </button>
               </div>
             );
           })}
