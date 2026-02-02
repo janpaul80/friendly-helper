@@ -1,4 +1,5 @@
 import { Folder, Clock, ExternalLink, Globe, Hash } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 interface Project {
   id: string;
@@ -46,7 +47,7 @@ export function ProjectCard({ project, onOpen }: ProjectCardProps) {
         ) : project.preview_html ? (
           <div 
             className="w-full h-full opacity-50 group-hover:opacity-70 transition-opacity"
-            dangerouslySetInnerHTML={{ __html: project.preview_html }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(project.preview_html) }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
