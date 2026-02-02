@@ -43,10 +43,10 @@ Deno.serve(async (req: Request) => {
     // Build the analysis prompt based on settings
     const presetDescriptions: Record<string, string> = {
       'minimal-saas': 'Clean, minimal SaaS aesthetic with ample whitespace, clear hierarchy, and subtle accents. Think Linear, Notion, or Vercel.',
-      'startup-ui': 'Modern startup look with bold typography, gradient accents, and engaging micro-interactions. Think Stripe, Loom, or Figma.',
-      'enterprise': 'Professional enterprise design with structured layouts, conservative colors, and formal typography. Think Salesforce, Microsoft, or IBM.',
+      'startup-ui': 'Modern startup look with bold typography, gradient accents, sharp edges, and engaging micro-interactions. Think Stripe, Loom, or Figma.',
+      'brutalist': 'Raw, high-contrast brutalist design with bold typography, stark contrasts, exposed structure, and intentional roughness. Think Bloomberg Terminal meets modern web.',
       'dark-dashboard': 'Dark theme dashboard with rich data visualization, glowing accents, and technical aesthetic. Think GitHub, Discord, or Raycast.',
-      'conversion-focused': 'Conversion-optimized design with clear CTAs, trust signals, and compelling visual hierarchy. Think landing pages and SaaS marketing sites.',
+      'founder-friendly': 'Conversion-optimized design with clear CTAs, trust signals, compelling visual hierarchy, and founder-focused copy. Think premium SaaS landing pages.',
     };
 
     const intensityGuide: Record<string, string> = {
