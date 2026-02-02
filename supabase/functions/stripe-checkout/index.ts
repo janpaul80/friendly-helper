@@ -29,46 +29,18 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Get the authorization header to verify if user is authenticated
-    const authHeader = req.headers.get("Authorization");
-    let authenticatedUserId: string | null = null;
-    let authenticatedUserEmail: string | null = null;
-    
-    // If authorization header is provided, try to verify the JWT
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      try {
-        const token = authHeader.replace("Bearer ", "");
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        
-        // Verify the token by making a request to Supabase auth
-        const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-          headers: {
-            "Authorization": authHeader,
-            "apikey": supabaseServiceKey,
-          },
-        });
-        
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          authenticatedUserId = userData.id;
-          authenticatedUserEmail = userData.email;
-          console.log("Authenticated user:", authenticatedUserId);
-        }
-      } catch (authError) {
-        console.log("Auth verification failed:", authError);
-        // Continue without authentication - allow unauthenticated checkouts
-      }
-    }
-
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
     const body = await req.json();
-    const { plan, topup } = body;
+    const { plan, topup, clerkUserId, clerkUserEmail } = body;
     
-    console.log("Checkout request:", { plan, topup, authenticatedUserId });
+    // Use Clerk user info from request body (Clerk doesn't use Supabase auth)
+    const userId = clerkUserEmail || clerkUserId || null; // Use email as primary identifier
+    const userEmail = clerkUserEmail || null;
+    
+    console.log("Checkout request:", { plan, topup, userId, userEmail });
 
     const origin = req.headers.get("origin") || "https://heftcoder.lovable.app";
 
@@ -82,7 +54,7 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      if (!authenticatedUserId) {
+      if (!userId) {
         return new Response(JSON.stringify({ error: "Authentication required for top-up" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -107,10 +79,10 @@ Deno.serve(async (req: Request) => {
         mode: "payment",
         success_url: `${origin}/dashboard?topup=success&credits=${pack.credits}`,
         cancel_url: `${origin}/dashboard?topup=canceled`,
-        customer_email: authenticatedUserEmail || undefined,
+        customer_email: userEmail || undefined,
         metadata: {
           type: "topup",
-          userId: authenticatedUserId,
+          userId: userId,
           credits: pack.credits.toString(),
           packId: topup,
         },
@@ -175,14 +147,14 @@ const prices: Record<string, string | undefined> = {
       cancel_url: `${origin}/?canceled=true`,
       metadata: {
         type: "subscription",
-        userId: authenticatedUserId || "",
+        userId: userId || "",
         plan: normalizedPlan,
       },
     };
 
-    // Use authenticated email if available
-    if (authenticatedUserEmail) {
-      sessionParams.customer_email = authenticatedUserEmail;
+    // Use email if available
+    if (userEmail) {
+      sessionParams.customer_email = userEmail;
     }
 
     if (normalizedPlan === "Basic") {
