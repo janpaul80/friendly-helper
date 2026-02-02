@@ -10,7 +10,7 @@ import { UIRefactorUpload } from '../components/ui-refactor/UIRefactorUpload';
 import { UIRefactorSettings } from '../components/ui-refactor/UIRefactorSettings';
 import { UIRefactorResults } from '../components/ui-refactor/UIRefactorResults';
 
-export type RefactorPreset = 'minimal-saas' | 'startup-ui' | 'enterprise' | 'dark-dashboard' | 'conversion-focused';
+export type RefactorPreset = 'minimal-saas' | 'startup-ui' | 'brutalist' | 'dark-dashboard' | 'founder-friendly';
 export type RefactorIntensity = 'low' | 'balanced' | 'high';
 
 export interface RefactorSettings {

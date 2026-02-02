@@ -12,18 +12,18 @@ interface UIRefactorSettingsProps {
   hasImage: boolean;
 }
 
-const PRESETS: Array<{ id: RefactorPreset; label: string }> = [
-  { id: 'minimal-saas', label: 'Minimal SaaS' },
-  { id: 'startup-ui', label: 'Startup UI' },
-  { id: 'enterprise', label: 'Enterprise' },
-  { id: 'dark-dashboard', label: 'Dark Dashboard' },
-  { id: 'conversion-focused', label: 'Conversion-Focused' },
+const PRESETS: Array<{ id: RefactorPreset; label: string; description: string }> = [
+  { id: 'minimal-saas', label: 'Minimal SaaS', description: 'Clean, Linear-style design' },
+  { id: 'startup-ui', label: 'Startup / Sharp', description: 'Bold, modern aesthetic' },
+  { id: 'brutalist', label: 'Brutalist', description: 'Raw, high-contrast edges' },
+  { id: 'dark-dashboard', label: 'Dark Dashboard', description: 'Rich, data-focused UI' },
+  { id: 'founder-friendly', label: 'Founder Friendly', description: 'Conversion-focused' },
 ];
 
-const INTENSITIES: Array<{ id: RefactorIntensity; label: string }> = [
-  { id: 'low', label: 'Low' },
-  { id: 'balanced', label: 'Balanced' },
-  { id: 'high', label: 'High' },
+const INTENSITIES: Array<{ id: RefactorIntensity; label: string; description: string }> = [
+  { id: 'low', label: 'Polish', description: 'Refine details' },
+  { id: 'balanced', label: 'Modernize', description: 'Reimagine layout' },
+  { id: 'high', label: 'Transform', description: 'Bold redesign' },
 ];
 
 export function UIRefactorSettings({
@@ -56,24 +56,27 @@ export function UIRefactorSettings({
         {/* Preset Selection */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-            Refactor Preset
+            Design Style
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
             {PRESETS.map((preset) => (
               <button
                 key={preset.id}
                 onClick={() => onSettingsChange({ preset: preset.id })}
                 disabled={isProcessing}
                 className={`
-                  px-3 py-2.5 rounded-lg text-xs font-medium transition-all
+                  w-full px-4 py-3 rounded-xl text-left transition-all
                   ${settings.preset === preset.id
-                    ? 'bg-orange-500/20 border border-orange-500/50 text-orange-400'
-                    : 'bg-black/30 border border-orange-500/10 text-gray-400 hover:border-orange-500/30 hover:text-gray-300'
+                    ? 'bg-orange-500/20 border border-orange-500/50 ring-1 ring-orange-500/30'
+                    : 'bg-black/30 border border-white/5 hover:border-orange-500/30 hover:bg-orange-500/5'
                   }
                   disabled:opacity-50 disabled:cursor-not-allowed
                 `}
               >
-                {preset.label}
+                <span className={`text-sm font-bold ${settings.preset === preset.id ? 'text-orange-400' : 'text-white'}`}>
+                  {preset.label}
+                </span>
+                <p className="text-[10px] text-gray-500 mt-0.5">{preset.description}</p>
               </button>
             ))}
           </div>
@@ -84,22 +87,25 @@ export function UIRefactorSettings({
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
             Refactor Intensity
           </label>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {INTENSITIES.map((intensity) => (
               <button
                 key={intensity.id}
                 onClick={() => onSettingsChange({ intensity: intensity.id })}
                 disabled={isProcessing}
                 className={`
-                  flex-1 px-3 py-2.5 rounded-lg text-xs font-medium transition-all
+                  px-3 py-3 rounded-xl text-center transition-all
                   ${settings.intensity === intensity.id
-                    ? 'bg-orange-500/20 border border-orange-500/50 text-orange-400'
-                    : 'bg-black/30 border border-orange-500/10 text-gray-400 hover:border-orange-500/30 hover:text-gray-300'
+                    ? 'bg-orange-500/20 border border-orange-500/50 ring-1 ring-orange-500/30'
+                    : 'bg-black/30 border border-white/5 hover:border-orange-500/30 hover:bg-orange-500/5'
                   }
                   disabled:opacity-50 disabled:cursor-not-allowed
                 `}
               >
-                {intensity.label}
+                <span className={`text-xs font-bold ${settings.intensity === intensity.id ? 'text-orange-400' : 'text-white'}`}>
+                  {intensity.label}
+                </span>
+                <p className="text-[9px] text-gray-500 mt-0.5">{intensity.description}</p>
               </button>
             ))}
           </div>
