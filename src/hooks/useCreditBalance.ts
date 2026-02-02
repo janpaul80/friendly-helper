@@ -14,28 +14,59 @@ interface CreditBalance {
   refetch: () => Promise<void>;
 }
 
-export function useCreditBalance(userId: string | null): CreditBalance {
+export function useCreditBalance(userId: string | null, userEmail?: string | null): CreditBalance {
   const [credits, setCredits] = useState(0);
   const [creditsSpent, setCreditsSpent] = useState(0);
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState('none');
   const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
   const fetchBalance = useCallback(async () => {
-    if (!userId) {
+    if (!userId && !userEmail) {
       setIsLoading(false);
       return;
     }
 
     try {
-      const { data, error } = await supabase
-        .from('user_credits')
-        .select('credits, credits_spent, subscription_tier, subscription_status, trial_end_date')
-        .eq('user_id', userId)
-        .maybeSingle();
+      // First try to find by Clerk user ID
+      let data = null;
+      let error = null;
+      
+      if (userId) {
+        const result = await supabase
+          .from('user_credits')
+          .select('credits, credits_spent, subscription_tier, subscription_status, trial_end_date, user_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      }
 
-      if (error) {
+      // If not found by ID, try by email (for legacy records)
+      if (!data && userEmail) {
+        const emailResult = await supabase
+          .from('user_credits')
+          .select('credits, credits_spent, subscription_tier, subscription_status, trial_end_date, user_id')
+          .eq('user_id', userEmail)
+          .maybeSingle();
+        
+        if (emailResult.data) {
+          data = emailResult.data;
+          error = emailResult.error;
+          // Update the record to use Clerk ID instead of email for future lookups
+          if (userId && emailResult.data.user_id === userEmail) {
+            console.log('Migrating user_credits record from email to Clerk ID');
+            await supabase
+              .from('user_credits')
+              .update({ user_id: userId })
+              .eq('user_id', userEmail);
+          }
+        }
+      }
+
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching credit balance:', error);
         // Use defaults for new users
         setCredits(0);
@@ -49,6 +80,7 @@ export function useCreditBalance(userId: string | null): CreditBalance {
         setSubscriptionTier(data.subscription_tier || 'free');
         setSubscriptionStatus(data.subscription_status || 'none');
         setTrialEndDate(data.trial_end_date);
+        setResolvedUserId(data.user_id);
       } else {
         // No record found - new user with no subscription
         setCredits(0);
@@ -62,25 +94,26 @@ export function useCreditBalance(userId: string | null): CreditBalance {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, userEmail]);
 
   useEffect(() => {
     fetchBalance();
   }, [fetchBalance]);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates using resolved userId (after email migration)
   useEffect(() => {
-    if (!userId) return;
+    const effectiveId = resolvedUserId || userId;
+    if (!effectiveId) return;
 
     const channel = supabase
-      .channel(`credits-${userId}`)
+      .channel(`credits-${effectiveId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'user_credits',
-          filter: `user_id=eq.${userId}`,
+          filter: `user_id=eq.${effectiveId}`,
         },
         (payload) => {
           const newData = payload.new as any;
@@ -98,7 +131,7 @@ export function useCreditBalance(userId: string | null): CreditBalance {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, resolvedUserId]);
 
   return {
     credits,
