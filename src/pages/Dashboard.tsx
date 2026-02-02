@@ -26,16 +26,12 @@ import { APIMarketplace } from '../components/marketplace/APIMarketplace';
 interface Project {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
-  thumbnail_url: string | null;
+  status: string;
   created_at: string;
   updated_at: string;
-  project_type: string;
-  template_id: string | null;
-  preview_html: string | null;
-  original_prompt: string;
   user_id: string;
-  files: any;
 }
 
 export default function Dashboard() {
@@ -101,9 +97,9 @@ export default function Dashboard() {
 
     const fetchData = async () => {
       try {
-        // Fetch projects
+        // Fetch projects from the new projects table
         const { data: projectsData, error: projectsError } = await supabase
-          .from('project_history' as any)
+          .from('projects' as any)
           .select('*')
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false });
@@ -197,14 +193,33 @@ export default function Dashboard() {
       .replace(/^-|-$/g, '') || 'project';
     
     try {
-      // project_history table doesn't exist yet - just navigate to workspace
-      toast.success('Opening workspace...');
+      // Save project to database first
+      const { data: newProject, error: createError } = await supabase
+        .from('projects' as any)
+        .insert({
+          user_id: user.id,
+          name: projectName,
+          slug: slug,
+          status: 'active',
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating project:', createError);
+        toast.error('Failed to create project');
+        setIsCreatingProject(false);
+        return;
+      }
+
+      const projectData = newProject as unknown as Project;
+      toast.success('Project created! Opening workspace...');
       
       setShowCreateModal(false);
       setIsCreatingProject(false);
       
-      // Navigate to workspace with a new project
-      window.location.href = `${WORKSPACE_BASE_URL}?new=${encodeURIComponent(projectName)}&slug=${encodeURIComponent(slug)}`;
+      // Navigate to external workspace with project ID
+      window.location.href = `${WORKSPACE_BASE_URL}?project=${projectData.id}&name=${encodeURIComponent(projectName)}`;
     } catch (err) {
       console.error('Error creating project:', err);
       toast.error('Failed to create project');

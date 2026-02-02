@@ -1,19 +1,14 @@
 import { Folder, Clock, ExternalLink, Globe, Hash } from 'lucide-react';
-import DOMPurify from 'dompurify';
 
 interface Project {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
-  thumbnail_url: string | null;
+  status: string;
   created_at: string;
   updated_at: string;
-  project_type: string;
-  template_id: string | null;
-  preview_html: string | null;
-  original_prompt: string;
   user_id: string;
-  files: any;
 }
 
 interface ProjectCardProps {
@@ -36,37 +31,30 @@ export function ProjectCard({ project, onOpen }: ProjectCardProps) {
   };
 
   const computeHash = project.id.slice(0, 8).toUpperCase();
-  const subdomain = project.name.toLowerCase().replace(/\s+/g, '-').slice(0, 20);
+  const subdomain = project.slug || project.name.toLowerCase().replace(/\s+/g, '-').slice(0, 20);
 
   return (
     <div className="group bg-[#0a0a0f] border border-white/5 rounded-2xl hover:border-orange-500/30 transition-all duration-300 flex flex-col relative overflow-hidden">
       {/* Thumbnail */}
       <div className="h-36 bg-gradient-to-br from-[#111118] to-[#0a0a0f] border-b border-white/5 relative overflow-hidden">
-        {project.thumbnail_url ? (
-          <img src={project.thumbnail_url} alt={project.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-        ) : project.preview_html ? (
-          <div 
-            className="w-full h-full opacity-50 group-hover:opacity-70 transition-opacity"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(project.preview_html) }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center opacity-30 group-hover:opacity-50 transition-opacity">
-              <Folder size={32} className="text-gray-500 mx-auto mb-2" />
-              <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">No Preview</span>
-            </div>
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-center opacity-30 group-hover:opacity-50 transition-opacity">
+            <Folder size={32} className="text-gray-500 mx-auto mb-2" />
+            <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">Project</span>
           </div>
-        )}
+        </div>
         
         {/* Status Badge */}
         <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400">Live</span>
+          <div className={`h-2 w-2 rounded-full ${project.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-500'}`} />
+          <span className={`text-[9px] font-bold uppercase tracking-wider ${project.status === 'active' ? 'text-emerald-400' : 'text-gray-400'}`}>
+            {project.status === 'active' ? 'Live' : project.status}
+          </span>
         </div>
 
         {/* Type Badge */}
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider text-blue-400 border border-blue-500/20">
-          {project.project_type}
+          Workspace
         </div>
       </div>
 
