@@ -98,11 +98,11 @@ export default function ApiReference() {
   return (
     <div className="min-h-screen bg-[#050505] text-white">
       {/* Header */}
-      <header className="border-b border-white/5 py-4 px-6 sticky top-0 bg-[#050505]/80 backdrop-blur-xl z-50">
+      <header className="border-b border-white/5 py-4 px-4 sm:px-6 sticky top-0 bg-[#050505]/80 backdrop-blur-xl z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-gray-400 hover:text-orange-500 transition-colors">
             <ArrowLeft size={18} />
-            <span className="text-sm">Back to Home</span>
+            <span className="text-sm hidden sm:inline">Back to Home</span>
           </Link>
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 bg-orange-600 rounded flex items-center justify-center text-white">
@@ -114,47 +114,47 @@ export default function ApiReference() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-20 px-6 overflow-hidden">
+      <section className="relative py-12 sm:py-20 px-4 sm:px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/5 to-transparent" />
-        <div className="absolute top-20 right-1/4 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-1/4 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-3xl hidden sm:block" />
         
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
             <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
-              <Code className="w-8 h-8 text-orange-500" />
+              <Code className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" />
             </div>
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold">API Reference</h1>
-              <p className="text-gray-400 mt-1">Build powerful integrations with the HeftCoder API</p>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">API Reference</h1>
+              <p className="text-gray-400 mt-1 text-sm sm:text-base">Build powerful integrations with the HeftCoder API</p>
             </div>
           </div>
 
           {/* Version Badge */}
-          <div className="flex items-center gap-4 mt-8">
-            <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm border border-green-500/30">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-6 sm:mt-8">
+            <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs sm:text-sm border border-green-500/30">
               v2.0 Stable
             </span>
-            <span className="text-gray-500 text-sm">Last updated: January 2025</span>
+            <span className="text-gray-500 text-xs sm:text-sm">Last updated: January 2025</span>
           </div>
         </div>
       </section>
 
       {/* Quick Start */}
-      <section className="py-12 px-6 border-t border-white/5">
+      <section className="py-8 sm:py-12 px-4 sm:px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
-            <Key className="w-6 h-6 text-orange-500" />
+          <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8 flex items-center gap-2">
+            <Key className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
             Quick Start
           </h2>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Authentication */}
-            <div className="p-8 rounded-2xl border border-white/10 bg-white/[0.02]">
-              <div className="flex items-center gap-3 mb-4">
+            <div className="p-5 sm:p-8 rounded-2xl border border-white/10 bg-white/[0.02]">
+              <div className="flex items-center gap-3 mb-3 sm:mb-4">
                 <Lock className="w-5 h-5 text-orange-500" />
-                <h3 className="text-lg font-bold">Authentication</h3>
+                <h3 className="text-base sm:text-lg font-bold">Authentication</h3>
               </div>
-              <p className="text-gray-400 mb-6">
+              <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
                 All API requests require authentication using an API key. Include your key in the Authorization header:
               </p>
               <div className="rounded-xl bg-[#0a0a0a] border border-white/10 overflow-hidden">
@@ -173,12 +173,12 @@ export default function ApiReference() {
             </div>
 
             {/* Base URL */}
-            <div className="p-8 rounded-2xl border border-white/10 bg-white/[0.02]">
-              <div className="flex items-center gap-3 mb-4">
+            <div className="p-5 sm:p-8 rounded-2xl border border-white/10 bg-white/[0.02]">
+              <div className="flex items-center gap-3 mb-3 sm:mb-4">
                 <Globe className="w-5 h-5 text-orange-500" />
-                <h3 className="text-lg font-bold">Base URL</h3>
+                <h3 className="text-base sm:text-lg font-bold">Base URL</h3>
               </div>
-              <p className="text-gray-400 mb-6">
+              <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
                 All API endpoints are relative to this base URL. Use HTTPS for all requests.
               </p>
               <div className="rounded-xl bg-[#0a0a0a] border border-white/10 overflow-hidden">
@@ -198,11 +198,11 @@ export default function ApiReference() {
       </section>
 
       {/* SDK Examples */}
-      <section className="py-12 px-6">
+      <section className="py-8 sm:py-12 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold mb-8">SDK Examples</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8">SDK Examples</h2>
           
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2">
             {[
               { id: "rest", label: "cURL" },
               { id: "node", label: "Node.js" },
@@ -273,29 +273,29 @@ export default function ApiReference() {
       </section>
 
       {/* Endpoints */}
-      <section className="py-12 px-6 border-t border-white/5">
+      <section className="py-8 sm:py-12 px-4 sm:px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
-            <Webhook className="w-6 h-6 text-orange-500" />
+          <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8 flex items-center gap-2">
+            <Webhook className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
             Endpoints
           </h2>
 
           {categories.map((category) => (
-            <div key={category} className="mb-12">
-              <h3 className="text-lg font-bold text-orange-400 mb-4 flex items-center gap-2">
-                <Database className="w-5 h-5" />
+            <div key={category} className="mb-8 sm:mb-12">
+              <h3 className="text-base sm:text-lg font-bold text-orange-400 mb-3 sm:mb-4 flex items-center gap-2">
+                <Database className="w-4 h-4 sm:w-5 sm:h-5" />
                 {category}
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {endpoints.filter(e => e.category === category).map((endpoint, i) => (
-                  <div key={i} className="p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:border-orange-500/20 transition-all cursor-pointer group flex items-center gap-4">
-                    <span className={`px-3 py-1 rounded-lg text-xs font-mono font-bold border ${methodColors[endpoint.method]}`}>
+                  <div key={i} className="p-3 sm:p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:border-orange-500/20 transition-all cursor-pointer group flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-2 sm:gap-4">
+                    <span className={`px-2 sm:px-3 py-1 rounded-lg text-[10px] sm:text-xs font-mono font-bold border ${methodColors[endpoint.method]}`}>
                       {endpoint.method}
                     </span>
-                    <code className="text-gray-300 font-mono flex-1">{endpoint.path}</code>
-                    <span className="text-gray-500 text-sm hidden md:block">{endpoint.description}</span>
-                    {endpoint.auth && <Lock className="w-4 h-4 text-gray-600" />}
-                    <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-orange-500 transition-colors" />
+                    <code className="text-gray-300 font-mono text-xs sm:text-sm flex-1 break-all">{endpoint.path}</code>
+                    <span className="text-gray-500 text-xs sm:text-sm hidden lg:block">{endpoint.description}</span>
+                    {endpoint.auth && <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />}
+                    <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-orange-500 transition-colors hidden sm:block" />
                   </div>
                 ))}
               </div>
@@ -305,32 +305,32 @@ export default function ApiReference() {
       </section>
 
       {/* Rate Limits */}
-      <section className="py-12 px-6 border-t border-white/5">
+      <section className="py-8 sm:py-12 px-4 sm:px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
-            <Cpu className="w-6 h-6 text-orange-500" />
+          <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8 flex items-center gap-2">
+            <Cpu className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
             Rate Limits
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             {[
               { plan: "Free", requests: "100", period: "per hour", color: "gray" },
               { plan: "Pro", requests: "1,000", period: "per hour", color: "blue" },
               { plan: "Enterprise", requests: "Unlimited", period: "", color: "orange" },
             ].map((tier, i) => (
-              <div key={i} className={`p-6 rounded-xl border ${tier.color === 'orange' ? 'border-orange-500/30 bg-orange-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
-                <h3 className="text-lg font-bold text-white mb-2">{tier.plan}</h3>
-                <p className="text-3xl font-bold text-orange-400">{tier.requests}</p>
-                <p className="text-gray-500 text-sm">{tier.period || "requests"}</p>
+              <div key={i} className={`p-4 sm:p-6 rounded-xl border ${tier.color === 'orange' ? 'border-orange-500/30 bg-orange-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
+                <h3 className="text-base sm:text-lg font-bold text-white mb-2">{tier.plan}</h3>
+                <p className="text-2xl sm:text-3xl font-bold text-orange-400">{tier.requests}</p>
+                <p className="text-gray-500 text-xs sm:text-sm">{tier.period || "requests"}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-8 p-6 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-start gap-4">
-            <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5" />
+          <div className="mt-6 sm:mt-8 p-4 sm:p-6 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-start gap-3 sm:gap-4">
+            <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-yellow-400 font-semibold">Rate Limit Headers</p>
-              <p className="text-gray-400 text-sm mt-1">
+              <p className="text-yellow-400 font-semibold text-sm sm:text-base">Rate Limit Headers</p>
+              <p className="text-gray-400 text-xs sm:text-sm mt-1">
                 Check <code className="text-yellow-400">X-RateLimit-Remaining</code> and <code className="text-yellow-400">X-RateLimit-Reset</code> headers in API responses to monitor your usage.
               </p>
             </div>
@@ -339,10 +339,10 @@ export default function ApiReference() {
       </section>
 
       {/* Response Codes */}
-      <section className="py-12 px-6 border-t border-white/5">
+      <section className="py-8 sm:py-12 px-4 sm:px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold mb-8">Response Codes</h2>
-          <div className="grid md:grid-cols-2 gap-4">
+          <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8">Response Codes</h2>
+          <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
             {[
               { code: "200", status: "OK", description: "Request succeeded", type: "success" },
               { code: "201", status: "Created", description: "Resource created successfully", type: "success" },

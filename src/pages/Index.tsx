@@ -306,27 +306,27 @@ export default function LandingPage() {
           </motion.div>
           <motion.h1 
             variants={staggerItem}
-            className="text-5xl md:text-7xl font-bold mb-6 tracking-tight bg-gradient-to-br from-white via-white to-gray-500 bg-clip-text text-transparent leading-[1.1]"
+            className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 tracking-tight bg-gradient-to-br from-white via-white to-gray-500 bg-clip-text text-transparent leading-[1.1]"
           >
-            Where ideas become <br /> reality
+            Where ideas become <br className="hidden sm:block" /> reality
           </motion.h1>
           <motion.p 
             variants={staggerItem}
-            className="text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto"
+            className="text-lg sm:text-xl text-gray-400 mb-8 sm:mb-12 font-light max-w-2xl mx-auto px-2"
           >
             The most powerful autonomous AI agents for building production-ready applications in minutes.
           </motion.p>
 
           <motion.div 
             variants={fadeInScale}
-            className="bg-[#121212] border border-white/10 rounded-2xl p-4 shadow-2xl backdrop-blur-sm relative group focus-within:border-orange-500/50 transition-all"
+            className="bg-[#121212] border border-white/10 rounded-2xl p-3 sm:p-4 shadow-2xl backdrop-blur-sm relative group focus-within:border-orange-500/50 transition-all"
           >
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onFocus={handlePromptFocus}
               placeholder="Build me a SaaS platform for..."
-              className="w-full h-24 bg-transparent text-lg text-white placeholder-gray-600 resize-none focus:outline-none p-2 mb-12"
+              className="w-full h-20 sm:h-24 bg-transparent text-base sm:text-lg text-white placeholder-gray-600 resize-none focus:outline-none p-2 mb-14 sm:mb-12"
             />
 
             <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center gap-2">
@@ -363,7 +363,7 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                <div className="h-9 px-3 flex items-center gap-2 bg-[#1a1a1a] border border-white/10 rounded-lg text-sm text-gray-300">
+                <div className="hidden sm:flex h-9 px-3 items-center gap-2 bg-[#1a1a1a] border border-white/10 rounded-lg text-sm text-gray-300">
                   <ModelIcon provider="anthropic" />
                   <span>Heftcoder Orchestrator</span>
                 </div>
@@ -430,12 +430,12 @@ export default function LandingPage() {
       </section>
 
       {/* Orchestrator Banner - Orange Background Section */}
-      <section id="features" className="py-24 px-6 bg-gradient-to-b from-orange-600 to-orange-700 relative overflow-hidden z-10">
+      <section id="features" className="py-16 sm:py-24 px-4 sm:px-6 bg-gradient-to-b from-orange-600 to-orange-700 relative overflow-hidden z-10">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 sm:gap-12 items-center relative z-10">
           <AnimatedSection delay={0}>
-            <div className="bg-[#0a0a0a] rounded-2xl p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-              <div className="space-y-4">
+            <div className="bg-[#0a0a0a] rounded-2xl p-4 sm:p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2 mb-6 opacity-50">
                   <div className="w-3 h-3 rounded-full bg-red-500/50" /><div className="w-3 h-3 rounded-full bg-yellow-500/50" /><div className="w-3 h-3 rounded-full bg-green-500/50" />
                 </div>
@@ -478,11 +478,11 @@ export default function LandingPage() {
               </div>
             </div>
           </AnimatedSection>
-          <AnimatedSection delay={0.2} className="text-white">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+          <AnimatedSection delay={0.2} className="text-white text-center md:text-left">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
               Orchestrator Agents<br /><span className="text-orange-200">by HeftCoder</span>
             </h2>
-            <p className="text-xl text-orange-100/80 mb-8 leading-relaxed">
+            <p className="text-lg sm:text-xl text-orange-100/80 mb-6 sm:mb-8 leading-relaxed">
               The most powerful autonomous AI agents for building production-ready applications in minutes. Turn <strong className="text-white">Extended Thinking</strong> on for complex enterprise architectures.
             </p>
             <motion.div
