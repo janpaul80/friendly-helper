@@ -139,10 +139,16 @@ Deno.serve(async (req: Request) => {
 // Basic: $9/mo = 10,000 credits
 // Pro: $25/mo = 50,000 credits  
 // Studio: $59/mo = 150,000 credits
+// Strip any leading "=" from price IDs (in case they were saved incorrectly)
+const cleanPriceId = (id: string | undefined): string | undefined => {
+  if (!id) return undefined;
+  return id.startsWith("=") ? id.slice(1) : id;
+};
+
 const prices: Record<string, string | undefined> = {
-  Basic: Deno.env.get("STRIPE_PRICE_BASIC_ID"),
-  Pro: Deno.env.get("STRIPE_PRICE_PRO_ID"),
-  Studio: Deno.env.get("STRIPE_PRICE_STUDIO_ID"),
+  Basic: cleanPriceId(Deno.env.get("STRIPE_PRICE_BASIC_ID")),
+  Pro: cleanPriceId(Deno.env.get("STRIPE_PRICE_PRO_ID")),
+  Studio: cleanPriceId(Deno.env.get("STRIPE_PRICE_STUDIO_ID")),
 };
 
     const priceId = prices[normalizedPlan];
