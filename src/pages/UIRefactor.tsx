@@ -1,8 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import type { Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 // Components
@@ -45,8 +43,6 @@ const DEFAULT_SETTINGS: RefactorSettings = {
 
 export default function UIRefactor() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   
   // Feature state
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -57,26 +53,6 @@ export default function UIRefactor() {
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<RefactorResult | null>(null);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session: Session | null) => {
-        setUser(session?.user ?? null);
-        if (event === 'SIGNED_OUT') {
-          navigate('/auth');
-        }
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) {
-        navigate('/auth');
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
 
   const handleImageUpload = useCallback((imageDataUrl: string, fileName: string) => {
     setUploadedImage(imageDataUrl);
@@ -182,13 +158,6 @@ export default function UIRefactor() {
     setProcessingStatus('');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-orange-500/30">
