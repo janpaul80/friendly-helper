@@ -195,7 +195,7 @@ Keep responses professional, actionable, and architecture-focused. No full code 
     let concepts = [];
     
     if (settings.generatePreviews && analysis.conceptDescriptions) {
-      console.log("Generating premium UI preview images for", analysis.conceptDescriptions.length, "concepts...");
+      console.log("Generating UI preview images in parallel for", analysis.conceptDescriptions.length, "concepts...");
       
       // Premium style descriptions for each concept variation
       const styleVariations = [
@@ -204,37 +204,25 @@ Keep responses professional, actionable, and architecture-focused. No full code 
         "sophisticated enterprise look with refined typography, subtle color hierarchy, polished hover states, inspired by Notion and Arc browser"
       ];
       
-      for (let i = 0; i < Math.min(analysis.conceptDescriptions.length, 3); i++) {
-        const concept = analysis.conceptDescriptions[i];
-        
+      // Generate all images in parallel for speed
+      const imagePromises = analysis.conceptDescriptions.slice(0, 3).map(async (concept: any, i: number) => {
         try {
-          // Premium image generation prompt - Framer/Vercel quality
-          const imagePrompt = `Create a stunning, ultra-premium UI screenshot mockup. This should look like a real, polished product screenshot from Vercel, Linear, or Framer.
+          const imagePrompt = `Create a stunning UI screenshot mockup. Premium product screenshot style from Vercel, Linear, or Framer.
 
-VISUAL STYLE: ${styleVariations[i]}
-
+STYLE: ${styleVariations[i]}
 CONCEPT: ${concept.title} - ${concept.description}
 
-CRITICAL REQUIREMENTS:
-• Photorealistic UI mockup - must look like an actual screenshot, NOT an illustration
-• Dark background (#0a0a0f to #111118 gradient)
-• Crisp, pixel-perfect elements with anti-aliased edges
-• Professional typography hierarchy using Inter or SF Pro style fonts
-• Subtle glassmorphism effects with backdrop blur
-• Refined color palette: dark grays, orange/amber accents (#f97316), white text
-• Realistic shadows and depth (soft diffused shadows, not harsh)
-• Clean grid-based layout with generous whitespace
-• Modern UI components: sleek cards, refined buttons, subtle borders
-• Desktop 16:9 widescreen aspect ratio
-• Ultra high resolution, sharp details, 4K quality
-
-DO NOT: Create cartoon-like graphics, use bright colors, include people, use stock photo elements, create flat illustrations.
-
-This mockup should be indistinguishable from a real Dribbble shot from a top designer.`;
+REQUIREMENTS:
+• Photorealistic UI mockup - actual screenshot look
+• Dark background (#0a0a0f to #111118)
+• Crisp elements, professional typography
+• Orange/amber accents (#f97316), white text
+• Clean grid layout, 16:9 widescreen
+• High resolution, sharp details`;
           
-          console.log(`Generating premium concept ${i + 1}: ${concept.title}`);
+          console.log(`Starting generation for concept ${i + 1}: ${concept.title}`);
           
-          // Use the PRO image model for maximum quality
+          // Use faster flash model for speed
           const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -242,7 +230,7 @@ This mockup should be indistinguishable from a real Dribbble shot from a top des
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "google/gemini-3-pro-image-preview",
+              model: "google/gemini-2.5-flash-image",
               messages: [{ role: "user", content: imagePrompt }],
               modalities: ["image", "text"]
             }),
@@ -253,31 +241,26 @@ This mockup should be indistinguishable from a real Dribbble shot from a top des
             const generatedImage = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
             
             if (generatedImage) {
-              concepts.push({
+              console.log(`Successfully generated concept ${i + 1}`);
+              return {
                 id: concept.id || `concept-${i + 1}`,
                 title: concept.title || `Concept ${i + 1}`,
                 imageUrl: generatedImage
-              });
-              console.log(`Successfully generated premium concept ${i + 1}`);
-            } else {
-              console.log(`No image returned for concept ${i + 1}, using placeholder`);
-              concepts.push(createPlaceholderConcept(concept, i));
+              };
             }
-          } else {
-            const errText = await imageResponse.text();
-            console.error(`Image generation failed for concept ${i + 1}:`, imageResponse.status, errText);
-            concepts.push(createPlaceholderConcept(concept, i));
           }
+          
+          console.log(`Fallback to placeholder for concept ${i + 1}`);
+          return createPlaceholderConcept(concept, i);
         } catch (err) {
           console.error(`Error generating concept ${i + 1}:`, err);
-          concepts.push(createPlaceholderConcept(concept, i));
+          return createPlaceholderConcept(concept, i);
         }
-        
-        // Delay between generations to avoid rate limiting with pro model
-        if (i < 2) {
-          await new Promise(resolve => setTimeout(resolve, 800));
-        }
-      }
+      });
+      
+      // Wait for all images in parallel
+      concepts = await Promise.all(imagePromises);
+      console.log("All concept images generated");
     }
 
     // If no images were generated or previews disabled, create placeholder concepts
