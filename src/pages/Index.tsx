@@ -6,10 +6,10 @@ import { supabase } from "../lib/supabase";
 import { motion, useInView } from "framer-motion";
 import { Header } from "../components/marketing/Header";
 import { Footer } from "../components/marketing/Footer";
+import { TestimonialsCarousel } from "../components/marketing/TestimonialsCarousel";
 import { CookieConsent } from "../components/marketing/CookieConsent";
 import { SEO, schemas } from "../components/SEO";
 import { toast } from "sonner";
-import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
 import {
   Paperclip,
   Github,
@@ -22,11 +22,8 @@ import {
   Image,
   FileText,
   Link2,
-  ChevronDown,
   AudioWaveform,
   X,
-  CheckCircle,
-  Loader2,
   MessageSquare,
   MessageCircle
 } from "lucide-react";
@@ -205,15 +202,11 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const [prompt, setPrompt] = useState('');
-  const [selectedModel, setSelectedModel] = useState('heftcoder-pro');
-  const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showAttachDropdown, setShowAttachDropdown] = useState(false);
   const [showConnectorsModal, setShowConnectorsModal] = useState(false);
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [isGithubConnected, setIsGithubConnected] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  const modelDropdownRef = useRef<HTMLDivElement>(null);
   const attachDropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -234,9 +227,6 @@ export default function LandingPage() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
-        setShowModelDropdown(false);
-      }
       if (attachDropdownRef.current && !attachDropdownRef.current.contains(e.target as Node)) {
         setShowAttachDropdown(false);
       }
@@ -250,65 +240,6 @@ export default function LandingPage() {
     if (isAuthenticated === false) {
       navigate('/auth?provider=google');
     }
-  };
-
-  const handleUpgrade = async (plan: string) => {
-    setLoadingPlan(plan);
-    // In the editor, open Stripe in a new tab (Stripe Checkout doesn't like iframes)
-    const checkoutWindow = preopenExternalWindow();
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
-      console.log("Starting checkout for plan:", plan);
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({
-          plan: plan.charAt(0).toUpperCase() + plan.slice(1),
-          userId: null,
-          userEmail: null,
-        }),
-      });
-
-      console.log("Response status:", response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Response not OK:", errorText);
-        toast.error("Failed to create checkout session. Please try again.");
-        return;
-      }
-      
-      const data = await response.json();
-      console.log("Response data:", data);
-      
-      if (data?.url) {
-        console.log("Redirecting to:", data.url);
-        openExternalUrl(data.url, checkoutWindow);
-      } else if (data?.error) {
-        console.error("Checkout error:", data.error);
-        toast.error(data.error || "An error occurred. Please try again.");
-      } else {
-        console.error("No URL in response:", data);
-        toast.error("Failed to get checkout URL. Please try again.");
-      }
-    } catch (error) {
-      console.error("Upgrade error:", error);
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
-
-  const getSelectedModelName = () => {
-    const model = models.find(m => m.id === selectedModel);
-    return model ? model.name : 'Heft Orchestrator';
   };
 
   const handleSend = () => {
@@ -569,121 +500,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-24 px-6 bg-[#0a0a0a]">
-        <AnimatedSection className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-br from-white to-gray-400 bg-clip-text text-transparent">
-            Choose Your Plan
-          </h2>
-          <p className="text-gray-400 mb-16 max-w-xl mx-auto text-lg">
-            AI-powered coding with transparent pricing. Credits reset monthly. No surprise overages.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Basic */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5 }}
-              className="bg-[#111] border border-white/10 rounded-2xl p-8 text-left hover:border-white/20 transition-all group"
-            >
-              <h3 className="text-xl font-bold text-white mb-2">Basic</h3>
-              <p className="text-orange-500 text-sm mb-4">3 Day Free Trial</p>
-              <div className="mb-6">
-                <span className="text-gray-500 text-sm">then</span>
-                <span className="text-4xl font-bold text-white">$9</span>
-                <span className="text-gray-500">/mo</span>
-              </div>
-              <p className="text-orange-400 font-medium mb-6">10,000 HeftCredits</p>
-              <ul className="space-y-3 text-gray-400 text-sm mb-8">
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> GPT-5.1 Orchestrator</li>
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Auto-Save Projects</li>
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Public Workspaces</li>
-              </ul>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleUpgrade('basic')}
-                disabled={loadingPlan === 'basic'}
-                className="w-full py-3 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors disabled:opacity-50"
-              >
-                {loadingPlan === 'basic' ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Choose Basic'}
-              </motion.button>
-            </motion.div>
-
-            {/* Pro */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5 }}
-              className="bg-[#111] border-2 border-orange-500 rounded-2xl p-8 text-left relative scale-105 shadow-[0_0_60px_rgba(234,88,12,0.2)]"
-            >
-              <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                <span className="bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider">
-                  Most Popular
-                </span>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
-              <div className="mb-6 mt-4">
-                <span className="text-4xl font-bold text-white">$25</span>
-                <span className="text-gray-500">/mo</span>
-              </div>
-              <p className="text-orange-400 font-medium mb-6">50,000 HeftCredits</p>
-              <ul className="space-y-3 text-gray-400 text-sm mb-8">
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> VIBE Multi-Agent Mode</li>
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Private Workspaces</li>
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> High-Power Models</li>
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Flux.2 PRO Image Gen</li>
-              </ul>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleUpgrade('pro')}
-                disabled={loadingPlan === 'pro'}
-                className="w-full py-3 rounded-xl bg-orange-600 text-white font-bold hover:bg-orange-700 transition-colors disabled:opacity-50 shadow-[0_0_20px_rgba(234,88,12,0.4)]"
-              >
-                {loadingPlan === 'pro' ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Choose Pro'}
-              </motion.button>
-            </motion.div>
-
-            {/* Studio */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5 }}
-              className="bg-[#111] border border-white/10 rounded-2xl p-8 text-left hover:border-white/20 transition-all group"
-            >
-              <h3 className="text-xl font-bold text-white mb-2">Studio</h3>
-              <div className="mb-6 mt-4">
-                <span className="text-4xl font-bold text-white">$59</span>
-                <span className="text-gray-500">/mo</span>
-              </div>
-              <p className="text-orange-400 font-medium mb-6">150,000 HeftCredits</p>
-              <ul className="space-y-3 text-gray-400 text-sm mb-8">
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Full Orchestration</li>
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Smart Model Routing</li>
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Team Workspaces</li>
-                <li className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Priority Compute</li>
-              </ul>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleUpgrade('studio')}
-                disabled={loadingPlan === 'studio'}
-                className="w-full py-3 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors disabled:opacity-50"
-              >
-                {loadingPlan === 'studio' ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Choose Studio'}
-              </motion.button>
-            </motion.div>
-          </div>
-        </AnimatedSection>
-      </section>
+      {/* Testimonials */}
+      <TestimonialsCarousel />
 
       <Footer />
 
