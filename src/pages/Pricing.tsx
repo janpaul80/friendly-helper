@@ -6,6 +6,7 @@ import { Footer } from "../components/marketing/Footer";
 import { SEO } from "../components/SEO";
 import { toast } from "sonner";
 import { openExternalUrl, preopenExternalWindow } from "../lib/openExternal";
+import { supabase } from "../lib/supabase";
 
 interface FeatureGroup {
   category: string;
@@ -210,27 +211,15 @@ export default function Pricing() {
     setLoadingPlan(plan);
     const checkoutWindow = preopenExternalWindow();
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({
-          plan: plan,
-        }),
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: { plan },
       });
 
-      if (!response.ok) {
+      if (error) {
+        console.error("Stripe checkout error:", error);
         toast.error("Failed to create checkout session. Please try again.");
         return;
       }
-      
-      const data = await response.json();
       
       if (data?.url) {
         openExternalUrl(data.url, checkoutWindow);
